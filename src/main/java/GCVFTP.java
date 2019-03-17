@@ -1,34 +1,37 @@
-import AgenteUDP.Stream;
+import Estado.ConnectionState;
+import Estado.ConnectionType;
+import TransfereCC.Client;
+import TransfereCC.Server;
 
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 
 public class GCVFTP {
-    public static void main(String[] args) {
-        try {
-            Stream stream = new Stream(50, 50, "localhost", 8020);
+    public static void main(String[] args)
+            throws UnknownHostException, SocketException {
 
-            String hostname = "localhost";
-            int port = 8020;
-
-            InetAddress address = InetAddress.getByName(hostname);
-            DatagramSocket socket = new DatagramSocket();
-
-            while(true) {
-                String string = "ola";
-                byte[] buffer = string.getBytes();
-                DatagramPacket request = new DatagramPacket(buffer, buffer.length, address, port);
-                socket.send(request);
-
-                String response = stream.get();
-                if(response != null)
-                    System.out.println(response);
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
+        if(args[0].equals("GET") || args[0].equals("PUT")) {                    // 'PUT' or 'GET' - args[0]
+            ConnectionState connectionState = new ConnectionState(
+                    args[0].equals("GET") ?
+                            ConnectionType.SEND :
+                            ConnectionType.RECEIVE,
+                    args[1],                                                    // FILENAME - args[1]
+                    InetAddress.getByName("localhost"),
+                    8000,
+                    InetAddress.getByName(args[2]),                             // DESTINY ADDRESS - args[2]
+                    Integer.parseInt(args[3])                                   // DESTINY PORT - args[3]
+            );
+            Client client = new Client(connectionState);
+            client.start();
+        }
+        else {
+            Server server = new Server(
+                    Integer.parseInt(args[0]),                                  //PORT - args[0]
+                    Integer.parseInt(args[1]),                                  //CAPACITY - args[1]
+                    Integer.parseInt(args[2])                                   //PACKET SIZE - args[2]
+            );
+            server.start();
         }
     }
 }

@@ -1,25 +1,25 @@
 package AgenteUDP;
 
 import helper.Debugger;
-import javafx.util.Pair;
 
 import java.io.IOException;
 import java.net.*;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class StreamIN implements Runnable {
     private DatagramSocket socket;
-    private Queue<Pair<DatagramPacket, String>> queue;
+    private ArrayBlockingQueue<DatagramPacket> queue;
     private int packetSize;
-    private boolean isRunning;
+    private AtomicBoolean isRunning;
 
     public StreamIN(int capacity, int packetSize, InetAddress ip, int port)
             throws SocketException {
         this.socket = new DatagramSocket(port, ip);
         this.queue = new ArrayBlockingQueue<>(capacity);
         this.packetSize = packetSize;
-        this.isRunning = true;
+        this.isRunning= new AtomicBoolean(true);
 
         new Thread(this).start();
     }
@@ -28,32 +28,35 @@ public class StreamIN implements Runnable {
         return queue.size();
     }
 
-    public Pair<DatagramPacket, String> get() {
-        return queue.poll();
+    public int remainingCapacity(){
+        return this.queue.remainingCapacity();
+    }
+
+    public DatagramPacket get() throws InterruptedException{
+        return queue.take();
     }
 
     public void stop() {
-        isRunning = false;
+        isRunning.set(false);
     }
 
     public void run() {
         Debugger.log("StreamIN is running");
 
-        byte[] buf = new byte[packetSize];
-        DatagramPacket packet = new DatagramPacket(buf, buf.length);
-
-        while(isRunning) {
+        while(isRunning.get()) {
             try {
+                DatagramPacket packet = new DatagramPacket(new byte[packetSize], packetSize);
                 socket.receive(packet);
-                String data = new String(buf, 0, packet.getLength());
 
                 Debugger.log(
                         "Packet received from " +
                                 packet.getAddress().toString() +
-                                ", data: " + data);
+                                ", data: " + packet.getData().toString());
 
-                queue.add(new Pair<>(packet, data));
+                queue.put(packet);
             } catch (IOException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e){
                 e.printStackTrace();
             }
         }

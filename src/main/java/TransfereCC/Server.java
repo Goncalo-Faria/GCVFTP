@@ -3,6 +3,7 @@ package TransfereCC;
 import AgenteUDP.StreamIN;
 import Estado.ConnectionState;
 
+import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -22,12 +23,19 @@ public class Server {
     }
 
     public void start() {
-        while(isRunning) {
-            if(streamIN.getQueueSize() > 0) {
-                System.out.println(streamIN.get().getValue());
+
+        try {
+
+
+            while (isRunning) {
+            DatagramPacket packet = streamIN.get();
+            System.out.println(new String(packet.getData()));
             }
+        }catch(InterruptedException e){
+            e.getStackTrace();
         }
     }
+
 
     public void stop() {
         isRunning = false;

@@ -21,5 +21,12 @@ public class TransmissionChannel implements Channel {
         return this.in.get();
     }
 
+    public int sendWindow(){
+        return out.window();
+    }
+
+    public int receiveWindow(){
+        return in.window();
+    }
 
 }

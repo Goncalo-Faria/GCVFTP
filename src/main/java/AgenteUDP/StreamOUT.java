@@ -4,7 +4,6 @@ import helper.Debugger;
 
 import java.io.IOException;
 import java.net.*;
-import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -15,6 +14,7 @@ public class StreamOUT implements Runnable {
     private InetAddress inetAddress;
     private AtomicBoolean isRunning;
     private int packetSize;
+    private int capacity;
 
     public StreamOUT(int capacity, int packetSize, InetAddress ip, int port)
             throws SocketException {
@@ -24,6 +24,7 @@ public class StreamOUT implements Runnable {
         this.inetAddress = ip;
         this.isRunning = new AtomicBoolean(true);
         this.packetSize = packetSize;
+        this.capacity = capacity;
 
         new Thread(this).start();
     }
@@ -36,6 +37,10 @@ public class StreamOUT implements Runnable {
             sz = this.packetSize;
 
         queue.put(new DatagramPacket(data, 0,sz, this.inetAddress, this.port));
+    }
+
+    public int window(){
+        return this.capacity -  this.queue.remainingCapacity();
     }
 
     public void stop() {

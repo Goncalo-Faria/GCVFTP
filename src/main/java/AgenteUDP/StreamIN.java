@@ -4,50 +4,26 @@ import helper.Debugger;
 
 import java.io.IOException;
 import java.net.*;
-import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-public class StreamIN implements Runnable {
-    private DatagramSocket socket;
-    private ArrayBlockingQueue<DatagramPacket> queue;
-    private int packetSize;
-    private AtomicBoolean isRunning;
+public class StreamIN extends Stream {
 
     public StreamIN(int capacity, int packetSize, InetAddress ip, int port)
             throws SocketException {
-        this.socket = new DatagramSocket(port, ip);
-        this.queue = new ArrayBlockingQueue<>(capacity);
-        this.packetSize = packetSize;
-        this.isRunning= new AtomicBoolean(true);
-
-        new Thread(this).start();
-    }
-
-    public int getQueueSize() {
-        return queue.size();
-    }
-
-    public int remainingCapacity(){
-        return this.queue.remainingCapacity();
+        super(capacity,packetSize,ip,port);
     }
 
     public DatagramPacket getDatagram() throws InterruptedException{
-        return queue.take();
+        return super.queue.take();
     }
 
     public byte[] get() throws InterruptedException{
         return queue.take().getData();
     }
 
-    public void stop() {
-        isRunning.set(false);
-    }
-
     public void run() {
         Debugger.log("StreamIN is running");
 
-        while(isRunning.get()) {
+        while(super.active()) {
             try {
                 DatagramPacket packet = new DatagramPacket(new byte[packetSize], packetSize);
                 socket.receive(packet);

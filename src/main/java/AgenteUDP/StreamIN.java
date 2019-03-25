@@ -32,8 +32,12 @@ public class StreamIN implements Runnable {
         return this.queue.remainingCapacity();
     }
 
-    public DatagramPacket get() throws InterruptedException{
+    public DatagramPacket getDatagram() throws InterruptedException{
         return queue.take();
+    }
+
+    public byte[] get() throws InterruptedException{
+        return queue.take().getData();
     }
 
     public void stop() {

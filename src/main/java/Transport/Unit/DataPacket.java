@@ -57,6 +57,26 @@ public class DataPacket extends Packet {
                 order(ByteOrder.LITTLE_ENDIAN).getShort();
     }
 
+    public int getTimestamp() {
+        return timestamp;
+    }
+
+    public byte[] getData() {
+        return information;
+    }
+
+    public int getSeq() {
+        return seq;
+    }
+
+    public int getWindow() {
+        return window;
+    }
+
+    public DataPacket.Flag getFlag() {
+        return Flag.values()[flag];
+    }
+
     public byte[] serialize(){
 
         ByteBuffer b = ByteBuffer.allocate(3 * 32 + this.information.length);

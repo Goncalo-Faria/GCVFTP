@@ -1,6 +1,5 @@
 package Transport;
 
-import AgenteUDP.StreamOUT;
 import AgenteUDP.Channel;
 import Transport.Unit.DataPacket;
 
@@ -11,21 +10,28 @@ public class Socket implements Channel{
     //int msb = (m & 0xff) >> 7;
 
     private PriorityBlockingQueue<DataPacket> bag;
-    private Channel cs;
 
-    public Socket( StationProperties in, StreamOUT s){
-        this.cs = cs;
+    /* receiver
+     * manda ack
+     * fica à escuta de dados
+     * espera ack2
+     * */
+
+    /* sender
+     * manda ack2
+     * manda dados
+     * */
+
+    public Socket( StationProperties me, StationProperties caller){
         this.bag  = new PriorityBlockingQueue<>();
 
-        //            // esperar ack
-        //            // mandar ack2
     }
 
-    void send( byte[] data) throws InterruptedException{
+    public void send( byte[] data) throws InterruptedException{
 
     }
 
-    byte[] receive() throws InterruptedException{
-
+    public byte[] receive() throws InterruptedException{
+        return null;
     }
 }

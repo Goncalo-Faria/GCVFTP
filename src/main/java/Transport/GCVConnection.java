@@ -6,6 +6,6 @@ public final class GCVConnection {
     public static int maxcontrol = 2000; /*65,507 bytes*/
 
 
-    public static int connection_request_capacity = 100;
-    public static long connection_request_ttl= 100;
+    public static int connection_receive_capacity = 100;
+    public static long connection_receive_ttl= 100;
 }

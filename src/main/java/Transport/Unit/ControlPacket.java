@@ -85,7 +85,7 @@ public class ControlPacket extends Packet {
 
     public int getTimestamp() { return this.timestamp; }
 
-    public short getType() { return this.type; }
+    public ControlPacket.Type getType() { return Type.values()[this.type]; }
 
     public byte[] getInformation() { return this.information; }
 

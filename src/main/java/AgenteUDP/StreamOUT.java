@@ -4,37 +4,25 @@ import helper.Debugger;
 
 import java.io.IOException;
 import java.net.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-public class StreamOUT implements Runnable {
-    private DatagramSocket socket;
-    private ArrayBlockingQueue<DatagramPacket> queue;
-    private int port;
-    private InetAddress inetAddress;
-    private AtomicBoolean isRunning;
-    private int packetSize;
-    private int capacity;
+public class StreamOUT extends Stream {
+
+    private final int port;
+    private final InetAddress inetAddress;
 
     public StreamOUT(int capacity, int packetSize, InetAddress ip, int port)
             throws SocketException {
-        this.socket = new DatagramSocket();
-        this.queue = new ArrayBlockingQueue<>(capacity);
-        this.port = port;
+        super(capacity, packetSize, ip, port);
         this.inetAddress = ip;
-        this.isRunning = new AtomicBoolean(true);
-        this.packetSize = packetSize;
-        this.capacity = capacity;
-
-        new Thread(this).start();
+        this.port = port;
     }
 
     public void add(byte[] data) throws InterruptedException{
 
         int sz = data.length;
 
-        if(data.length > this.packetSize)
-            sz = this.packetSize;
+        if(data.length > this.maxpacketSize)
+            sz = this.maxpacketSize;
 
         queue.put(new DatagramPacket(data, 0,sz, this.inetAddress, this.port));
     }
@@ -43,13 +31,10 @@ public class StreamOUT implements Runnable {
         return this.capacity -  this.queue.remainingCapacity();
     }
 
-    public void stop() {
-        isRunning.set(false);
-    }
 
     public void run() {
 
-        while(isRunning.get()) {
+        while(this.isActive()) {
             try {
                 if (queue.size() > 0) {
                     DatagramPacket packet = queue.take();

@@ -7,9 +7,9 @@ import java.net.*;
 
 public class StreamIN extends Stream {
 
-    public StreamIN(int capacity, int packetSize, InetAddress ip, int port)
+    public StreamIN(int capacity, int maxpacketSize, InetAddress ip, int port)
             throws SocketException {
-        super(capacity,packetSize,ip,port);
+        super(capacity,maxpacketSize,ip,port);
     }
 
     public DatagramPacket getDatagram() throws InterruptedException{
@@ -23,9 +23,9 @@ public class StreamIN extends Stream {
     public void run() {
         Debugger.log("StreamIN is running");
 
-        while(super.active()) {
+        while(super.isActive()) {
             try {
-                DatagramPacket packet = new DatagramPacket(new byte[packetSize], packetSize);
+                DatagramPacket packet = new DatagramPacket(new byte[maxpacketSize], maxpacketSize);
                 socket.receive(packet);
 
                 Debugger.log(

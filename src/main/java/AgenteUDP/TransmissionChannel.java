@@ -1,6 +1,6 @@
 package AgenteUDP;
-import Contract.Channel;
-import Contract.StationProperties;
+import Transport.Channel;
+import Transport.StationProperties;
 
 import java.net.SocketException;
 
@@ -14,6 +14,7 @@ public class TransmissionChannel implements Channel {
     }
 
     public void send(byte[] data) throws InterruptedException{
+
         this.out.add(data);
     }
 

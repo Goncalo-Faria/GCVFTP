@@ -11,7 +11,7 @@ public abstract class Stream implements Runnable{
 
     final DatagramSocket socket;
     ArrayBlockingQueue<DatagramPacket> queue;
-    final int packetSize;
+    final int maxpacketSize;
     private AtomicBoolean isRunning;
     final int capacity;
 
@@ -19,7 +19,7 @@ public abstract class Stream implements Runnable{
             throws SocketException {
         this.socket = new DatagramSocket(port, ip);
         this.queue = new ArrayBlockingQueue<>(capacity);
-        this.packetSize = packetSize;
+        this.maxpacketSize = packetSize;
         this.isRunning= new AtomicBoolean(true);
         this.capacity = capacity;
         new Thread(this).start();
@@ -35,7 +35,9 @@ public abstract class Stream implements Runnable{
 
     public abstract void run();
 
-    public boolean active(){
+    public boolean isActive(){
         return isRunning.get();
     }
+
+    public boolean isClosed() {return !isRunning.get(); }
 }

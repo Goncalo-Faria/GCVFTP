@@ -1,4 +1,4 @@
-package Contract;
+package Transport;
 
 public interface Channel {
     void send( byte[] data) throws InterruptedException;

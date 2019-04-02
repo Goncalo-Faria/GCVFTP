@@ -72,7 +72,7 @@ public class GCVListener implements Listener {
                     ConnectionType.RECEIVE);
 
             StreamOUT sout = new StreamOUT(this.outc,
-                    GCVConnection.maxdata,
+                    GCVConnection.maxcontrol,
                     caller_ip,
                     caller_port);
 

@@ -15,4 +15,6 @@ public abstract class Packet {
         }
     }
 
+    public abstract byte[] serialize();
+
 }

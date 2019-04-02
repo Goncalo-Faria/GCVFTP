@@ -12,6 +12,11 @@ public class StreamIN extends Stream {
         super(capacity,maxpacketSize,ip,port);
     }
 
+    public StreamIN(int capacity, int maxpacketSize, InetAddress ip, int port, boolean fresh)
+            throws SocketException {
+        super(capacity,maxpacketSize,ip,port);
+    }
+
     public DatagramPacket getDatagram() throws InterruptedException{
         return super.queue.take();
     }
@@ -33,7 +38,8 @@ public class StreamIN extends Stream {
                                 packet.getAddress().toString() +
                                 ", data: " + packet.getData().toString());
 
-                queue.put(packet);
+                this.queue.put(packet);
+
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (InterruptedException e){

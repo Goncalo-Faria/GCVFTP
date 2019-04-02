@@ -1,5 +1,4 @@
 package AgenteUDP;
-import Transport.Channel;
 import Transport.StationProperties;
 
 import java.net.SocketException;

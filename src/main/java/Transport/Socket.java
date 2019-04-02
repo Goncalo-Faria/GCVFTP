@@ -1,8 +1,8 @@
 package Transport;
 
 import AgenteUDP.StreamOUT;
-import Transport.Channel;
-import Transport.DataPacket;
+import AgenteUDP.Channel;
+import Transport.Unit.DataPacket;
 
 import java.util.concurrent.PriorityBlockingQueue;
 

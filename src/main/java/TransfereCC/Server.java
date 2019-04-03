@@ -1,7 +1,11 @@
 package TransfereCC;
 
+import AgenteUDP.Channel;
 import AgenteUDP.StreamIN;
 import Estado.ConnectionState;
+import Transport.Socket;
+import Transport.Start.GCVListener;
+import Transport.Start.Listener;
 
 import java.net.DatagramPacket;
 import java.net.InetAddress;
@@ -11,27 +15,25 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Server {
-    private StreamIN streamIN;
-    private Map<Integer, ConnectionState> connectionStateMap;
     private boolean isRunning = true;
+    private Listener listener = new GCVListener(1,1);
 
-    public Server(int port, int capacity, int packetSize)
-            throws SocketException, UnknownHostException {
-        this.streamIN = new StreamIN(
-                capacity, packetSize, InetAddress.getByName("localhost"), port);
-        this.connectionStateMap = new HashMap<>();
+    public Server(){
+
     }
 
     public void start() {
 
         try {
+            Channel cs = listener.accept();
 
-
-            while (isRunning) {
-            DatagramPacket packet = streamIN.get();
-            System.out.println(new String(packet.getData()));
+            while (isRunning)
+            {
+                 byte[] data = cs.receive();
+                System.out.println(new String(data));
             }
-        }catch(InterruptedException e){
+
+        }catch(InterruptedException|SocketException e){
             e.getStackTrace();
         }
     }

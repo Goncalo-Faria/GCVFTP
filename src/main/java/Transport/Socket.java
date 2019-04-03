@@ -4,9 +4,11 @@ import AgenteUDP.Channel;
 import AgenteUDP.StationProperties;
 import AgenteUDP.StreamIN;
 import AgenteUDP.TransmissionChannel;
+import Transport.Unit.ControlPacket;
 import Transport.Unit.DataPacket;
 
 import java.net.SocketException;
+import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.PriorityBlockingQueue;
@@ -30,14 +32,23 @@ public class Socket implements Channel{
      * manda dados
      * */
 
-    public Socket(StationProperties me, StationProperties caller) throws SocketException {
+    public Socket(StationProperties me, StationProperties caller) throws SocketException,InterruptedException {
         this.ch = new TransmissionChannel( me, caller);
-        /* ack w/ port */
+
+        ControlPacket ackpacket = new ControlPacket(
+                ByteBuffer.allocate(4).putInt(me.port()).array(),
+                ControlPacket.Type.OK,
+                this.connection_time());
+
+        this.ch.send(ackpacket.serialize());/* ack w/ port */
+
+       /* deve esperar pelo ack2*/
     }
 
-    public Socket(StreamIN in, StationProperties caller ) throws SocketException {
+    public Socket(StreamIN in, StationProperties caller ) throws SocketException,InterruptedException {
         this.ch = new TransmissionChannel( in, caller);
-        /*ack2*/
+        this.ch.send( ControlPacket.sure(this.connection_time()).serialize() );/*ack2*/
+
     }
 
     private int connection_time(){
@@ -45,10 +56,10 @@ public class Socket implements Channel{
     }
 
     public void send( byte[] data) throws InterruptedException{
-
+        this.ch.send(data);
     }
 
     public byte[] receive() throws InterruptedException{
-        return null;
+        return this.ch.receive();
     }
 }

@@ -25,26 +25,26 @@ public class GCVConnector extends TimerTask implements Connector {
     private ControlPacket connection_message;
     private AtomicBoolean active = new AtomicBoolean(true);
     private AtomicInteger count = new AtomicInteger(0);
-    private int my_port;
-    private int inCapacity;
+    private Thread cur_t;
+
     private int outCapacity;
     private StationProperties in_properties;
+    private StationProperties out_properties;
 
     public GCVConnector(int my_port,int inCapacity, int outCapacity){
         try {
             this.in_properties = new StationProperties(
                     InetAddress.getByName("localhost"),
-                    this.inCapacity, my_port,
+                    inCapacity, my_port,
                     StationProperties.ConnectionType.RECEIVE,GCVConnection.maxcontrol);
 
             this.connection_message = new ControlPacket(
                     ByteBuffer.allocate(4).putInt(this.in_properties.port()).put(this.in_properties.ip().getAddress()).array(),
                     ControlPacket.Type.HI,
                     0);
-            this.my_port = my_port;
-            this.inCapacity = inCapacity;
-            this.outCapacity = outCapacity;
 
+            this.outCapacity = outCapacity;
+            this.cur_t = Thread.currentThread();
         }catch(UnknownHostException e){
             e.getStackTrace();
         }
@@ -63,7 +63,6 @@ public class GCVConnector extends TimerTask implements Connector {
         this.ins = new StreamIN(this.in_properties);
 
         try{
-
             while(this.active.get()) {
                 Packet du = Packet.parse(this.ins.get());
                 if(du instanceof ControlPacket){
@@ -71,12 +70,17 @@ public class GCVConnector extends TimerTask implements Connector {
                     if( cdu.getType().equals(ControlPacket.Type.SUP) ){
                         cdu.startBuffer();
                         int port = cdu.getInt();
-                    }else{
-
+                        this.active.set(false);
+                        this.outs.stop();
+                        this.out_properties = new StationProperties(
+                                InetAddress.getByName(ip),
+                                this.outCapacity,
+                                port,
+                                StationProperties.ConnectionType.SEND,
+                                GCVConnection.maxdata);
                     }
                 }
             }
-
 
         }catch(InterruptedException e){
            if(this.active.get()){
@@ -86,7 +90,7 @@ public class GCVConnector extends TimerTask implements Connector {
            }
         }
 
-
+        return new Socket(this.ins,this.out_properties);
 
     }
 
@@ -99,6 +103,8 @@ public class GCVConnector extends TimerTask implements Connector {
 
         if(count.get() >= GCVConnection.request_retry_number){
             active.set(false);
+            this.outs.stop();
+            this.cur_t.interrupt();
         }
 
     }

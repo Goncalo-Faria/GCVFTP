@@ -6,9 +6,13 @@ public class TransmissionChannel implements Channel {
     private StreamIN in;
     private StreamOUT out;
 
-    public TransmissionChannel(int mtu, StationProperties in, StationProperties out) throws SocketException {
-        this.in = new StreamIN(in.capacity(), mtu, in.ip(), in.port());
-        this.out = new StreamOUT(out.capacity(), mtu, out.ip(), out.port());
+    public TransmissionChannel(StationProperties in, StationProperties out) throws SocketException {
+        this(new StreamIN(in.capacity(), in.packetsize(), in.ip(), in.port()), out);
+    }
+
+    public TransmissionChannel(StreamIN in, StationProperties out) throws SocketException {
+        this.in = in;
+        this.out = new StreamOUT(out.capacity(), out.packetsize(), out.ip(), out.port());
     }
 
     public void send(byte[] data) throws InterruptedException{

@@ -32,13 +32,13 @@ public class ControlPacket extends Packet {
 
     public static ControlPacket forgetit(int timestamp){ return new ControlPacket(Type.FORGETIT,timestamp); }
 
-    private short type;
+    private short type; /* control message type*/
     private short extendedtype=0; /*para a aplicação*/
-    private int timestamp=0; /*calcular rrt*/
-    private byte[] information = new byte[0];
-    private int ack = 0;
-    private boolean readonly = false;
-    private ByteBuffer b;
+    private int timestamp=0; /*tempo desde que a ligação começou*/
+    private byte[] information = new byte[0]; /* informação de controlo extra ao header*/
+    private int ack = 0; /* números de sequência até este valor foram recebidos */
+    private boolean readonly = false; /* é possivel alterar o pacote */
+    private ByteBuffer b; /* util para ler o pacote de dados*/
 
     ControlPacket( BitSet data ){
         this.readonly = true;

@@ -6,6 +6,8 @@ import java.util.BitSet;
 
 public class ControlPacket extends Packet {
 
+    public static int header_size = 12;
+
     public enum Type{
         HI, /*syn*/
         OK, /*ack*/
@@ -36,6 +38,7 @@ public class ControlPacket extends Packet {
     private byte[] information = new byte[0];
     private int ack = 0;
     private boolean readonly = false;
+    private ByteBuffer b;
 
     ControlPacket( BitSet data ){
         this.readonly = true;
@@ -90,6 +93,18 @@ public class ControlPacket extends Packet {
     public byte[] getInformation() { return this.information; }
 
     public short getExtendedtype() { return this.extendedtype; }
+
+    public void startBuffer(){
+        this.b = ByteBuffer.wrap(this.information);
+    }
+
+    public int getInt(){
+        return this.b.getInt();
+    }
+
+    public String asString(){
+        return this.b.asCharBuffer().toString();
+    }
 
     public byte[] serialize(){
         int type_mask = (2^15 + (int)this.type)*2^16 + (int)this.extendedtype;

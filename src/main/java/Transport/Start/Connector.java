@@ -1,7 +1,9 @@
 package Transport.Start;
 
-import AgenteUDP.Channel;
+import Transport.Socket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 
 public interface Connector {
-    Channel connect(String ip) throws InterruptedException;
+    Socket bind(String ip) throws InterruptedException, UnknownHostException, SocketException;
 }

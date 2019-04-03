@@ -25,6 +25,11 @@ public abstract class Stream implements Runnable{
         new Thread(this).start();
     }
 
+    public Stream(StationProperties st)
+            throws SocketException {
+        this(st.capacity(),st.packetsize(),st.ip(),st.port());
+    }
+
     public int window(){
         return this.capacity -  this.queue.remainingCapacity();
     }

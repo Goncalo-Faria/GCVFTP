@@ -1,15 +1,16 @@
 package Transport.Start;
 
 
-import Estado.ConnectionType;
 import Transport.GCVConnection;
 import Transport.Socket;
-import Transport.StationProperties;
+import AgenteUDP.StationProperties;
+import Transport.Unit.ControlPacket;
+
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 
 
 public class GCVListener implements Listener {
@@ -25,10 +26,10 @@ public class GCVListener implements Listener {
 
                 GCVListener.common_daemon = new ConnectionScheduler(
                         GCVConnection.connection_receive_capacity,
-                        GCVConnection.maxcontrol,
                         InetAddress.getByName("localhost"),
                         GCVConnection.port,
-                        GCVConnection.connection_receive_ttl);
+                        GCVConnection.connection_receive_ttl,
+                        ControlPacket.Type.HI);
 
             } catch (SocketException| UnknownHostException e) {
                 e.printStackTrace();
@@ -38,9 +39,11 @@ public class GCVListener implements Listener {
     }
     private static void close(){
         GCVListener.common_daemon.close();
+        GCVListener.common_daemon = null;
     }
 
     public GCVListener(int inCapacity, int outCapacity){
+        GCVListener.activate();
         this.inc = inCapacity;
         this.outc = outCapacity;
 
@@ -49,16 +52,22 @@ public class GCVListener implements Listener {
     public Socket accept() throws SocketException {
         try {
 
-            DatagramPacket packet = GCVListener.common_daemon.get();/*waiting for datagram*/
+            ControlPacket packet = GCVListener.common_daemon.get();/*waiting for datagram*/
 
-            InetAddress caller_ip = packet.getAddress();
-            int caller_port = packet.getPort();
+            packet.startBuffer();
+
+            int caller_port = packet.getInt();
+
+            String caller_ip_text = packet.asString();
+
+            InetAddress caller_ip = InetAddress.getByName(caller_ip_text);
 
             StationProperties caller_station_properties = new StationProperties(
                     caller_ip,
                     this.outc,
                     caller_port,
-                    ConnectionType.SEND);
+                    StationProperties.ConnectionType.SEND,
+                    GCVConnection.maxcontrol);
 
             InetSocketAddress sa = new InetSocketAddress(0);
 
@@ -68,10 +77,10 @@ public class GCVListener implements Listener {
                     InetAddress.getByName("localhost"),
                     this.inc,
                     message_port,
-                    ConnectionType.RECEIVE);
+                    StationProperties.ConnectionType.RECEIVE,
+                    GCVConnection.maxdata);
 
             return new Socket(my_station_properties, caller_station_properties);
-
 
         } catch (UnknownHostException|InterruptedException e) {
             e.printStackTrace();

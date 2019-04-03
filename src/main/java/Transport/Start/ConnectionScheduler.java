@@ -1,6 +1,9 @@
 package Transport.Start;
 
 import AgenteUDP.StreamIN;
+import Transport.Unit.ControlPacket;
+import Transport.Unit.Packet;
+
 
 import java.net.DatagramPacket;
 import java.net.InetAddress;
@@ -20,18 +23,21 @@ public class ConnectionScheduler implements Runnable{
     private BlockingQueue<StampedDatagramPacket> queue = new LinkedBlockingQueue<>();
     private final Timer alarm = new Timer();
     private LocalDateTime clearTime = LocalDateTime.now();
+    private ControlPacket.Type packet_type;
 
     ConnectionScheduler(int connection_request_capacity,
-                        int maxcontrol,
                         InetAddress ip,
                         int port,
-                        long connection_request_ttl)
+                        long connection_request_ttl,
+                        ControlPacket.Type control_packet_type)
             throws SocketException {
 
-       this.connection = new StreamIN(
+        this.packet_type = control_packet_type;
+        this.connection = new StreamIN(
                connection_request_capacity,
-               maxcontrol,ip,
-               port);
+                8 + ControlPacket.header_size + 4 + 8,/* udp header + our header + port + ip */
+                ip,
+                port);
 
        new Thread(this).start();
 
@@ -41,10 +47,23 @@ public class ConnectionScheduler implements Runnable{
                 connection_request_ttl);
     }
 
-    public DatagramPacket get()
+    public ControlPacket get()
             throws InterruptedException{
 
-        return queue.take().get();
+        Packet synpacket =  Packet.parse(queue.take().get().getData());
+
+        if(synpacket instanceof ControlPacket){
+            ControlPacket.Type packettype = ((ControlPacket)synpacket).getType();
+
+            if(packettype.equals(this.packet_type)) {
+                return (ControlPacket)synpacket;
+            }else {
+                return this.get();
+            }
+        } else {
+            return this.get();
+        }
+
     }
 
     public void run() {

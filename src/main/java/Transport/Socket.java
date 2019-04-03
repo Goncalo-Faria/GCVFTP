@@ -1,6 +1,7 @@
 package Transport;
 
 import AgenteUDP.Channel;
+import AgenteUDP.StationProperties;
 import Transport.Unit.DataPacket;
 
 import java.util.concurrent.PriorityBlockingQueue;
@@ -12,7 +13,7 @@ public class Socket implements Channel{
     private PriorityBlockingQueue<DataPacket> bag;
 
     /* receiver
-     * manda ack
+     * manda ack e avisa o port
      * fica à escuta de dados
      * espera ack2
      * */
@@ -22,7 +23,7 @@ public class Socket implements Channel{
      * manda dados
      * */
 
-    public Socket( StationProperties me, StationProperties caller){
+    public Socket(StationProperties me, StationProperties caller){
         this.bag  = new PriorityBlockingQueue<>();
 
     }

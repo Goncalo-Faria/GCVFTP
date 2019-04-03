@@ -12,9 +12,9 @@ public class StreamIN extends Stream {
         super(capacity,maxpacketSize,ip,port);
     }
 
-    public StreamIN(int capacity, int maxpacketSize, InetAddress ip, int port, boolean fresh)
+    public StreamIN(StationProperties st)
             throws SocketException {
-        super(capacity,maxpacketSize,ip,port);
+        super(st);
     }
 
     public DatagramPacket getDatagram() throws InterruptedException{
@@ -40,9 +40,7 @@ public class StreamIN extends Stream {
 
                 this.queue.put(packet);
 
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e){
+            } catch (IOException|InterruptedException e) {
                 e.printStackTrace();
             }
         }

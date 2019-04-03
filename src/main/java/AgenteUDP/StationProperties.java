@@ -1,20 +1,25 @@
-package Transport;
+package AgenteUDP;
 
 import java.net.InetAddress;
-
-import Estado.ConnectionType;
 
 public final class StationProperties {
     private final int capacity;
     private final int port;
     private final ConnectionType ct;
     private final InetAddress ip;
+    private final int maxpacket;
 
-    public StationProperties(InetAddress ip, int capacity, int port, ConnectionType ct){
+    public enum ConnectionType {
+        SEND,
+        RECEIVE
+    }
+
+    public StationProperties(InetAddress ip, int capacity, int port, ConnectionType ct, int maxpacket){
         this.ct = ct;
         this.port = port;
         this.capacity = capacity;
         this.ip = ip;
+        this.maxpacket = maxpacket;
     }
 
 
@@ -33,4 +38,6 @@ public final class StationProperties {
     public InetAddress ip() {
         return ip;
     }
+
+    public int packetsize(){ return this.maxpacket;}
 }

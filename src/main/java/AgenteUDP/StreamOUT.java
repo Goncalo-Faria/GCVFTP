@@ -7,14 +7,19 @@ import java.net.*;
 
 public class StreamOUT extends Stream {
 
-    private final int port;
-    private final InetAddress inetAddress;
+    private final StationProperties st;
 
     public StreamOUT(int capacity, int packetSize, InetAddress ip, int port)
             throws SocketException {
         super(capacity, packetSize, ip, port);
-        this.inetAddress = ip;
-        this.port = port;
+        this.st = new StationProperties(ip, capacity, port, StationProperties.ConnectionType.SEND, packetSize);
+
+    }
+
+    public StreamOUT(StationProperties st)
+            throws SocketException {
+        super(st);
+        this.st = st;
     }
 
     public void add(byte[] data) throws InterruptedException{
@@ -24,7 +29,7 @@ public class StreamOUT extends Stream {
         if(data.length > this.maxpacketSize)
             sz = this.maxpacketSize;
 
-        queue.put(new DatagramPacket(data, 0,sz, this.inetAddress, this.port));
+        queue.put(new DatagramPacket(data, 0,sz, st.ip(), st.port()));
     }
 
     public int window(){
@@ -41,7 +46,7 @@ public class StreamOUT extends Stream {
 
                     try {
                         socket.send(packet);
-                        Debugger.log("Packet sent to " + inetAddress + ":" + port);
+                        Debugger.log("Packet sent to " + st.ip() + ":" + st.port());
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

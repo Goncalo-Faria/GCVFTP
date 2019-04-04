@@ -4,11 +4,13 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.nio.ByteBuffer;
 
 public class TransmissionChannel implements Channel {
-    private DatagramSocket cs;
-    private StationProperties in;
-    private StationProperties out;
+    private final DatagramSocket cs;
+    private final StationProperties in;
+    private final StationProperties out;
+    private final byte[] data_buffer ;
 
     public TransmissionChannel(StationProperties in,
                                StationProperties out) throws SocketException {
@@ -16,7 +18,7 @@ public class TransmissionChannel implements Channel {
         this.cs.connect(out.ip(),out.port());
         this.in = in;
         this.out = out;
-
+        this.data_buffer = new byte[in.packetsize()];
     }
 
     public TransmissionChannel(DatagramSocket cs,
@@ -24,7 +26,9 @@ public class TransmissionChannel implements Channel {
                                StationProperties out) throws SocketException {
         this.cs = cs;
         this.cs.connect(out.ip(),out.port());
+        this.in=in;
         this.out = out;
+        this.data_buffer = new byte[in.packetsize()];
     }
 
     public void send(byte[] data) throws IOException {
@@ -33,17 +37,17 @@ public class TransmissionChannel implements Channel {
         if(data.length > out.packetsize())
             sz = out.packetsize();
 
-        System.out.println("hey ::" + out.port() + "::" +  out.ip() );
-
         cs.send(new DatagramPacket(data, 0, sz, out.ip(), out.port()));
     }
 
     public byte[] receive() throws IOException{
-        DatagramPacket packet = new DatagramPacket(new byte[in.packetsize()],in.packetsize());
+        DatagramPacket packet = new DatagramPacket(this.data_buffer,in.packetsize());
 
         cs.receive(packet);
+        byte[] dest = new byte[packet.getLength()];
+        ByteBuffer.wrap(packet.getData()).get(new byte[packet.getLength()],0,packet.getLength());
 
-        return packet.getData();
+        return dest;
     }
 
 }

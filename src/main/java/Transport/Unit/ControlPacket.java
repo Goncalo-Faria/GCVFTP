@@ -47,7 +47,7 @@ public class ControlPacket extends Packet {
         this.extendedtype = this.extract_extendedtype(data);
         this.timestamp = this.extract_timestamp(data);
         this.ack = this.extract_ack(data);
-        if(data.length()>96)
+        if(size*8 >96)
             this.information = data.get(96, size).toByteArray();
 
     }
@@ -120,7 +120,7 @@ public class ControlPacket extends Packet {
         int ans =  ByteBuffer.wrap(bs.toByteArray()).order(ByteOrder.BIG_ENDIAN).getInt();
 
         if(fudge)
-            ans = ans-128;
+            ans = (ans-128)/65536;
 
         System.out.println("timestop : " + ans);
 
@@ -141,7 +141,7 @@ public class ControlPacket extends Packet {
         int ans = ByteBuffer.wrap(bs.toByteArray()).getInt();
 
         if( fudge )
-            ans = ans-128;
+            ans = (ans-128)/65536;
 
         System.out.println("ack : " + ans);
 

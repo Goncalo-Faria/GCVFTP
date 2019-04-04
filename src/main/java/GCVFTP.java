@@ -7,7 +7,7 @@ public class GCVFTP {
     public static void main(String[] args) {
 
 
-        ControlPacket cp = new ControlPacket( ControlPacket.Type.BYE ,69);
+        ControlPacket cp = new ControlPacket( ControlPacket.Type.BYE ,78000);
         cp.setAck(44);
         cp.setExtendedType((short)33);
 

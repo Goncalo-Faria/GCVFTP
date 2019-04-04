@@ -11,8 +11,6 @@ public abstract class Packet {
 
         BitSet message = BitSet.valueOf(udp_data);
 
-        System.out.println(message.toString());
-
         boolean type = message.get(0);
 
         if(type){

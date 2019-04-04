@@ -58,8 +58,8 @@ public class GCVConnector implements Connector {
                 ControlPacket.header_size);
 
         this.cs = new DatagramSocket(this.in_properties.port());
-        //this.cs.setSoTimeout(GCVConnection.request_retry_timeout);
-        cs.connect(ip,GCVConnection.port);
+        this.cs.setSoTimeout(GCVConnection.request_retry_timeout);
+        //cs.connect(ip,GCVConnection.port);
 
 
         int tries = 0;
@@ -68,7 +68,7 @@ public class GCVConnector implements Connector {
             System.out.println("sent " + connection_message.length + " bytes");
             this.cs.send(send_message);
             try {
-                System.out.println(":localport " + this.cs.getLocalPort() + " :: " + this.cs.getLocalAddress() );
+                System.out.println(":localport " + this.cs.getLocalPort() );
                 this.cs.receive(received_message);
                 System.out.println("--got in--");
                 Packet du = Packet.parse(received_message.getData());
@@ -76,12 +76,11 @@ public class GCVConnector implements Connector {
                     ControlPacket cdu = (ControlPacket)du;
                     if( cdu.getType().equals(ControlPacket.Type.OK) ){
                         this.active.set(false);
-                        this.cs.disconnect();
                         this.out_properties = new StationProperties(
                                     ip,
                                     received_message.getPort(),
                                     GCVConnection.maxdata);
-
+                        System.out.println(cdu.serialize().length);
                         return new Socket(this.cs,this.in_properties,this.out_properties);
                     }
                 }

@@ -1,7 +1,5 @@
 package Transport.Start;
 
-import AgenteUDP.StreamIN;
-import AgenteUDP.StreamOUT;
 import Transport.GCVConnection;
 import Transport.Socket;
 import AgenteUDP.StationProperties;
@@ -9,103 +7,92 @@ import Transport.Unit.ControlPacket;
 import Transport.Unit.Packet;
 
 
-import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.io.IOException;
+import java.net.*;
 import java.nio.ByteBuffer;
-import java.util.TimerTask;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
-public class GCVConnector extends TimerTask implements Connector {
+public class GCVConnector implements Connector {
 
-    private StreamOUT outs;
-    private StreamIN ins;
-    private ControlPacket connection_message;
+    private byte[] connection_message;
     private AtomicBoolean active = new AtomicBoolean(true);
-    private AtomicInteger count = new AtomicInteger(0);
-    private Thread cur_t;
 
-    private int outCapacity;
+    private DatagramSocket cs;
     private StationProperties in_properties;
     private StationProperties out_properties;
 
-    public GCVConnector(int my_port,int inCapacity, int outCapacity){
+    public GCVConnector(int my_port){
         try {
             this.in_properties = new StationProperties(
-                    InetAddress.getByName("localhost"),
-                    inCapacity, my_port,
-                    StationProperties.ConnectionType.RECEIVE,GCVConnection.maxcontrol);
+                    InetAddress.getLocalHost(),
+                    my_port,
+                    GCVConnection.maxcontrol);
 
             this.connection_message = new ControlPacket(
-                    ByteBuffer.allocate(4).putInt(this.in_properties.port()).put(this.in_properties.ip().getAddress()).array(),
+                    ByteBuffer.allocate(12).putInt(this.in_properties.port()).put(this.in_properties.ip().getAddress()).array(),
                     ControlPacket.Type.HI,
-                    0);
+                    0).serialize();
 
-            this.outCapacity = outCapacity;
-            this.cur_t = Thread.currentThread();
         }catch(UnknownHostException e){
             e.getStackTrace();
         }
 
     }
 
-    public Socket bind(String ip) throws InterruptedException, UnknownHostException, SocketException, TimeoutException {
+    public Socket bind(String ip) throws IOException, TimeoutException{
+
+        return this.bind(InetAddress.getByName(ip));
+
+    }
+
+    public Socket bind(InetAddress ip) throws IOException, TimeoutException {
 
         this.active.set(true);
-        this.outs = new StreamOUT(
-                GCVConnection.request_retry_number,
-                8 + ControlPacket.header_size + 4 + 8,/* udp header + our header + port + ip */
-                InetAddress.getByName(ip),
-                GCVConnection.port);
 
-        this.ins = new StreamIN(this.in_properties);
+        DatagramPacket send_message = new DatagramPacket(
+                connection_message,
+                8 + ControlPacket.header_size + 4 + 8);
+        DatagramPacket received_message = new DatagramPacket(
+                new byte[8 + ControlPacket.header_size ],
+                8 + ControlPacket.header_size);
 
-        try{
-            while(this.active.get()) {
-                Packet du = Packet.parse(this.ins.get());
+        this.cs = new DatagramSocket(this.in_properties.port());
+        this.cs.setSoTimeout(GCVConnection.request_retry_timeout);
+        cs.connect(ip,GCVConnection.port);
+
+
+        int tries = 0;
+        while(this.active.get() && tries < GCVConnection.request_retry_number ) {
+
+            this.cs.send(send_message);
+            try {
+                this.cs.receive(received_message);
+                Packet du = Packet.parse(received_message.getData());
                 if(du instanceof ControlPacket){
                     ControlPacket cdu = (ControlPacket)du;
                     if( cdu.getType().equals(ControlPacket.Type.SUP) ){
-                        cdu.startBuffer();
-                        int port = cdu.getInt();
                         this.active.set(false);
-                        this.outs.stop();
+                        this.cs.disconnect();
                         this.out_properties = new StationProperties(
-                                InetAddress.getByName(ip),
-                                this.outCapacity,
-                                port,
-                                StationProperties.ConnectionType.SEND,
-                                GCVConnection.maxdata);
+                                    ip,
+                                    received_message.getPort(),
+                                    GCVConnection.maxdata);
+
+                        return new Socket(this.cs,this.in_properties,this.out_properties);
                     }
                 }
+
+
+
+            }catch (SocketTimeoutException ste){
+                tries++;
             }
 
-        }catch(InterruptedException e){
-           if(this.active.get()){
-               e.getStackTrace();
-           }else{
-               throw new TimeoutException();
-           }
         }
 
-        return new Socket(this.ins,this.out_properties);
+        throw new TimeoutException();
 
     }
 
-    public void run(){
-        try {
-            this.outs.add(connection_message.serialize());
-        }catch (InterruptedException e){
-            e.getStackTrace();
-        }
-
-        if(count.get() >= GCVConnection.request_retry_number){
-            active.set(false);
-            this.outs.stop();
-            this.cur_t.interrupt();
-        }
-
-    }
 }

@@ -1,35 +1,46 @@
 package AgenteUDP;
 
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.SocketException;
 
 public class TransmissionChannel implements Channel {
-    private StreamIN in;
-    private StreamOUT out;
+    private DatagramSocket cs;
+    private StationProperties in;
+    private StationProperties out;
 
-    public TransmissionChannel(StationProperties in, StationProperties out) throws SocketException {
-        this(new StreamIN(in.capacity(), in.packetsize(), in.ip(), in.port()), out);
-    }
-
-    public TransmissionChannel(StreamIN in, StationProperties out) throws SocketException {
+    public TransmissionChannel(StationProperties in,
+                               StationProperties out) throws SocketException {
+        this.cs = new DatagramSocket(in.port());
+        this.cs.connect(out.ip(),out.port());
         this.in = in;
-        this.out = new StreamOUT(out.capacity(), out.packetsize(), out.ip(), out.port());
+        this.out = out;
     }
 
-    public void send(byte[] data) throws InterruptedException{
-
-        this.out.add(data);
+    public TransmissionChannel(DatagramSocket cs,
+                               StationProperties in,
+                               StationProperties out) throws SocketException {
+        this.cs = cs;
+        this.cs.connect(out.ip(),out.port());
+        this.out = out;
     }
 
-    public byte[] receive() throws InterruptedException{
-        return this.in.get();
+    public void send(byte[] data) throws IOException {
+        int sz = data.length;
+
+        if(data.length > out.packetsize())
+            sz = out.packetsize();
+
+        cs.send(new DatagramPacket(data, 0, sz, out.ip(), out.port()));
     }
 
-    public int sendWindow(){
-        return out.window();
-    }
+    public byte[] receive() throws IOException{
+        DatagramPacket packet = new DatagramPacket(new byte[in.packetsize()],in.packetsize());
 
-    public int receiveWindow(){
-        return in.window();
+        cs.receive(packet);
+
+        return packet.getData();
     }
 
 }

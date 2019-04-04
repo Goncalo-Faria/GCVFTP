@@ -1,37 +1,38 @@
-import Estado.ConnectionState;
-import Estado.ConnectionType;
-import TransfereCC.Client;
-import TransfereCC.Server;
 
-import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
+import Transport.Unit.ControlPacket;
+import Transport.Unit.DataPacket;
+import Transport.Unit.Packet;
 
 public class GCVFTP {
-    public static void main(String[] args)
-            throws UnknownHostException, SocketException {
+    public static void main(String[] args) {
 
-        if(args[0].equals("GET") || args[0].equals("PUT")) {                    // 'PUT' or 'GET' - args[0]
-            ConnectionState connectionState = new ConnectionState(
-                    args[0].equals("GET") ?
-                            ConnectionType.SEND :
-                            ConnectionType.RECEIVE,
-                    args[1],                                                    // FILENAME - args[1]
-                    InetAddress.getByName("localhost"),
-                    8000,
-                    InetAddress.getByName(args[2]),                             // DESTINY ADDRESS - args[2]
-                    Integer.parseInt(args[3])                                   // DESTINY PORT - args[3]
-            );
-            Client client = new Client(connectionState);
-            client.start();
+
+        ControlPacket cp = new ControlPacket( ControlPacket.Type.BYE ,69);
+        cp.setAck(44);
+        cp.setExtendedType((short)33);
+
+        Packet p =  Packet.parse(cp.serialize());
+
+        if( p instanceof ControlPacket) {
+            ControlPacket c = (ControlPacket) p;
+            System.out.println("functionally works");
+            System.out.println(c.equals(cp));
+        }else{
+            System.out.println(" it's data ");
         }
-        else {
-            Server server = new Server(
-                    Integer.parseInt(args[0]),                                  //PORT - args[0]
-                    Integer.parseInt(args[1]),                                  //CAPACITY - args[1]
-                    Integer.parseInt(args[2])                                   //PACKET SIZE - args[2]
-            );
-            server.start();
+
+
+        DataPacket dp = new DataPacket( new byte[10],32,64,88,DataPacket.Flag.SOLO);
+
+        p =  Packet.parse(dp.serialize());
+
+        if( p instanceof DataPacket) {
+            DataPacket c = (DataPacket) p;
+            System.out.println("functionally works");
+            System.out.println(c.equals(dp));
+        }else{
+            System.out.println(" it's control ");
         }
+
     }
 }

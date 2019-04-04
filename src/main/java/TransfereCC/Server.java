@@ -1,45 +1,34 @@
 package TransfereCC;
 
-import AgenteUDP.Channel;
-import AgenteUDP.StreamIN;
-import Estado.ConnectionState;
 import Transport.Socket;
 import Transport.Start.GCVListener;
 import Transport.Start.Listener;
 
-import java.net.DatagramPacket;
-import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.IOException;
+
 
 public class Server {
-    private boolean isRunning = true;
-    private Listener listener = new GCVListener(1,1);
+    private static boolean isRunning = true;
+    private static Listener listener = new GCVListener();
 
-    public Server(){
-
-    }
-
-    public void start() {
+    public static void main( String[] args ) {
 
         try {
-            Channel cs = listener.accept();
+            Socket cs = listener.accept();
 
             while (isRunning)
             {
-                 byte[] data = cs.receive();
+                byte[] data = cs.receive();
                 System.out.println(new String(data));
             }
 
-        }catch(InterruptedException|SocketException e){
-            e.getStackTrace();
+        }catch(IOException|InterruptedException e){
+            e.printStackTrace();
         }
     }
 
 
-    public void stop() {
+    public static void stop() {
         isRunning = false;
     }
 }

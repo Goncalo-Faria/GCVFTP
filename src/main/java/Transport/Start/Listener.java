@@ -1,9 +1,10 @@
 package Transport.Start;
 
-import AgenteUDP.Channel;
 
-import java.net.SocketException;
+import Transport.Socket;
+import java.io.IOException;
+
 
 public interface Listener {
-    Channel accept() throws SocketException,InterruptedException;
+    Socket accept() throws InterruptedException, IOException ;
 }

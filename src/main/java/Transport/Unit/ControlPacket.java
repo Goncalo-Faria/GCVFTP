@@ -2,6 +2,7 @@ package Transport.Unit;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
 
 public class ControlPacket extends Packet {
@@ -40,14 +41,14 @@ public class ControlPacket extends Packet {
     private boolean readonly = false; /* é possivel alterar o pacote */
     private ByteBuffer b; /* util para ler o pacote de dados*/
 
-    ControlPacket( BitSet data ){
+    ControlPacket( BitSet data, int size){
         this.readonly = true;
         this.type = this.extract_type(data);
         this.extendedtype = this.extract_extendedtype(data);
         this.timestamp = this.extract_timestamp(data);
         this.ack = this.extract_ack(data);
         if(data.length()>96)
-            this.information = data.get(96, data.length()).toByteArray();
+            this.information = data.get(96, size).toByteArray();
 
     }
 
@@ -58,26 +59,50 @@ public class ControlPacket extends Packet {
 
     public ControlPacket( Type t, int timestamp){
         this.type = (short)t.ordinal();
+        this.timestamp = timestamp;
     }
 
     private short extract_type( BitSet data ){
-        return ByteBuffer.wrap(data.get(1,16).toByteArray()).
-                order(ByteOrder.LITTLE_ENDIAN).getShort();
+        BitSet bs = data.get(0,16);
+
+        bs.set(0,false);
+
+        byte[] dat = bs.toByteArray();
+
+        //System.out.println(dat.length);
+
+        short ans = ByteBuffer.wrap(dat).getShort();
+
+        //System.out.println("type : " + ans);
+
+        return ans;
     }
 
     private short extract_extendedtype( BitSet data ){
-        return ByteBuffer.wrap(data.get(16,32).toByteArray()).
-                order(ByteOrder.LITTLE_ENDIAN).getShort();
+       short ans = ByteBuffer.wrap(data.get(16,32).toByteArray()).getShort();
+
+       //System.out.println("extended type : " + ans);
+
+       return ans;
     }
 
     private int extract_timestamp( BitSet data ){
-        return ByteBuffer.wrap(data.get(64,96).toByteArray()).
-                order(ByteOrder.LITTLE_ENDIAN).getInt();
+        int ans =  ByteBuffer.wrap(data.get(64,96).toByteArray()).getInt();
+
+        //System.out.println("timestamp : " + ans);
+
+        return ans;
     }
 
     private int extract_ack( BitSet data ){
-        return ByteBuffer.wrap(data.get(33,64).toByteArray()).
-                order(ByteOrder.LITTLE_ENDIAN).getInt();
+        BitSet s = BitSet.valueOf(ByteBuffer.wrap(data.get(32,64).toByteArray()));
+        s.set(0,false);
+
+        int ans = ByteBuffer.wrap(s.toByteArray()).getInt();
+
+        //System.out.println("ack : " + ans);
+
+        return ans;
     }
 
     public void setAck(int ack){ if(!this.readonly) this.ack = ack; }
@@ -107,10 +132,48 @@ public class ControlPacket extends Packet {
     }
 
     public byte[] serialize(){
-        int type_mask = (2^15 + (int)this.type)*2^16 + (int)this.extendedtype;
-        ByteBuffer b = ByteBuffer.allocate(3 * 32 + this.information.length);
-        b.putInt(type_mask).putInt(this.ack).putInt(this.timestamp).put(this.information);
-        return b.array();
+
+        ByteBuffer baseb = ByteBuffer.
+                allocate(4);
+
+        ByteBuffer viewb = ByteBuffer.wrap(baseb.array());
+
+        viewb.putShort(this.type).
+                putShort(this.extendedtype);
+
+
+        BitSet bb = BitSet.valueOf( viewb.array() );
+
+        bb.set(0,true);
+
+        byte[] type = bb.toByteArray();
+
+        ByteBuffer b = ByteBuffer.allocate(3 * 4 + this.information.length);
+
+        byte[] answer = b.array();
+
+        b.put(type).putInt(this.ack).putInt(this.timestamp).put(this.information);
+
+        return answer;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if( !( obj instanceof ControlPacket ) )
+            return false;
+
+        ControlPacket cp = (ControlPacket)obj;
+
+        boolean acc= true;
+
+        int min = ( cp.getInformation().length < this.information.length) ? cp.getInformation().length: this.information.length;
+
+        for(int i=0; i< min; i++)
+            acc = acc && (cp.getInformation()[i] == this.information[i]);
+
+        return acc && this.getType().equals(cp.getType()) &&
+                (cp.getExtendedtype() == this.extendedtype) &&
+                    (cp.getAck() == this.ack) && (cp.getTimestamp() == this.timestamp);
+
+    }
 }

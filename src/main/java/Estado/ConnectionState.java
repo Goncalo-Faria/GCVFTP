@@ -1,8 +1,5 @@
 package Estado;
 
-import AgenteUDP.StreamIN;
-import AgenteUDP.StreamOUT;
-
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,8 +14,8 @@ public class ConnectionState {
     private int originPort;
     private InetAddress destiny;
     private int destinyPort;
-    private List<StreamOUT> streamOUTList;
-    private List<StreamIN> streamINList;
+    //private List<StreamOUT> streamOUTList;
+    //private List<StreamIN> streamINList;
     private State state;
 
     public ConnectionState(
@@ -31,8 +28,8 @@ public class ConnectionState {
         this.destiny = destiny;
         this.destinyPort = destinyPort;
 
-        this.streamOUTList = new ArrayList<>();
-        this.streamINList = new ArrayList<>();
+        //this.streamOUTList = new ArrayList<>();
+        //this.streamINList = new ArrayList<>();
         this.state = State.INITIATED;
     }
 
@@ -68,6 +65,7 @@ public class ConnectionState {
         return destinyPort;
     }
 
+    /*
     public List<StreamOUT> getStreamOUTList() {
         return streamOUTList;
     }
@@ -91,7 +89,7 @@ public class ConnectionState {
     public boolean removeFromStreamIN(StreamIN streamIN) {
         return streamINList.remove(streamIN);
     }
-
+    */
     public State getState() {
         return state;
     }

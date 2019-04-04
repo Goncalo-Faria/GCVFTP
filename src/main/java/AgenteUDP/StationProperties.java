@@ -3,7 +3,7 @@ package AgenteUDP;
 import java.net.InetAddress;
 
 public final class StationProperties {
-    private final int port;
+    private int port;
     private final InetAddress ip;
     private final int maxpacket;
 
@@ -26,6 +26,8 @@ public final class StationProperties {
     public InetAddress ip() {
         return ip;
     }
+
+    public void setPort(int port){ this.port = port; }
 
     public int packetsize(){ return this.maxpacket;}
 }

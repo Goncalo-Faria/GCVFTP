@@ -46,7 +46,6 @@ public class GCVListener implements Listener {
             ConnectionScheduler.StampedControlPacket packets = GCVListener.common_daemon.getstamped();
             ControlPacket packet = packets.get();/*waiting for datagram*/
 
-
             int caller_port = packets.port();
 
             InetAddress caller_ip = packets.ip();
@@ -59,6 +58,8 @@ public class GCVListener implements Listener {
             InetSocketAddress sa = new InetSocketAddress(0);
 
             int message_port = sa.getPort();
+
+            System.out.println("______acontece________" + message_port);
 
             StationProperties my_station_properties = new StationProperties(
                     InetAddress.getLocalHost(),

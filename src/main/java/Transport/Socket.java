@@ -32,16 +32,17 @@ public class Socket {
 
     public Socket(StationProperties me, StationProperties caller) throws IOException {
         this.ch = new TransmissionTransportChannel( me, caller);
-
         ControlPacket ackpacket = ControlPacket.ok(this.connection_time());
 
-        this.ch.send(ackpacket);/* ack w/ port */
+        for(int i=0; i< 20; i++)
+            this.ch.send(ackpacket);/* ack w/ port */
 
        /* deve esperar pelo ack2*/
     }
 
     public Socket(DatagramSocket in, StationProperties me,StationProperties caller ) throws IOException {
         this.ch = new TransmissionTransportChannel( in, me, caller);
+        System.out.println(" la do outro lado ");
         this.ch.send( ControlPacket.sure(this.connection_time()) );/*ack2*/
 
     }
@@ -54,6 +55,8 @@ public class Socket {
         DataPacket packet = new DataPacket(data, this.connection_time(),this.seq,1, DataPacket.Flag.SOLO);
         this.ch.send( packet );
     }
+
+
 
     public byte[] receive() throws IOException{
         DataPacket p = (DataPacket)this.ch.receive();

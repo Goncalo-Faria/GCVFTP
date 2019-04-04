@@ -16,6 +16,7 @@ public class TransmissionChannel implements Channel {
         this.cs.connect(out.ip(),out.port());
         this.in = in;
         this.out = out;
+
     }
 
     public TransmissionChannel(DatagramSocket cs,
@@ -31,6 +32,8 @@ public class TransmissionChannel implements Channel {
 
         if(data.length > out.packetsize())
             sz = out.packetsize();
+
+        System.out.println("hey ::" + out.port() + "::" +  out.ip() );
 
         cs.send(new DatagramPacket(data, 0, sz, out.ip(), out.port()));
     }

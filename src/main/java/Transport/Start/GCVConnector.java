@@ -29,11 +29,9 @@ public class GCVConnector implements Connector {
                     my_port,
                     GCVConnection.maxcontrol);
 
-            this.connection_message = new ControlPacket(
-                    ByteBuffer.allocate(12).putInt(this.in_properties.port()).put(this.in_properties.ip().getAddress()).array(),
-                    ControlPacket.Type.HI,
-                    0).serialize();
+            ControlPacket p = ControlPacket.hi(0);
 
+            this.connection_message = p.serialize();
         }catch(UnknownHostException e){
             e.getStackTrace();
         }
@@ -49,29 +47,34 @@ public class GCVConnector implements Connector {
     public Socket bind(InetAddress ip) throws IOException, TimeoutException {
 
         this.active.set(true);
-
         DatagramPacket send_message = new DatagramPacket(
-                connection_message,
-                8 + ControlPacket.header_size + 4 + 8);
+                connection_message,0,
+                connection_message.length,
+                ip,
+                GCVConnection.port);
+
         DatagramPacket received_message = new DatagramPacket(
-                new byte[8 + ControlPacket.header_size ],
-                8 + ControlPacket.header_size);
+                new byte[ControlPacket.header_size],
+                ControlPacket.header_size);
 
         this.cs = new DatagramSocket(this.in_properties.port());
-        this.cs.setSoTimeout(GCVConnection.request_retry_timeout);
+        //this.cs.setSoTimeout(GCVConnection.request_retry_timeout);
         cs.connect(ip,GCVConnection.port);
 
 
         int tries = 0;
         while(this.active.get() && tries < GCVConnection.request_retry_number ) {
 
+            System.out.println("sent " + connection_message.length + " bytes");
             this.cs.send(send_message);
             try {
+                System.out.println(":localport " + this.cs.getLocalPort() + " :: " + this.cs.getLocalAddress() );
                 this.cs.receive(received_message);
+                System.out.println("--got in--");
                 Packet du = Packet.parse(received_message.getData());
                 if(du instanceof ControlPacket){
                     ControlPacket cdu = (ControlPacket)du;
-                    if( cdu.getType().equals(ControlPacket.Type.SUP) ){
+                    if( cdu.getType().equals(ControlPacket.Type.OK) ){
                         this.active.set(false);
                         this.cs.disconnect();
                         this.out_properties = new StationProperties(

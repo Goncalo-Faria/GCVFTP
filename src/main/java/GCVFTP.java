@@ -21,7 +21,6 @@ public class GCVFTP {
             System.out.println(" it's data ");
         }
 
-
         DataPacket dp = new DataPacket( new byte[10],32,64,88,DataPacket.Flag.SOLO);
 
         p =  Packet.parse(dp.serialize());

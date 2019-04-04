@@ -64,43 +64,86 @@ public class ControlPacket extends Packet {
 
     private short extract_type( BitSet data ){
         BitSet bs = data.get(0,16);
+        boolean fudge = false;
 
         bs.set(0,false);
 
-        byte[] dat = bs.toByteArray();
+        if( !bs.get(15) ) {
+            bs.set(15, true);
+            fudge = true;
+        }
 
-        //System.out.println(dat.length);
+        short ans = ByteBuffer.wrap(bs.toByteArray()).order(ByteOrder.LITTLE_ENDIAN).getShort();
 
-        short ans = ByteBuffer.wrap(dat).getShort();
+        if( fudge ) {
+            int tmp = ((int) ans + 32768)/256;
+            ans = (short) tmp;
+        }
 
-        //System.out.println("type : " + ans);
+        System.out.println("type : " + ans );
 
         return ans;
     }
 
     private short extract_extendedtype( BitSet data ){
-       short ans = ByteBuffer.wrap(data.get(16,32).toByteArray()).getShort();
 
-       //System.out.println("extended type : " + ans);
+        BitSet bs = data.get(16,32);
+        boolean fudge = false;
+
+
+        if( !bs.get(15) ) {
+            bs.set(15, true);
+            fudge = true;
+        }
+
+        short ans = ByteBuffer.wrap(bs.toByteArray()).order(ByteOrder.LITTLE_ENDIAN).getShort();
+
+        if( fudge ) {
+            int tmp = ((int) ans + 32768)/256;
+            ans = (short) tmp;
+        }
+
+        System.out.println("extendtype : " + ans);
 
        return ans;
     }
 
     private int extract_timestamp( BitSet data ){
-        int ans =  ByteBuffer.wrap(data.get(64,96).toByteArray()).getInt();
+        BitSet bs = data.get(64,96);
+        boolean fudge = false;
 
-        //System.out.println("timestamp : " + ans);
+        if( !bs.get(31) ){
+            bs.set(31, true);
+            fudge=true;
+        }
+
+        int ans =  ByteBuffer.wrap(bs.toByteArray()).order(ByteOrder.BIG_ENDIAN).getInt();
+
+        if(fudge)
+            ans = ans-128;
+
+        System.out.println("timestop : " + ans);
 
         return ans;
     }
 
     private int extract_ack( BitSet data ){
-        BitSet s = BitSet.valueOf(ByteBuffer.wrap(data.get(32,64).toByteArray()));
-        s.set(0,false);
+        BitSet bs = data.get(32,64);
+        boolean fudge = false;
 
-        int ans = ByteBuffer.wrap(s.toByteArray()).getInt();
+        bs.set(0,false);
 
-        //System.out.println("ack : " + ans);
+        if( !bs.get(31) ){
+            bs.set(31, true);
+            fudge=true;
+        }
+
+        int ans = ByteBuffer.wrap(bs.toByteArray()).getInt();
+
+        if( fudge )
+            ans = ans-128;
+
+        System.out.println("ack : " + ans);
 
         return ans;
     }
@@ -113,7 +156,7 @@ public class ControlPacket extends Packet {
 
     public int getTimestamp() { return this.timestamp; }
 
-    public ControlPacket.Type getType() { return Type.values()[this.type]; }
+    public ControlPacket.Type getType() { return Type.values()[(int)this.type]; }
 
     public byte[] getInformation() { return this.information; }
 

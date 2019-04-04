@@ -1,5 +1,6 @@
 package Transport.Start;
 
+import Transport.GCVConnection;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.Packet;
 
@@ -39,6 +40,7 @@ public class ConnectionScheduler implements Runnable{
 
        new Thread(this).start();
 
+       System.out.println( this.connection.getLocalPort() + "::" + this.connection.getLocalAddress());
        this.alarm.scheduleAtFixedRate(
                 new RemoveExpired(),
                 0 ,
@@ -61,8 +63,10 @@ public class ConnectionScheduler implements Runnable{
 
         try {
             while (this.active.get()) {
-                DatagramPacket packet = new DatagramPacket(new byte[this.maxpacket], this.maxpacket);
+                DatagramPacket packet = new DatagramPacket(new byte[ControlPacket.header_size], ControlPacket.header_size);
                 this.connection.receive(packet);
+
+                System.out.println(packet.getLength() + " // " +  packet.getData().length);
 
                 Packet synpacket = Packet.parse(packet.getData());
 

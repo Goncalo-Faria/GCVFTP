@@ -3,7 +3,9 @@ package Transport;
 import AgenteUDP.StationProperties;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.DataPacket;
+import Transport.Unit.Packet;
 
+import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.time.LocalDateTime;
@@ -32,7 +34,7 @@ public class Socket {
 
     public Socket(StationProperties me, StationProperties caller) throws IOException {
         this.ch = new TransmissionTransportChannel( me, caller);
-        ControlPacket ackpacket = ControlPacket.ok(/*this.connection_time()*/1);
+        ControlPacket ackpacket = ControlPacket.ok(this.connection_time());
 
 
         this.ch.send(ackpacket);/* ack w/ port */
@@ -42,7 +44,7 @@ public class Socket {
 
     public Socket(DatagramSocket in, StationProperties me,StationProperties caller ) throws IOException {
         this.ch = new TransmissionTransportChannel( in, me, caller);
-        this.ch.send( ControlPacket.sure(/*this.connection_time()*/2) );/*ack2*/
+        this.ch.send( ControlPacket.sure(this.connection_time()) );/*ack2*/
 
     }
 
@@ -51,14 +53,23 @@ public class Socket {
     }
 
     public void send( byte[] data) throws IOException{
-        DataPacket packet = new DataPacket(data, this.connection_time(),this.seq,1, DataPacket.Flag.SOLO);
+        DataPacket packet = new DataPacket(data, this.connection_time(),this.seq++,1, DataPacket.Flag.SOLO);
         this.ch.send( packet );
     }
 
 
-
     public byte[] receive() throws IOException{
-        DataPacket p = (DataPacket)this.ch.receive();
-        return p.getData();
+        Packet p = this.ch.receive();
+        if(p instanceof DataPacket) {
+            DataPacket dp = (DataPacket) p;
+            System.out.println("x-----------x-----------x--------x-------x----x--x--x-x-x-x--x ");
+            System.out.println("flag " + dp.getFlag());
+            System.out.println("seq " + dp.getSeq());
+            System.out.println("timestamp " + dp.getTimestamp());
+            System.out.println("window " + dp.getWindow());
+            return dp.getData();
+        }
+
+        return new byte[0];
     }
 }

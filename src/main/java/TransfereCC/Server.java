@@ -19,7 +19,7 @@ public class Server {
             while (isRunning)
             {
                 byte[] data = cs.receive();
-                System.out.println(new String(data));
+                System.out.println("says: " + new String(data));
             }
 
         }catch(IOException|InterruptedException e){

@@ -25,7 +25,7 @@ public class TransmissionTransportChannel implements TransportChannel {
     }
 
     public void send(Packet p) throws IOException {
-        ch.send(p.serialize());
+        this.ch.send(p.serialize());
     }
 
     public Packet receive() throws IOException{

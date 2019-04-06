@@ -19,8 +19,9 @@ public class Client {
             Socket cs = connect.bind(InetAddress.getLocalHost());
             while (isRunning) {
                 cs.send(message.getBytes());
+                Thread.sleep(2000);
             }
-        } catch(IOException | TimeoutException e){
+        } catch(IOException | TimeoutException| InterruptedException e){
             e.printStackTrace();
         }
     }

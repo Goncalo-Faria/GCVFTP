@@ -4,6 +4,7 @@ import Transport.Unit.DataPacket;
 import Transport.Unit.Packet;
 
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 
 public class GCVFTP {
     public static void main(String[] args) {
@@ -29,13 +30,14 @@ public class GCVFTP {
             System.out.println(" it's data ");
         }
 
-
-        DataPacket dp = new DataPacket( ByteBuffer.allocate(8).putInt(8).putInt(-22).array(),32,884,8448,DataPacket.Flag.FIRST);
+        DataPacket dp = new DataPacket( "ola".getBytes() ,32,884,8448,DataPacket.Flag.FIRST);
 
         p =  Packet.parse(dp.serialize());
 
         if( p instanceof DataPacket) {
             DataPacket c = (DataPacket) p;
+
+            System.out.println(new String(c.getData()));
             System.out.println("functionally works");
             System.out.println(c.equals(dp));
         }else{

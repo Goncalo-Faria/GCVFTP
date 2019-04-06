@@ -43,9 +43,11 @@ public class TransmissionChannel implements Channel {
     public byte[] receive() throws IOException{
         DatagramPacket packet = new DatagramPacket(this.data_buffer,in.packetsize());
 
+        //System.out.println(new String(this.data_buffer));
+
         cs.receive(packet);
         byte[] dest = new byte[packet.getLength()];
-        ByteBuffer.wrap(packet.getData()).get(new byte[packet.getLength()],0,packet.getLength());
+        ByteBuffer.wrap(packet.getData()).get(dest,0,packet.getLength());
 
         return dest;
     }

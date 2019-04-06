@@ -59,7 +59,7 @@ public class GCVListener implements Listener {
 
             int message_port = sa.getPort();
 
-            System.out.println("______acontece________" + message_port);
+            System.out.println("______CONFIRMED______" + message_port);
 
             StationProperties my_station_properties = new StationProperties(
                     InetAddress.getLocalHost(),

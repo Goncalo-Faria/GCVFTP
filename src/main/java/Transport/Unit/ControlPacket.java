@@ -76,18 +76,6 @@ public class ControlPacket extends Packet {
 
     public short getExtendedtype() { return this.extendedtype; }
 
-    public void startBuffer(){
-        this.b = ByteBuffer.wrap(this.information);
-    }
-
-    public int getInt(){
-        return this.b.getInt();
-    }
-
-    public String asString(){
-        return this.b.asCharBuffer().toString();
-    }
-
     public byte[] serialize(){
 
         return  BitManipulator.allocate(Packet.header_size + this.information.length).

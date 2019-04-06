@@ -74,7 +74,7 @@ public class GCVConnector implements Connector {
                 Packet du = Packet.parse(received_message.getData());
                 if(du instanceof ControlPacket){
                     ControlPacket cdu = (ControlPacket)du;
-                    if( cdu.getType().equals(ControlPacket.Type.OK) ){
+                    if( cdu.getType().equals(ControlPacket.Type.HI) ){
                         this.active.set(false);
                         this.out_properties = new StationProperties(
                                     ip,

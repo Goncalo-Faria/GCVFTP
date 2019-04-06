@@ -57,8 +57,12 @@ public class BitManipulator {
             }
         }
 
-        if( this.mod1)
-            ans = (-1)*ans;
+        if( this.mod1){
+            if(ans==Integer.MIN_VALUE)
+                ans = 0;
+            else
+                ans = (-1)*ans;
+        }
 
         this.mod1 = false;
         this.mod2 = false;
@@ -83,8 +87,12 @@ public class BitManipulator {
             }
         }
 
-        if( this.mod1)
-            ans = (short)((-1)*ans);
+        if( this.mod1) {
+            if( ans == Short.MIN_VALUE)
+                ans = 0;
+            else
+                ans = (short) ((-1) * ans);
+        }
 
         this.mod1 = false;
         this.mod2 = false;
@@ -109,8 +117,12 @@ public class BitManipulator {
             }
         }
 
-        if( this.mod1)
-            ans = (byte)((-1)*ans);
+        if( this.mod1) {
+            if(ans==Byte.MIN_VALUE)
+                ans = 0;
+            else
+                ans = (byte) ((-1) * ans);
+        }
 
         this.mod1 = false;
         this.mod2 = false;
@@ -120,14 +132,18 @@ public class BitManipulator {
 
     public BitManipulator put(int value){
 
-        if( this.mod1)
-            value = (-1)*value;
+        if( this.mod1) {
+            if(value == 0)
+                value = Integer.MIN_VALUE;
+            else
+                value = (-1) * value;
+        }
 
 
         this.mod1 = false;
         this.mod2 = false;
 
-        System.out.println(value);
+        //System.out.println(value);
 
         this.view.putInt(value);
 
@@ -136,13 +152,17 @@ public class BitManipulator {
 
     public BitManipulator put(short value){
 
-        if( this.mod1)
-            value = (short)((-1)*value);
+        if( this.mod1) {
+            if(value == 0)
+                value = Short.MIN_VALUE;
+            else
+                value = (short) ((-1) * value);
+        }
 
         this.mod1 = false;
         this.mod2 = false;
 
-        System.out.println(value);
+        //System.out.println(value);
 
         this.view.putShort(value);
 
@@ -151,8 +171,12 @@ public class BitManipulator {
 
     public BitManipulator put(byte value){
 
-        if( this.mod1)
-            value = (byte)((-1)*value);
+        if( this.mod1) {
+            if(value == 0)
+                value = Byte.MIN_VALUE;
+            else
+                value = (byte) ((-1) * value);
+        }
 
         this.mod1 = false;
         this.mod2 = false;
@@ -196,7 +220,7 @@ public class BitManipulator {
             value = (-1)*( value+s );
         }
 
-        System.out.println(value);
+        //System.out.println(value);
 
         this.view.putInt( value );
 

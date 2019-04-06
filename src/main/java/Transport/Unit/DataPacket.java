@@ -68,9 +68,12 @@ public class DataPacket extends Packet {
         this.flag = Flag.SOLO.parse(BitManipulator.msb2(data, 8));
         this.window = extrator.flip2().getInt();
 
-        this.information = new byte[data.length*8 - Packet.header_size * 8];
+        this.information = new byte[data.length - Packet.header_size ];
 
-        ByteBuffer.wrap(data).get(this.information,0,data.length  - Packet.header_size );
+        ByteBuffer.wrap(data,Packet.header_size,data.length - Packet.header_size).
+                get(this.information,
+                0,
+                data.length  - Packet.header_size );
     }
 
     public DataPacket(byte[] data, int timestamp, int seq, int window, DataPacket.Flag flag){
@@ -107,7 +110,8 @@ public class DataPacket extends Packet {
                 put(this.seq).
                 put(this.timestamp).
                 put(this.window, this.flag.mark(this.flag)).
-                put(this.information).array();
+                put(this.information).
+                array();
 
     }
 

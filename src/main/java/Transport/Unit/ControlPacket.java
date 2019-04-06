@@ -45,8 +45,11 @@ public class ControlPacket extends Packet {
         this.extendedtype = extrator.getShort();
         this.timestamp = extrator.getInt();
         this.ack = extrator.getInt();
-        this.information = new byte[data.length*8 - Packet.header_size * 8];
-        ByteBuffer.wrap(data).get(this.information,0,data.length - Packet.header_size );
+        this.information = new byte[data.length - Packet.header_size];
+        ByteBuffer.wrap(data,Packet.header_size,data.length - Packet.header_size).get(
+                this.information,
+                0,
+                data.length - Packet.header_size );
     }
 
     public ControlPacket( byte[] information, Type t, int timestamp){
@@ -92,7 +95,8 @@ public class ControlPacket extends Packet {
                 put(this.extendedtype).
                 put(this.timestamp).
                 put(this.ack).
-                put(this.information).array();
+                put(this.information).
+                array();
 
     }
 

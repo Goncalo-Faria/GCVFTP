@@ -23,7 +23,7 @@ public class GCVListener implements Listener {
                         GCVConnection.port,
                         GCVConnection.connection_receive_ttl,
                         ControlPacket.Type.HI,
-                        8 + ControlPacket.header_size);
+                        ControlPacket.header_size);
 
             } catch (SocketException e) {
                 e.printStackTrace();

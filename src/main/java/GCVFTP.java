@@ -1,13 +1,21 @@
+import Estado.BitManipulator;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.DataPacket;
 import Transport.Unit.Packet;
+
+import java.nio.ByteBuffer;
 
 public class GCVFTP {
     public static void main(String[] args) {
 
 
+        /*ByteBuffer base = ByteBuffer.allocate(4);
+        base.putInt(-1);
 
-        ControlPacket cp = new ControlPacket( new byte[40], ControlPacket.Type.BYE ,2);
+        System.out.println( BitManipulator.msb( base.array(),0) );
+        */
+
+        ControlPacket cp = new ControlPacket( new byte[40], ControlPacket.Type.SURE ,4422);
         cp.setAck(44);
         cp.setExtendedType((short)17);
 
@@ -21,7 +29,8 @@ public class GCVFTP {
             System.out.println(" it's data ");
         }
 
-        DataPacket dp = new DataPacket( new byte[50],32,64,88,DataPacket.Flag.MIDDLE);
+
+        DataPacket dp = new DataPacket( ByteBuffer.allocate(8).putInt(8).putInt(-22).array(),32,884,8448,DataPacket.Flag.FIRST);
 
         p =  Packet.parse(dp.serialize());
 

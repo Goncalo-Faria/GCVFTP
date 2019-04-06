@@ -11,6 +11,7 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 
 public class GCVListener implements Listener {
 
@@ -23,7 +24,7 @@ public class GCVListener implements Listener {
                         GCVConnection.port,
                         GCVConnection.connection_receive_ttl,
                         ControlPacket.Type.HI,
-                        ControlPacket.header_size);
+                        ControlPacket.header_size + 4 );
 
             } catch (SocketException e) {
                 e.printStackTrace();
@@ -31,12 +32,12 @@ public class GCVListener implements Listener {
         }
     }
 
-    private static void close(){
-        GCVListener.common_daemon.close();
-        GCVListener.common_daemon = null;
-    }
-
+    private int mtu = GCVConnection.stdmtu;
     public GCVListener(){
+        GCVListener.activate();
+    }
+    public GCVListener( int mtu ){
+        this.mtu = mtu;
         GCVListener.activate();
     }
 
@@ -50,25 +51,29 @@ public class GCVListener implements Listener {
 
             InetAddress caller_ip = packets.ip();
 
+            int rmtu = ByteBuffer.wrap(packet.getInformation()).getInt(0);
+
             StationProperties caller_station_properties = new StationProperties(
                     caller_ip,
                     caller_port,
-                    GCVConnection.maxcontrol);
+                    rmtu);
 
             InetSocketAddress sa = new InetSocketAddress(0);
 
             int message_port = sa.getPort();
 
-            System.out.println("______CONFIRMED______" + message_port);
-
             StationProperties my_station_properties = new StationProperties(
                     InetAddress.getLocalHost(),
                     message_port,
-                    GCVConnection.maxdata);
+                    this.mtu);
 
             return new Socket(my_station_properties, caller_station_properties);
 
+    }
 
+    public void close(){
+        GCVListener.common_daemon.close();
+        GCVListener.common_daemon = null;
     }
 
 

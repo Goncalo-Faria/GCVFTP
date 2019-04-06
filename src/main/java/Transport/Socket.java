@@ -8,6 +8,7 @@ import Transport.Unit.Packet;
 import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.net.DatagramSocket;
+import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.PriorityBlockingQueue;
@@ -34,11 +35,8 @@ public class Socket {
 
     public Socket(StationProperties me, StationProperties caller) throws IOException {
         this.ch = new TransmissionTransportChannel( me, caller);
-        ControlPacket ackpacket = ControlPacket.hi(this.connection_time());
 
-
-        this.ch.send(ackpacket);/* ack w/ port */
-
+        this.ch.send( new ControlPacket(ByteBuffer.allocate(4).putInt(me.packetsize()).array(),ControlPacket.Type.HI,0));
        /* deve esperar pelo ack2*/
     }
 

@@ -63,7 +63,7 @@ public class ConnectionScheduler implements Runnable{
 
         try {
             while (this.active.get()) {
-                DatagramPacket packet = new DatagramPacket(new byte[Packet.header_size], Packet.header_size);
+                DatagramPacket packet = new DatagramPacket(new byte[this.maxpacket], this.maxpacket);
                 this.connection.receive(packet);
 
                 System.out.println(packet.getLength());

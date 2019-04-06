@@ -22,14 +22,18 @@ public class GCVConnector implements Connector {
     private StationProperties in_properties;
     private StationProperties out_properties;
 
-    public GCVConnector(int my_port){
+    public GCVConnector(int my_port) {
+        this(my_port,GCVConnection.stdmtu);
+    }
+
+    public GCVConnector(int my_port, int mtu){
         try {
             this.in_properties = new StationProperties(
                     InetAddress.getLocalHost(),
                     my_port,
-                    GCVConnection.maxcontrol);
+                    mtu);
 
-            ControlPacket p = ControlPacket.hi(0);
+            ControlPacket p = new ControlPacket(ByteBuffer.allocate(4).putInt(mtu).array(),ControlPacket.Type.HI,0);
 
             this.connection_message = p.serialize();
         }catch(UnknownHostException e){
@@ -54,8 +58,8 @@ public class GCVConnector implements Connector {
                 GCVConnection.port);
 
         DatagramPacket received_message = new DatagramPacket(
-                new byte[ControlPacket.header_size],
-                ControlPacket.header_size);
+                new byte[ControlPacket.header_size + 4],
+                ControlPacket.header_size + 4);
 
         this.cs = new DatagramSocket(this.in_properties.port());
         this.cs.setSoTimeout(GCVConnection.request_retry_timeout);
@@ -74,12 +78,15 @@ public class GCVConnector implements Connector {
                 Packet du = Packet.parse(received_message.getData());
                 if(du instanceof ControlPacket){
                     ControlPacket cdu = (ControlPacket)du;
+
+                    int rmtu = ByteBuffer.wrap(cdu.getInformation()).getInt(0);
+
                     if( cdu.getType().equals(ControlPacket.Type.HI) ){
                         this.active.set(false);
                         this.out_properties = new StationProperties(
                                     ip,
                                     received_message.getPort(),
-                                    GCVConnection.maxdata);
+                                    rmtu);
                         System.out.println(cdu.serialize().length);
                         return new Socket(this.cs,this.in_properties,this.out_properties);
                     }

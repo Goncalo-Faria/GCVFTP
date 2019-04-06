@@ -1,35 +1,34 @@
 package TransfereCC;
 
-import AgenteUDP.StreamIN;
-import Estado.ConnectionState;
+import Transport.Socket;
+import Transport.Start.GCVListener;
+import Transport.Start.Listener;
 
-import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.IOException;
+
 
 public class Server {
-    private StreamIN streamIN;
-    private Map<Integer, ConnectionState> connectionStateMap;
-    private boolean isRunning = true;
+    private static boolean isRunning = true;
+    private static Listener listener = new GCVListener();
 
-    public Server(int port, int capacity, int packetSize)
-            throws SocketException, UnknownHostException {
-        this.streamIN = new StreamIN(
-                capacity, packetSize, InetAddress.getByName("localhost"), port);
-        this.connectionStateMap = new HashMap<>();
-    }
+    public static void main( String[] args ) {
 
-    public void start() {
-        while(isRunning) {
-            if(streamIN.getQueueSize() > 0) {
-                System.out.println(streamIN.get().getValue());
+        try {
+            Socket cs = listener.accept();
+
+            while (isRunning)
+            {
+                byte[] data = cs.receive();
+                System.out.println("says: " + new String(data));
             }
+
+        }catch(IOException|InterruptedException e){
+            e.printStackTrace();
         }
     }
 
-    public void stop() {
+
+    public static void stop() {
         isRunning = false;
     }
 }

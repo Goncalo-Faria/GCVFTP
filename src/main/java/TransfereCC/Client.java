@@ -1,28 +1,32 @@
 package TransfereCC;
 
-import AgenteUDP.StreamOUT;
-import Estado.ConnectionState;
-import Estado.State;
+import Transport.Socket;
+import Transport.Start.GCVConnector;
 
-import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.util.concurrent.TimeoutException;
 
 public class Client {
-    private ConnectionState connectionState;
-    private StreamOUT streamOUT;
 
-    public Client(ConnectionState connectionState)
-            throws SocketException {
-        this.connectionState = connectionState;
-        this.streamOUT = new StreamOUT(
-                150,
-                connectionState.getDestiny(),
-                connectionState.getDestinyPort());
+    private static GCVConnector connect = new GCVConnector(7220);
+    private static boolean isRunning = true;
+
+    public static void main( String[] args )  {
+        String message = "very useful data";
+
+        try {
+            Socket cs = connect.bind(InetAddress.getLocalHost());
+            while (isRunning) {
+                cs.send(message.getBytes());
+                Thread.sleep(2000);
+            }
+        } catch(IOException | TimeoutException| InterruptedException e){
+            e.printStackTrace();
+        }
     }
 
-    public void start() {
-        while(connectionState.getState() != State.FINISHED) {
-            streamOUT.add("very useful data");
-        }
+    public static void stop() {
+        isRunning = false;
     }
 }

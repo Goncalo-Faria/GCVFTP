@@ -32,7 +32,7 @@ public class Socket {
 
     public Socket(StationProperties me, StationProperties caller) throws IOException {
         this.ch = new TransmissionTransportChannel( me, caller);
-        ControlPacket ackpacket = ControlPacket.ok(this.connection_time());
+        ControlPacket ackpacket = ControlPacket.ok(/*this.connection_time()*/1);
 
 
         this.ch.send(ackpacket);/* ack w/ port */
@@ -42,7 +42,7 @@ public class Socket {
 
     public Socket(DatagramSocket in, StationProperties me,StationProperties caller ) throws IOException {
         this.ch = new TransmissionTransportChannel( in, me, caller);
-        this.ch.send( ControlPacket.sure(this.connection_time()) );/*ack2*/
+        this.ch.send( ControlPacket.sure(/*this.connection_time()*/2) );/*ack2*/
 
     }
 

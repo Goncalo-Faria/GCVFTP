@@ -1,4 +1,3 @@
-
 import Transport.Unit.ControlPacket;
 import Transport.Unit.DataPacket;
 import Transport.Unit.Packet;
@@ -7,9 +6,10 @@ public class GCVFTP {
     public static void main(String[] args) {
 
 
-        ControlPacket cp = new ControlPacket( ControlPacket.Type.BYE ,78000);
+
+        ControlPacket cp = new ControlPacket( new byte[40], ControlPacket.Type.BYE ,2);
         cp.setAck(44);
-        cp.setExtendedType((short)33);
+        cp.setExtendedType((short)17);
 
         Packet p =  Packet.parse(cp.serialize());
 
@@ -21,7 +21,7 @@ public class GCVFTP {
             System.out.println(" it's data ");
         }
 
-        DataPacket dp = new DataPacket( new byte[10],32,64,88,DataPacket.Flag.SOLO);
+        DataPacket dp = new DataPacket( new byte[50],32,64,88,DataPacket.Flag.MIDDLE);
 
         p =  Packet.parse(dp.serialize());
 
@@ -32,6 +32,7 @@ public class GCVFTP {
         }else{
             System.out.println(" it's control ");
         }
+
 
     }
 }

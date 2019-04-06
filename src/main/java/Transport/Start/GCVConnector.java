@@ -30,6 +30,7 @@ public class GCVConnector implements Connector {
                     GCVConnection.maxcontrol);
 
             ControlPacket p = ControlPacket.hi(0);
+            p.setAck(0);
 
             this.connection_message = p.serialize();
         }catch(UnknownHostException e){

@@ -44,8 +44,7 @@ public class Socket {
     public Socket(SenderProperties me, TransportStationProperties caller, int seq) throws IOException {
         System.out.println("Socket created");
         this.ch = new TransmissionTransportChannel( me, caller);
-        this.ch.sendPacket( new HI((short)0,0 , me.packetsize(), me.window()));
-        System.out.println("Sender created");
+        this.handshake();
         this.seq = seq;
         send_buffer = new Accountant<Packet>(me.getStock(), me.getLevel());
         this.worker = new Sender(ch, send_buffer,100,me);
@@ -59,6 +58,15 @@ public class Socket {
         this.worker = new Sender(ch, send_buffer,100,me);
 
         //this.ch.send( ControlPacket.hi(this.connection_time()));/*ack2*/
+
+    }
+
+    public void handshake() throws IOException{
+
+        this.ch.sendPacket(new HI((short)0,
+                        0 ,
+                        this.ch.getSelfStationProperties().packetsize(),
+                        this.ch.getSelfStationProperties().window()));
 
     }
 

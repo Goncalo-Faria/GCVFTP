@@ -57,7 +57,6 @@ public abstract class ControlPacket extends Packet {
     public short getExtendedtype() { return this.extendedtype; }
 
     public byte[] serialize(){
-
         return  this.extendedSerialize(
                 BitManipulator.allocate(this.size()).
                 flip().put((short)this.type.ordinal()).

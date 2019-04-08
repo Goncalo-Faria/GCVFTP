@@ -15,6 +15,10 @@ public class SUP extends ControlPacket {
         return size;
     }
 
+    public SUP(short extendedtype, int timestamp){
+        super(ControlPacket.Type.SUP,extendedtype,timestamp);
+    }
+
     public byte[] extendedSerialize( BitManipulator extractor ){
 
         return  extractor.array();

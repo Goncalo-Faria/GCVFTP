@@ -35,13 +35,18 @@ public class GCVListener implements Listener {
 
     private int mtu = GCVConnection.stdmtu;
     private int maxwindow = 1024*8;
+    private int stock = 10;
+    private int level = 5;
 
     public GCVListener(){
         GCVListener.activate();
     }
-    public GCVListener( int mtu, int maxwindow ){
+
+    public GCVListener( int mtu, int maxwindow, int sendingstock, int sendinglevel){
         this.mtu = mtu;
-        this.maxwindow =maxwindow;
+        this.maxwindow = maxwindow;
+        this.stock = sendingstock;
+        this.level = sendinglevel;
         GCVListener.activate();
     }
 
@@ -59,11 +64,15 @@ public class GCVListener implements Listener {
 
             int message_port = sa.getPort();
 
-            TransportStationProperties my_station_properties = new TransportStationProperties(
+            System.out.println(" about to bind ");
+
+            SenderProperties my_station_properties = new SenderProperties(
                     InetAddress.getLocalHost(),
                     message_port,
                     this.mtu,
-                    this.maxwindow);
+                    this.maxwindow,
+                    this.stock,
+                    this.level);
 
             TransportStationProperties caller_station_properties = new TransportStationProperties(
                     caller_ip,
@@ -71,7 +80,9 @@ public class GCVListener implements Listener {
                     packet.getMTU(),
                     packet.getMaxWindow());
 
-            return new Socket(my_station_properties, caller_station_properties,packet.getSeq());
+            System.out.println("Almost there");
+
+            return new Socket(my_station_properties, caller_station_properties, packet.getSeq());
 
     }
 

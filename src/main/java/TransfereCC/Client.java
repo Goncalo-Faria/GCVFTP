@@ -9,11 +9,11 @@ import java.util.concurrent.TimeoutException;
 
 public class Client {
 
-    private static GCVConnector connect = new GCVConnector(7220,1000);
+    private static GCVConnector connect = new GCVConnector(7220,1000,20,10);
     private static boolean isRunning = true;
 
     public static void main( String[] args )  {
-        String message = "very useful data";
+        String message = "very useful data, so they say";
 
         try {
             Socket cs = connect.bind(InetAddress.getLocalHost());

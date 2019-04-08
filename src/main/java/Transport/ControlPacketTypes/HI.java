@@ -12,7 +12,7 @@ public class HI extends ControlPacket {
     private int maxwindow;
     private int seq;
 
-    public HI( short extendedtype, int timestamp, int maxpacket, int maxwindow){
+    public HI(short extendedtype, int timestamp, int maxpacket, int maxwindow){
         super(ControlPacket.Type.HI,extendedtype,timestamp);
         this.maxpacket=maxpacket;
         this.maxwindow=maxwindow;

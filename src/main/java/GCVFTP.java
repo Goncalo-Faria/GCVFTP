@@ -1,4 +1,5 @@
 import Estado.BitManipulator;
+import Transport.ControlPacketTypes.*;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.DataPacket;
 import Transport.Unit.Packet;
@@ -15,10 +16,9 @@ public class GCVFTP {
 
         System.out.println( BitManipulator.msb( base.array(),0) );
         */
+        ControlPacket cp = new OK((short)422,42,445);
 
-        ControlPacket cp = new ControlPacket( new byte[40], ControlPacket.Type.SURE ,4422);
-        cp.setAck(44);
-        cp.setExtendedType((short)17);
+        System.out.println(cp.getType());
 
         Packet p =  Packet.parse(cp.serialize());
 
@@ -36,6 +36,8 @@ public class GCVFTP {
 
         if( p instanceof DataPacket) {
             DataPacket c = (DataPacket) p;
+
+            System.out.println(((DataPacket) p).getFlag());
 
             System.out.println(new String(c.getData()));
             System.out.println("functionally works");

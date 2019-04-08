@@ -11,6 +11,10 @@ public class BYE extends ControlPacket {
         super(ControlPacket.Type.BYE, extrator.getShort()/*extended*/, extrator.getInt());
     }
 
+    public BYE(short extendedtype, int timestamp){
+        super(ControlPacket.Type.BYE,extendedtype,timestamp);
+    }
+
     public byte[] extendedSerialize( BitManipulator extractor ){
 
         return  extractor.array();

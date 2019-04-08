@@ -20,20 +20,22 @@ public class GCVConnector implements Connector {
     private AtomicBoolean active = new AtomicBoolean(true);
 
     private DatagramSocket cs;
-    private TransportStationProperties in_properties;
+    private SenderProperties in_properties;
     private TransportStationProperties out_properties;
 
-    public GCVConnector(int my_port, int max_window) {
-        this(my_port,GCVConnection.stdmtu, max_window);
+    public GCVConnector(int my_port, int max_window,int stock, int level) {
+        this(my_port,GCVConnection.stdmtu, max_window, stock, level);
     }
 
-    public GCVConnector(int my_port, int mtu,int max_window){
+    public GCVConnector(int my_port, int mtu, int max_window, int stock, int level){
         try {
-            this.in_properties = new TransportStationProperties(
+            this.in_properties = new SenderProperties(
                     InetAddress.getLocalHost(),
                     my_port,
                     mtu,
-                    max_window);
+                    max_window,
+                    stock,
+                    level);
 
             HI p = new HI((short)0,0,mtu,max_window);
 
@@ -89,6 +91,7 @@ public class GCVConnector implements Connector {
                                     hi.getMTU(),
                                     hi.getMaxWindow());
                         System.out.println(cdu.serialize().length);
+
                         return new Socket(this.cs,this.in_properties,this.out_properties, hi.getSeq());
                     }
                 }

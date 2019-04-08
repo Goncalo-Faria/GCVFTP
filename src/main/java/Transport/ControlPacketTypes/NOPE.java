@@ -15,6 +15,10 @@ public class NOPE extends ControlPacket {
         return size;
     }
 
+    public NOPE(short extendedtype, int timestamp){
+        super(ControlPacket.Type.NOPE,extendedtype,timestamp);
+    }
+
     public byte[] extendedSerialize( BitManipulator extractor ){
 
         return  extractor.array();

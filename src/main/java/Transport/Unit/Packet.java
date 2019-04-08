@@ -9,7 +9,7 @@ public abstract class Packet {
 
     public static Packet parse(byte[] udp_data){
 
-        System.out.println("got " + udp_data.length + " bytes ");
+        //System.out.println("got " + udp_data.length + " bytes ");
 
         boolean type = BitManipulator.msb(udp_data,0);
 

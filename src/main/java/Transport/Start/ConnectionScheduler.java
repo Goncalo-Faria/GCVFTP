@@ -66,7 +66,7 @@ public class ConnectionScheduler implements Runnable{
                 DatagramPacket packet = new DatagramPacket(new byte[this.maxpacket], this.maxpacket);
                 this.connection.receive(packet);
 
-                System.out.println(packet.getLength());
+                System.out.println("got " + packet.getLength() + " bytes ::-:: ip = " + packet.getAddress() + " port= " + packet.getPort());
 
                 Packet synpacket = Packet.parse(packet.getData());
 

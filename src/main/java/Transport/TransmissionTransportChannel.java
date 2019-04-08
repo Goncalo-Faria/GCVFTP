@@ -18,8 +18,8 @@ public class TransmissionTransportChannel extends TransmissionChannel implements
     }
 
     public TransmissionTransportChannel(DatagramSocket cs,
-                                        StationProperties in,
-                                        StationProperties out) throws SocketException {
+                                        TransportStationProperties in,
+                                        TransportStationProperties out) throws SocketException {
         super(cs,in,out);
     }
 

@@ -13,6 +13,12 @@ public class OK extends ControlPacket {
         super(ControlPacket.Type.OK, extrator.getShort()/*extended*/, extrator.getInt());
         this.ack = extrator.getInt();
     }
+
+    public OK(short extendedtype, int timestamp, int ack){
+        super(ControlPacket.Type.OK,extendedtype,timestamp);
+        this.ack = ack;
+    }
+
     public int size(){
         return size;
     }

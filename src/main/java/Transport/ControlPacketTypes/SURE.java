@@ -15,6 +15,10 @@ public class SURE extends ControlPacket {
         return size;
     }
 
+    public SURE(short extendedtype, int timestamp){
+        super(ControlPacket.Type.SURE,extendedtype,timestamp);
+    }
+
     public byte[] extendedSerialize( BitManipulator extractor ){
 
         return  extractor.put(0).array();

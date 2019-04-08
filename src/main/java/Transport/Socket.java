@@ -1,26 +1,34 @@
 package Transport;
 
 import AgenteUDP.StationProperties;
+import Transport.ControlPacketTypes.HI;
+import Transport.Start.TransportStationProperties;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.DataPacket;
 import Transport.Unit.Packet;
 
 import javax.xml.crypto.Data;
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.DatagramSocket;
 import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Timer;
 import java.util.concurrent.PriorityBlockingQueue;
 
 public class Socket {
 
     //int msb = (m & 0xff) >> 7;
 
-    private PriorityBlockingQueue<DataPacket> bag = new PriorityBlockingQueue<>();
+    private Accountant<Packet> send_buffer = new Accountant<Packet>();
     private LocalDateTime connection_start_time = LocalDateTime.now();
-    private TransportChannel ch;
-    private int seq=1;
+    private TransmissionTransportChannel ch;
+    private int seq;
+    private Sender worker;
+
+
 
     /* receiver
      * manda ack e avisa o port
@@ -33,15 +41,18 @@ public class Socket {
      * manda dados
      * */
 
-    public Socket(StationProperties me, StationProperties caller) throws IOException {
+    public Socket(TransportStationProperties me, TransportStationProperties caller, int seq) throws IOException {
         this.ch = new TransmissionTransportChannel( me, caller);
-
-        this.ch.send( new ControlPacket(ByteBuffer.allocate(4).putInt(me.packetsize()).array(),ControlPacket.Type.HI,0));
-       /* deve esperar pelo ack2*/
+        this.worker = new Sender(ch, send_buffer);
+        this.ch.sendPacket( new HI((short)0,0 , me.packetsize(), me.window()));
+        this.seq = seq;
+        /* deve esperar pelo ack2*/
     }
 
-    public Socket(DatagramSocket in, StationProperties me,StationProperties caller ) throws IOException {
+    public Socket(DatagramSocket in, StationProperties me,StationProperties caller, int seq) throws IOException {
         this.ch = new TransmissionTransportChannel( in, me, caller);
+        this.seq = seq;
+        this.worker = new Sender(ch, send_buffer);
         //this.ch.send( ControlPacket.hi(this.connection_time()));/*ack2*/
 
     }
@@ -51,13 +62,31 @@ public class Socket {
     }
 
     public void send( byte[] data) throws IOException{
-        DataPacket packet = new DataPacket(data, this.connection_time(),this.seq++,1, DataPacket.Flag.SOLO);
-        this.ch.send( packet );
+        DataPacket packet = new DataPacket(data, this.connection_time(),this.increment(),1, DataPacket.Flag.SOLO);
+        this.ch.sendPacket( packet );
+    }
+
+    public void send(InputStream io){
+        /* encrava */
+
+        BufferedInputStream bufst = new BufferedInputStream(io);
+
+        try {
+            while (true) {
+                byte[] data = new byte[this.ch.inMTU()];
+                bufst.read(data, 0, this.ch.inMTU());
+                //DataPacket(data,this.connection_time(),this.increment(), 1, DataPacket.Flag.SOLO);
+            }
+        }catch(IOException e){
+
+        }
+
+        /* desencrava*/
     }
 
 
     public byte[] receive() throws IOException{
-        Packet p = this.ch.receive();
+        Packet p = this.ch.receivePacket();
         if(p instanceof DataPacket) {
             DataPacket dp = (DataPacket) p;
             System.out.println("x-----------x-----------x--------x-------x----x--x--x-x-x-x--x ");
@@ -69,5 +98,9 @@ public class Socket {
         }
 
         return new byte[0];
+    }
+
+    private int increment(){
+        return (++this.seq )%Integer.MAX_VALUE;
     }
 }

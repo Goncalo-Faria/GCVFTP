@@ -1,10 +1,11 @@
 package Transport.Unit;
 
 import Estado.BitManipulator;
+import Transport.ControlPacketTypes.*;
 
 import java.nio.ByteBuffer;
 
-public class ControlPacket extends Packet {
+public abstract class ControlPacket extends Packet {
 
     public enum Type{
         HI, /*syn*/
@@ -16,77 +17,57 @@ public class ControlPacket extends Packet {
         FORGETIT /*message drop*/
     }
 
-    public static ControlPacket hi(int timestamp){ return new ControlPacket(Type.HI,timestamp); }
+    public static int header_size = 8;
 
-    public static ControlPacket ok(int timestamp){ return new ControlPacket(Type.OK,timestamp); }
+    public static ControlPacket parseControl(byte[] data){
+        BitManipulator extractor = new BitManipulator(data);
+        Type ctype = Type.values()[extractor.flip().getShort()];
 
-    public static ControlPacket sure(int timestamp){ return new ControlPacket(Type.SURE,timestamp); }
+        switch(ctype){
+            case HI:return new HI(extractor);
+            case OK:return new OK(extractor);
+            case SURE:return new SURE(extractor);
+            case BYE:return new BYE(extractor);
+            case SUP:return new SUP(extractor);
+            case FORGETIT:return new FORGETIT(extractor);
+            case NOPE:return new NOPE(extractor);
+        }
 
-    public static ControlPacket nope(int timestamp){ return new ControlPacket(Type.NOPE,timestamp); }
-
-    public static ControlPacket sup(int timestamp){ return new ControlPacket(Type.SUP,timestamp); }
-
-    public static ControlPacket bye(int timestamp){ return new ControlPacket(Type.BYE,timestamp); }
-
-    public static ControlPacket forgetit(int timestamp){ return new ControlPacket(Type.FORGETIT,timestamp); }
+        return null;
+    }
 
     private Type type; /* control message type*/
     private short extendedtype=0; /*para a aplicação*/
     private int timestamp=0; /*tempo desde que a ligação começou*/
+
     private byte[] information = new byte[0]; /* informação de controlo extra ao header*/
-    private int ack = 0; /* números de sequência até este valor foram recebidos */
-    private boolean readonly = false; /* é possivel alterar o pacote */
-    private ByteBuffer b; /* util para ler o pacote de dados*/
 
-    ControlPacket( byte[] data){
-        this.readonly = true;
-        BitManipulator extrator = new BitManipulator(data);
-        this.type = Type.values()[extrator.flip().getShort()];
-        this.extendedtype = extrator.getShort();
-        this.timestamp = extrator.getInt();
-        this.ack = extrator.getInt();
-        this.information = new byte[data.length - Packet.header_size];
-        ByteBuffer.wrap(data,Packet.header_size,data.length - Packet.header_size).get(
-                this.information,
-                0,
-                data.length - Packet.header_size );
-    }
-
-    public ControlPacket( byte[] information, Type t, int timestamp){
-        this(t,timestamp);
-        this.information = information;
-    }
-
-    public ControlPacket( Type t, int timestamp){
+    public ControlPacket( Type t, short extendedtype, int timestamp){
         this.type = t;
         this.timestamp = timestamp;
+        this.extendedtype=extendedtype;
     }
 
-    public void setAck(int ack){ if(!this.readonly) this.ack = ack; }
-
-    public void setExtendedType(short extendedtype){ if(!this.readonly) this.extendedtype = extendedtype; }
-
-    public int getAck() { return this.ack; }
+    public void setExtendedType(short extendedtype){ this.extendedtype = extendedtype; }
 
     public int getTimestamp() { return this.timestamp; }
 
     public ControlPacket.Type getType() { return this.type; }
 
-    public byte[] getInformation() { return this.information; }
-
     public short getExtendedtype() { return this.extendedtype; }
 
     public byte[] serialize(){
 
-        return  BitManipulator.allocate(Packet.header_size + this.information.length).
+        return  this.extendedSerialize(BitManipulator.allocate(this.size()).
                 flip().put((short)this.type.ordinal()).
                 put(this.extendedtype).
-                put(this.timestamp).
-                put(this.ack).
-                put(this.information).
-                array();
+                put(this.timestamp));
 
     }
+
+    public abstract byte[] extendedSerialize(BitManipulator extractor);
+
+    public abstract int size();
 
     @Override
     public boolean equals(Object obj) {
@@ -97,17 +78,8 @@ public class ControlPacket extends Packet {
 
         boolean acc= true;
 
-        int min = ( cp.getInformation().length < this.information.length) ?
-                cp.getInformation().length:
-                this.information.length;
-
-        for(int i=0; i< min; i++)
-            acc = acc && (cp.getInformation()[i] == this.information[i]);
-
-        return acc &&
-                (this.getType().equals(cp.getType())) &&
+        return (this.getType().equals(cp.getType())) &&
                 (cp.getExtendedtype() == this.extendedtype) &&
-                (cp.getAck() == this.ack) &&
                 (cp.getTimestamp() == this.timestamp);
 
     }

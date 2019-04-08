@@ -1,6 +1,7 @@
 package Transport.Start;
 
 
+import Transport.ControlPacketTypes.HI;
 import Transport.GCVConnection;
 import Transport.Socket;
 import AgenteUDP.StationProperties;
@@ -24,7 +25,7 @@ public class GCVListener implements Listener {
                         GCVConnection.port,
                         GCVConnection.connection_receive_ttl,
                         ControlPacket.Type.HI,
-                        ControlPacket.header_size + 4 );
+                        HI.size);
 
             } catch (SocketException e) {
                 e.printStackTrace();
@@ -33,11 +34,14 @@ public class GCVListener implements Listener {
     }
 
     private int mtu = GCVConnection.stdmtu;
+    private int maxwindow = 1024*8;
+
     public GCVListener(){
         GCVListener.activate();
     }
-    public GCVListener( int mtu ){
+    public GCVListener( int mtu, int maxwindow ){
         this.mtu = mtu;
+        this.maxwindow =maxwindow;
         GCVListener.activate();
     }
 
@@ -45,29 +49,29 @@ public class GCVListener implements Listener {
 
 
             ConnectionScheduler.StampedControlPacket packets = GCVListener.common_daemon.getstamped();
-            ControlPacket packet = packets.get();/*waiting for datagram*/
+            HI packet = (HI)packets.get();/*waiting for datagram*/
 
             int caller_port = packets.port();
 
             InetAddress caller_ip = packets.ip();
 
-            int rmtu = ByteBuffer.wrap(packet.getInformation()).getInt(0);
-
-            StationProperties caller_station_properties = new StationProperties(
-                    caller_ip,
-                    caller_port,
-                    rmtu);
-
             InetSocketAddress sa = new InetSocketAddress(0);
 
             int message_port = sa.getPort();
 
-            StationProperties my_station_properties = new StationProperties(
+            TransportStationProperties my_station_properties = new TransportStationProperties(
                     InetAddress.getLocalHost(),
                     message_port,
-                    this.mtu);
+                    this.mtu,
+                    this.maxwindow);
 
-            return new Socket(my_station_properties, caller_station_properties);
+            TransportStationProperties caller_station_properties = new TransportStationProperties(
+                caller_ip,
+                caller_port,
+                packet.getMTU(),
+                    packet.getMaxWindow());
+
+            return new Socket(my_station_properties, caller_station_properties,packet.getSeq());
 
     }
 

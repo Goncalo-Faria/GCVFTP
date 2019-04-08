@@ -52,6 +52,8 @@ public class DataPacket extends Packet {
 
     }
 
+    public static int header_size = 12;
+
     private int timestamp=0;
     private int seq=0;
     private int window=0;
@@ -68,12 +70,12 @@ public class DataPacket extends Packet {
         this.flag = Flag.SOLO.parse(BitManipulator.msb2(data, 8));
         this.window = extrator.flip2().getInt();
 
-        this.information = new byte[data.length - Packet.header_size ];
+        this.information = new byte[data.length - DataPacket.header_size ];
 
-        ByteBuffer.wrap(data,Packet.header_size,data.length - Packet.header_size).
+        ByteBuffer.wrap(data,DataPacket.header_size,data.length - DataPacket.header_size).
                 get(this.information,
                 0,
-                data.length  - Packet.header_size );
+                data.length  - DataPacket.header_size );
     }
 
     public DataPacket(byte[] data, int timestamp, int seq, int window, DataPacket.Flag flag){
@@ -106,7 +108,7 @@ public class DataPacket extends Packet {
 
     public byte[] serialize(){
 
-        return BitManipulator.allocate(Packet.header_size + this.information.length).
+        return BitManipulator.allocate(DataPacket.header_size + this.information.length).
                 put(this.seq).
                 put(this.timestamp).
                 put(this.window, this.flag.mark(this.flag)).

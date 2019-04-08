@@ -7,7 +7,6 @@ import java.util.BitSet;
 
 public abstract class Packet {
 
-    public static int header_size = 12;
     public static Packet parse(byte[] udp_data){
 
         System.out.println("got " + udp_data.length + " bytes ");
@@ -16,7 +15,7 @@ public abstract class Packet {
 
         if(type){
             System.out.print("control : \\ ");
-            return new ControlPacket(udp_data);
+            return ControlPacket.parseControl(udp_data);
         }else{
             System.out.print("data : ");
             return new DataPacket(udp_data);

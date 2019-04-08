@@ -52,4 +52,12 @@ public class TransmissionChannel implements Channel {
         return dest;
     }
 
+    public StationProperties getinStationProperties(){
+        return in;
+    }
+
+    public StationProperties getoutStationProperties(){
+        return out;
+    }
+
 }

@@ -1,5 +1,6 @@
 package Transport.Start;
 
+import Transport.ControlPacketTypes.HI;
 import Transport.GCVConnection;
 import Transport.Socket;
 import AgenteUDP.StationProperties;
@@ -22,18 +23,19 @@ public class GCVConnector implements Connector {
     private StationProperties in_properties;
     private StationProperties out_properties;
 
-    public GCVConnector(int my_port) {
-        this(my_port,GCVConnection.stdmtu);
+    public GCVConnector(int my_port, int max_window) {
+        this(my_port,GCVConnection.stdmtu, max_window);
     }
 
-    public GCVConnector(int my_port, int mtu){
+    public GCVConnector(int my_port, int mtu,int max_window){
         try {
-            this.in_properties = new StationProperties(
+            this.in_properties = new TransportStationProperties(
                     InetAddress.getLocalHost(),
                     my_port,
-                    mtu);
+                    mtu,
+                    max_window);
 
-            ControlPacket p = new ControlPacket(ByteBuffer.allocate(4).putInt(mtu).array(),ControlPacket.Type.HI,0);
+            HI p = new HI((short)0,0,mtu,max_window);
 
             this.connection_message = p.serialize();
         }catch(UnknownHostException e){
@@ -51,6 +53,7 @@ public class GCVConnector implements Connector {
     public Socket bind(InetAddress ip) throws IOException, TimeoutException {
 
         this.active.set(true);
+
         DatagramPacket send_message = new DatagramPacket(
                 connection_message,0,
                 connection_message.length,
@@ -58,13 +61,11 @@ public class GCVConnector implements Connector {
                 GCVConnection.port);
 
         DatagramPacket received_message = new DatagramPacket(
-                new byte[ControlPacket.header_size + 4],
-                ControlPacket.header_size + 4);
+                new byte[HI.size],
+                HI.size);
 
         this.cs = new DatagramSocket(this.in_properties.port());
         this.cs.setSoTimeout(GCVConnection.request_retry_timeout);
-        //cs.connect(ip,GCVConnection.port);
-
 
         int tries = 0;
         while(this.active.get() && tries < GCVConnection.request_retry_number ) {
@@ -79,16 +80,16 @@ public class GCVConnector implements Connector {
                 if(du instanceof ControlPacket){
                     ControlPacket cdu = (ControlPacket)du;
 
-                    int rmtu = ByteBuffer.wrap(cdu.getInformation()).getInt(0);
-
-                    if( cdu.getType().equals(ControlPacket.Type.HI) ){
+                    if( cdu instanceof HI ){
+                        HI hi = (HI)cdu;
                         this.active.set(false);
-                        this.out_properties = new StationProperties(
+                        this.out_properties = new TransportStationProperties(
                                     ip,
                                     received_message.getPort(),
-                                    rmtu);
+                                    hi.getMTU(),
+                                    hi.getMaxWindow());
                         System.out.println(cdu.serialize().length);
-                        return new Socket(this.cs,this.in_properties,this.out_properties);
+                        return new Socket(this.cs,this.in_properties,this.out_properties, hi.getSeq());
                     }
                 }
 

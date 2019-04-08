@@ -9,7 +9,7 @@ import java.util.concurrent.TimeoutException;
 
 public class Client {
 
-    private static GCVConnector connect = new GCVConnector(7220,1000,20,10);
+    private static GCVConnector connect = new GCVConnector(7220,1000,20,1000);
     private static boolean isRunning = true;
 
     public static void main( String[] args )  {
@@ -17,10 +17,12 @@ public class Client {
 
         try {
             Socket cs = connect.bind(InetAddress.getLocalHost());
-            while (isRunning) {
+            int i = 0;
+            while (isRunning && ++i < 15 ) {
                 cs.send(message.getBytes());
-                Thread.sleep(2000);
+                Thread.sleep(500);
             }
+            cs.close((short)69);
         } catch(IOException | TimeoutException| InterruptedException e){
             e.printStackTrace();
         }

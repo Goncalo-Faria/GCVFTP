@@ -4,15 +4,15 @@ import Transport.Start.SenderProperties;
 import Transport.Unit.Packet;
 
 import java.io.IOException;
+import java.io.NotActiveException;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+
 
 public class Sender extends TimerTask {
 
-    private Accountant<Packet> send_buffer;
+    private Accountant send_buffer;
     private TransportChannel channel;
     private Timer send_time;
     private long period;
@@ -20,7 +20,7 @@ public class Sender extends TimerTask {
     private int flow_window;
     private SenderProperties properties;
 
-    public Sender(TransportChannel ch, Accountant<Packet> send, long period, SenderProperties properties){
+    public Sender(TransportChannel ch, Accountant send, long period, SenderProperties properties) throws NotActiveException {
         this.send_buffer = send;
         this.channel = ch;
         this.send_time = new Timer();
@@ -32,6 +32,7 @@ public class Sender extends TimerTask {
 
     public void stop(){
         this.active.set(false);
+        send_time.cancel();
     }
 
     public void run(){

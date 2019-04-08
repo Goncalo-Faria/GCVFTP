@@ -36,30 +36,28 @@ public class GCVListener implements Listener {
     private int mtu = GCVConnection.stdmtu;
     private int maxwindow = 1024*8;
     private int stock = 10;
-    private int level = 5;
     private InetAddress localhost;
 
     public GCVListener(){
         GCVListener.activate();
     }
 
-    public void announceConnection(String key, Socket cs){
+    static public void announceConnection(String key, Socket cs){
         if( common_daemon != null)
             GCVListener.common_daemon.announceConnection(key,cs);
 
     }
 
-    public void closeConnection(String key){
+    static public void closeConnection(String key){
         if( common_daemon != null)
             GCVListener.common_daemon.closeConnection(key);
 
     }
 
-    public GCVListener( int mtu, int maxwindow, int sendingstock, int sendinglevel) throws UnknownHostException{
+    public GCVListener( int mtu, int maxwindow, int sendingstock) throws UnknownHostException{
         this.mtu = mtu;
         this.maxwindow = maxwindow;
         this.stock = sendingstock;
-        this.level = sendinglevel;
         this.localhost = InetAddress.getLocalHost();
         GCVListener.activate();
     }
@@ -85,8 +83,7 @@ public class GCVListener implements Listener {
                     message_port,
                     this.mtu,
                     this.maxwindow,
-                    this.stock,
-                    this.level);
+                    this.stock);
 
             TransportStationProperties caller_station_properties = new TransportStationProperties(
                     caller_ip,

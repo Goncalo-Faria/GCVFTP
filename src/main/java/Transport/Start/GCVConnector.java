@@ -23,19 +23,18 @@ public class GCVConnector implements Connector {
     private SenderProperties in_properties;
     private TransportStationProperties out_properties;
 
-    public GCVConnector(int my_port, int max_window,int stock, int level) {
-        this(my_port,GCVConnection.stdmtu, max_window, stock, level);
+    public GCVConnector(int my_port, int max_window,int stock) {
+        this(my_port,GCVConnection.stdmtu, max_window, stock);
     }
 
-    public GCVConnector(int my_port, int mtu, int max_window, int stock, int level){
+    public GCVConnector(int my_port, int mtu, int max_window, int stock){
         try {
             this.in_properties = new SenderProperties(
                     InetAddress.getLocalHost(),
                     my_port,
                     mtu,
                     max_window,
-                    stock,
-                    level);
+                    stock);
 
             HI p = new HI((short)0,0,mtu,max_window);
 

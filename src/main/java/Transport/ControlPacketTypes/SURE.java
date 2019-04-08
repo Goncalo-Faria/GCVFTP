@@ -7,6 +7,8 @@ public class SURE extends ControlPacket {
 
     public static int size = ControlPacket.header_size;
 
+    public static short ack_hi = 239;
+
     public SURE( BitManipulator extrator ) {
         super(ControlPacket.Type.SURE, extrator.getShort()/*extended*/, extrator.getInt());
     }
@@ -21,7 +23,7 @@ public class SURE extends ControlPacket {
 
     public byte[] extendedSerialize( BitManipulator extractor ){
 
-        return  extractor.put(0).array();
+        return  extractor.array();
 
     }
 }

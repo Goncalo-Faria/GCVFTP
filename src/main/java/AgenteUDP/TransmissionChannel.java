@@ -52,6 +52,11 @@ public class TransmissionChannel implements Channel {
         return dest;
     }
 
+    public void close(){
+        this.cs.disconnect();
+        this.cs.close();
+    }
+
     public StationProperties getinStationProperties(){
         return in;
     }

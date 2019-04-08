@@ -100,6 +100,12 @@ public class BitManipulator {
         return ans;
     }
 
+    public BitManipulator skip(int num){
+        for(int i=0;i<num;i++)
+                view.get();
+        return this;
+    }
+
     public byte getByte(){
 
         byte ans =  this.view.get();

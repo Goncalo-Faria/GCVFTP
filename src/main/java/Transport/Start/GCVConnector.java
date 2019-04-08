@@ -20,8 +20,8 @@ public class GCVConnector implements Connector {
     private AtomicBoolean active = new AtomicBoolean(true);
 
     private DatagramSocket cs;
-    private StationProperties in_properties;
-    private StationProperties out_properties;
+    private TransportStationProperties in_properties;
+    private TransportStationProperties out_properties;
 
     public GCVConnector(int my_port, int max_window) {
         this(my_port,GCVConnection.stdmtu, max_window);
@@ -92,8 +92,6 @@ public class GCVConnector implements Connector {
                         return new Socket(this.cs,this.in_properties,this.out_properties, hi.getSeq());
                     }
                 }
-
-
 
             }catch (SocketTimeoutException ste){
                 tries++;

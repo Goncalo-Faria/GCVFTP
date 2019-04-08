@@ -58,7 +58,8 @@ public abstract class ControlPacket extends Packet {
 
     public byte[] serialize(){
 
-        return  this.extendedSerialize(BitManipulator.allocate(this.size()).
+        return  this.extendedSerialize(
+                BitManipulator.allocate(this.size()).
                 flip().put((short)this.type.ordinal()).
                 put(this.extendedtype).
                 put(this.timestamp));

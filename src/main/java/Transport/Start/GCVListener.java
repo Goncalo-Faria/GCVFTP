@@ -66,9 +66,9 @@ public class GCVListener implements Listener {
                     this.maxwindow);
 
             TransportStationProperties caller_station_properties = new TransportStationProperties(
-                caller_ip,
-                caller_port,
-                packet.getMTU(),
+                    caller_ip,
+                    caller_port,
+                    packet.getMTU(),
                     packet.getMaxWindow());
 
             return new Socket(my_station_properties, caller_station_properties,packet.getSeq());

@@ -5,7 +5,19 @@ import Transport.Unit.ControlPacket;
 
 public class FORGETIT extends ControlPacket {
 
+    public static int size = ControlPacket.header_size;
+
     public FORGETIT( BitManipulator extrator ) {
         super(ControlPacket.Type.FORGETIT, extrator.getShort()/*extended*/, extrator.getInt()/*timestamp*/);
+    }
+
+    public int size(){
+        return size;
+    }
+
+    public byte[] extendedSerialize( BitManipulator extractor ){
+
+        return  extractor.array();
+
     }
 }

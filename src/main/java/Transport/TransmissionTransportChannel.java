@@ -28,7 +28,6 @@ public class TransmissionTransportChannel extends TransmissionChannel implements
         this.send(p.serialize());
     }
 
-
     public Packet receivePacket() throws IOException{
 
         return Packet.parse(super.receive());

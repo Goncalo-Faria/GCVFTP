@@ -4,7 +4,6 @@ package Transport.Start;
 import Transport.ControlPacketTypes.HI;
 import Transport.GCVConnection;
 import Transport.Socket;
-import AgenteUDP.StationProperties;
 import Transport.Unit.ControlPacket;
 
 import java.io.IOException;
@@ -12,7 +11,6 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 
 public class GCVListener implements Listener {
 

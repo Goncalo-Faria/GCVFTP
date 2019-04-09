@@ -1,11 +1,7 @@
-import Estado.BitManipulator;
 import Transport.ControlPacketTypes.*;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.DataPacket;
 import Transport.Unit.Packet;
-
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 
 public class GCVFTP {
     public static void main(String[] args) {

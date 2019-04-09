@@ -2,9 +2,6 @@ package Transport.Unit;
 
 import Estado.BitManipulator;
 
-import java.nio.ByteBuffer;
-import java.util.BitSet;
-
 public abstract class Packet {
 
     public static Packet parse(byte[] udp_data){

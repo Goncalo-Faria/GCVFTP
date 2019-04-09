@@ -1,6 +1,5 @@
 package Transport;
 
-import AgenteUDP.StationProperties;
 import AgenteUDP.TransmissionChannel;
 import Transport.Start.TransportStationProperties;
 import Transport.Unit.Packet;

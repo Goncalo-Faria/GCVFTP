@@ -1,8 +1,6 @@
 package Estado;
 
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ConnectionState {
     private static int nextID = 0;

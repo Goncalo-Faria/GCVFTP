@@ -1,7 +1,8 @@
-package Transport;
+package Transport.Sender;
 
+import Transport.FlowWindow;
 import Transport.Start.SenderProperties;
-import Transport.Unit.Packet;
+import Transport.TransportChannel;
 
 import java.io.IOException;
 import java.io.NotActiveException;
@@ -10,24 +11,22 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
-public class Sender extends TimerTask {
+public class SendWorker extends TimerTask {
 
     private Accountant send_buffer;
     private TransportChannel channel;
     private Timer send_time;
-    private long period;
     private AtomicBoolean active = new AtomicBoolean(true);
-    private int flow_window;
-    private SenderProperties properties;
+    private FlowWindow flow_window;
 
-    public Sender(TransportChannel ch, Accountant send, long period, SenderProperties properties) throws NotActiveException {
+    public SendWorker(TransportChannel ch, Accountant send, long period, SenderProperties properties, FlowWindow window) throws NotActiveException {
         this.send_buffer = send;
         this.channel = ch;
         this.send_time = new Timer();
-        this.period = period;
-        this.send_time.scheduleAtFixedRate( this, 0, this.period);
-        this.flow_window = send_buffer.window();
-        this.properties = properties;
+        long period1 = period;
+        this.send_time.scheduleAtFixedRate( this, 0, period1);
+        this.flow_window = window;
+        SenderProperties properties1 = properties;
     }
 
     public void stop(){
@@ -39,9 +38,8 @@ public class Sender extends TimerTask {
         try {
 
             if( active.get() ) {
-                this.flow_window = send_buffer.window();
 
-                for(int i= 0; i< this.flow_window ; i++)
+                for(int i= 0; i< this.flow_window.value() ; i++)
                     channel.sendPacket(send_buffer.get());
             }
 

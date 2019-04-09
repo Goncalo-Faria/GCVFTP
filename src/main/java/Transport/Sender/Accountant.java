@@ -1,10 +1,10 @@
-package Transport;
+package Transport.Sender;
 
+import Transport.FlowWindow;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.DataPacket;
 import Transport.Unit.Packet;
 
-import javax.xml.crypto.Data;
 import java.io.NotActiveException;
 import java.io.StreamCorruptedException;
 import java.util.*;
@@ -16,26 +16,30 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /* structure for saving traveling packets*/
-public class Accountant {
+class Accountant {
 
-    private ConcurrentSkipListMap<Integer, DataPacket> uncounted = new ConcurrentSkipListMap<>(); // ack -> packet
+    private LinkedBlockingDeque<DataPacket> uncounted = new LinkedBlockingDeque<>();
     private ConcurrentSkipListMap<Integer,StreamState> streams = new ConcurrentSkipListMap<>(); // stream_id -> stream_state
     private LinkedBlockingDeque<Integer> sending = new LinkedBlockingDeque<>();
     private LinkedBlockingQueue<ControlPacket> control = new LinkedBlockingQueue<>();
     private AtomicBoolean at = new AtomicBoolean(true);
-    private long stock;
+    private long buffersize;
 
-    private AtomicInteger flow_window = new AtomicInteger(2); /* sempre que for alterada é lançado um signal All*/
+    private FlowWindow window; /* sempre que for alterada é lançado um signal All*/
     private AtomicInteger storage = new AtomicInteger(0);
+    private AtomicInteger seq;
 
     private ReentrantLock rl = new ReentrantLock();
     private Condition fifo = rl.newCondition();
 
-    public Accountant(long stock){
-        this.stock = stock;
+    public Accountant(long stock, int seq,FlowWindow window){
+        this.buffersize = stock;
+        this.seq = new AtomicInteger(seq);
+        this.window = window;
+        this.window.warn(this.fifo);
     }
 
-    void data(Integer id, DataPacket value) throws InterruptedException{
+    void data( DataPacket value) throws InterruptedException{
 
         int stream_id = value.getMessageNumber();
 
@@ -45,42 +49,37 @@ public class Accountant {
             this.streams.put(stream_id,new StreamState(value,this.rl.newCondition()));
         }
 
+        this.rl.lock();
         try {
-            this.rl.lock();
-            while (this.storage.get() > this.stock * this.flow_window.get())
+            while (this.storage.get() > this.buffersize)
                 this.fifo.await();
+
+            value.setSeq(this.seq());
+            uncounted.put(value);
         }finally {
             this.rl.unlock();
         }
 
-        uncounted.put(id, value);
-        sending.putLast(id);
+        sending.putLast(value.getSeq());
 
         this.storage.addAndGet(1);
     }
 
-    void ack(int x) throws NotActiveException{
+    void ack(int x) throws NotActiveException, InterruptedException{
         if( !this.at.get() )
             throw new NotActiveException();
 
-        ConcurrentNavigableMap<Integer,DataPacket> tmp = uncounted.headMap(x,true);
+        DataPacket packet;
 
-        for(Map.Entry<Integer,DataPacket> ent : tmp.entrySet()){
-            int stream_id = ent.getValue().getMessageNumber();
-            this.streams.get(stream_id).decrement();
-        }
+        do{
+            packet = this.uncounted.take();
+            this.storage.addAndGet(-1);
+            this.streams.get(packet.getMessageNumber()).decrement();
 
-        this.storage.addAndGet(-tmp.size());
+        }while( packet.getSeq() < x );
 
-        tmp.clear();
     }
 
-    int window() throws NotActiveException {
-        if( !this.at.get() )
-            throw new NotActiveException();
-
-        return this.flow_window.get();
-    }
     void control(ControlPacket p) throws InterruptedException, NotActiveException{
         if( !this.at.get() )
             throw new NotActiveException();
@@ -107,12 +106,12 @@ public class Accountant {
         this.uncounted.clear();
 
         /* saving variable values */
-        long tmpstock = this.stock;
-        int tmpwindow = this.flow_window.get();
+        long tmpstock = this.buffersize;
+
 
         /* leting the blocked threads leave*/
-        this.stock = 1;
-        this.flow_window.set(Integer.MAX_VALUE);
+        this.buffersize = Integer.MAX_VALUE;
+
         this.rl.lock();
         try {
             this.fifo.signalAll();
@@ -121,8 +120,15 @@ public class Accountant {
         }
 
         /* restauring variable values*/
-        this.stock = tmpstock;
-        this.flow_window.set(tmpwindow);
+        this.buffersize = tmpstock;
+
+        this.window.purge(this.fifo);
+    }
+
+    private int seq(){
+        return this.seq.accumulateAndGet(0,
+                (x,y) -> Integer.max(++x % Integer.MAX_VALUE, y)
+        );
     }
 
     public void finish(int stream_id) throws InterruptedException, NotActiveException, StreamCorruptedException {
@@ -146,19 +152,32 @@ public class Accountant {
         if( !this.at.get() )
             throw new NotActiveException();
 
-        int index = sending.take();
+        while(true) {
 
-        if( index == -1)
-            return control.take();
+            int index = sending.takeFirst();
 
-        this.rl.lock();
-        try {
-            this.fifo.signal();
-        }finally {
-            this.rl.unlock();
+            if (index == -1)
+                return control.take();
+
+            this.rl.lock();
+            try {
+                this.fifo.signal();
+            } finally {
+                this.rl.unlock();
+            }
+            // procura o index
+
+            Iterator<DataPacket> it = uncounted.iterator();
+
+            while (it.hasNext()) {
+                DataPacket packet = it.next();
+                if (packet.getSeq() == index)
+                    return packet;
+
+            }
+
         }
 
-        return uncounted.get( index);
     }
 
     class StreamState {

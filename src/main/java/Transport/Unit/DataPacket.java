@@ -3,8 +3,6 @@ package Transport.Unit;
 import Estado.BitManipulator;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.BitSet;
 
 public class DataPacket extends Packet {
 
@@ -90,6 +88,10 @@ public class DataPacket extends Packet {
 
     public DataPacket(byte[] data, int timestamp, int seq, int message_number, DataPacket.Flag flag){
         this(data,data.length,timestamp,seq,message_number,flag);
+    }
+
+    public void setSeq(int seq){
+        this.seq = seq;
     }
 
     public int getTimestamp() {

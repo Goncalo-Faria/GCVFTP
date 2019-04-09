@@ -3,8 +3,6 @@ package Transport.Unit;
 import Estado.BitManipulator;
 import Transport.ControlPacketTypes.*;
 
-import java.nio.ByteBuffer;
-
 public abstract class ControlPacket extends Packet {
 
     public enum Type{

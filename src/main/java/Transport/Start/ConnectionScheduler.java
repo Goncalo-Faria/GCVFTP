@@ -1,6 +1,5 @@
 package Transport.Start;
 
-import Transport.GCVConnection;
 import Transport.Socket;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.Packet;
@@ -87,7 +86,7 @@ public class ConnectionScheduler implements Runnable{
                         System.out.println("got " + packet.getLength() + " bytes ::-:: ip = " + packet.getAddress() + " port= " + packet.getPort());
 
                         if( connections.containsKey(packet.getAddress().toString() + packet.getPort()) )
-                            connections.get(packet.getAddress().toString() + packet.getPort()).handshake();
+                            connections.get(packet.getAddress().toString() + packet.getPort()).restart();
 
                         this.queue.put(new StampedControlPacket(cpacket, packet.getPort(), packet.getAddress()));
                     }

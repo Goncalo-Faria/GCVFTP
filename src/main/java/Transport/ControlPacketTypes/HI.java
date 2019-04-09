@@ -2,7 +2,6 @@ package Transport.ControlPacketTypes;
 
 import Estado.BitManipulator;
 import Transport.Unit.ControlPacket;
-import Transport.Unit.Packet;
 
 public class HI extends ControlPacket {
 

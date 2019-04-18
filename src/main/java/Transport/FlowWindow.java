@@ -17,6 +17,9 @@ public class FlowWindow {
 
     private AtomicInteger value = new AtomicInteger(2);
 
+    public FlowWindow(){
+
+    }
     public int value(){
         return value.get();
     }

@@ -48,7 +48,7 @@ public class SendGate {
         System.out.println("SendGate created");
         this.ch = ch;
 
-        this.send_buffer = new Accountant(me.getStock(),seq,this.window);
+        this.send_buffer = new Accountant(me.getBufferSize(),seq,this.window);
         this.worker = new SendWorker(ch, send_buffer,initialperiod,me,this.window);
     }
 

@@ -123,7 +123,7 @@ class Accountant {
         Iterator<DataPacket> it = this.uncounted.iterator();
 
         for( Integer mss : missing)
-            while (it.hasnext()) {
+            while (it.hasNext()) {
                 DataPacket packet = it.next();
                 if(packet.getSeq() == mss) { this.sending.putFirst(packet); }
             }

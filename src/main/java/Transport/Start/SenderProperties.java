@@ -1,11 +1,14 @@
 package Transport.Start;
 
+import Transport.FlowWindow;
+
 import java.net.InetAddress;
+
 
 public class SenderProperties extends TransportStationProperties {
 
     private final int stock;
-    private FlowWindow = new FlowWindow();
+    private FlowWindow  window = new FlowWindow();
 
     public SenderProperties(InetAddress ip, int port, int maxpacket, int maxwindow, int stock){
         super(ip,port,maxpacket,maxwindow);

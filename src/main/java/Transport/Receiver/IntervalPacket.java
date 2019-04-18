@@ -1,10 +1,10 @@
-package Transport;
+package Transport.Receiver;
 
 import Transport.Unit.Packet;
 
 import java.util.HashMap;
 
-class IntervalPacket extends Interval<Packet>{
+class IntervalPacket extends Interval<Packet> {
 
     private HashMap<Integer,Packet> l = new HashMap<Integer,Packet>();
 

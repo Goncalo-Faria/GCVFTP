@@ -1,14 +1,15 @@
-package Transport;
+package Transport.Receiver;
 
 public class SimpleSeqChain<V> {
 
-    private Node head = null;
+    //private Node head = null;
     private int min = Integer.MAX_VALUE;
     private int max = Integer.MIN_VALUE;
 
     public SimpleSeqChain(){
     }
 
+    /*
     public SimpleSeqChain put( Interval<V> x ) throws ValueAlreadyAckedException{
 
         if( head == null) {
@@ -95,7 +96,7 @@ public class SimpleSeqChain<V> {
             if ( n.interval().merge(n.left.interval()) ) {
                 /*can merge*/
 
-                /* change the tree */
+                /* change the tree
 
                 n.left = n.left.left;
 
@@ -108,7 +109,7 @@ public class SimpleSeqChain<V> {
             if ( n.interval().merge(n.right.interval()) ) {
                 /*can merge*/
 
-                /*change the tree */
+                /*change the tree
 
                 n.right = n.right.right;
 
@@ -173,5 +174,7 @@ public class SimpleSeqChain<V> {
         }
 
     }
+
+    */
 
 }

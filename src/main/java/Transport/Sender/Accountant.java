@@ -18,10 +18,10 @@ import java.util.concurrent.locks.ReentrantLock;
 /* structure for saving traveling packets*/
 class Accountant {
 
-    private LinkedBlockingDeque<DataPacket> uncounted = new LinkedBlockingDeque<>();
-    private ConcurrentSkipListMap<Integer,StreamState> streams = new ConcurrentSkipListMap<>(); // stream_id -> stream_state
-    private LinkedBlockingDeque<Integer> sending = new LinkedBlockingDeque<>();
-    private LinkedBlockingQueue<ControlPacket> control = new LinkedBlockingQueue<>();
+    private LinkedBlockingDeque<DataPacket> uncounted = new LinkedBlockingDeque<DataPacket>();
+    private ConcurrentSkipListMap<Integer,StreamState> streams = new ConcurrentSkipListMap<Integer,StreamState>(); // stream_id -> stream_state
+    private LinkedBlockingDeque<Packet> sending = new LinkedBlockingDeque<Packet>();
+    private LinkedBlockingQueue<ControlPacket> control = new LinkedBlockingQueue<ControlPacket>();
     private AtomicBoolean at = new AtomicBoolean(true);
     private long buffersize;
 
@@ -55,12 +55,12 @@ class Accountant {
                 this.fifo.await();
 
             value.setSeq(this.seq());
-            uncounted.put(value);
+            uncounted.putLast(value);
         }finally {
             this.rl.unlock();
         }
 
-        sending.putLast(value.getSeq());
+        sending.putLast(value);
 
         this.storage.addAndGet(1);
     }
@@ -72,7 +72,7 @@ class Accountant {
         DataPacket packet;
 
         do{
-            packet = this.uncounted.take();
+            packet = this.uncounted.takeFirst();
             this.storage.addAndGet(-1);
             this.streams.get(packet.getMessageNumber()).decrement();
 
@@ -84,16 +84,29 @@ class Accountant {
         if( !this.at.get() )
             throw new NotActiveException();
 
-        sending.putFirst(-1);
+        sending.putFirst(null);
         control.put(p);
     }
 
     void nack(List<Integer> missing) throws InterruptedException, NotActiveException {
+        /* Assuming it's sorted*/
+
+        /*
+        mete na lista de entrega os pacotes no nack
+        como os pacotes serão muito provavelmente os mais antigos
+        começa a procurar da cabeça até à cauda
+        */
+
         if( !this.at.get() )
             throw new NotActiveException();
 
-        for (Integer e : missing)
-            sending.putFirst(e);
+        Iterator<DataPacket> it = this.uncounted.iterator();
+
+        for( Integer mss : missing)
+            while (it.hasnext()) {
+                DataPacket p = it.next();
+                if(p.getSeq() == mss) { this.sending.putFirst(p); }
+            }
     }
 
     public boolean hasTerminated(){
@@ -107,7 +120,6 @@ class Accountant {
 
         /* saving variable values */
         long tmpstock = this.buffersize;
-
 
         /* leting the blocked threads leave*/
         this.buffersize = Integer.MAX_VALUE;
@@ -145,6 +157,8 @@ class Accountant {
             this.rl.unlock();
         }
 
+        this.streams.remove(stream_id);
+
     }
 
     Packet get() throws InterruptedException, NotActiveException{
@@ -152,32 +166,19 @@ class Accountant {
         if( !this.at.get() )
             throw new NotActiveException();
 
-        while(true) {
+        Packet index = sending.takeFirst();
 
-            int index = sending.takeFirst();
-
-            if (index == -1)
+        if (index == null)
                 return control.take();
 
-            this.rl.lock();
-            try {
-                this.fifo.signal();
-            } finally {
-                this.rl.unlock();
-            }
-            // procura o index
-
-            Iterator<DataPacket> it = uncounted.iterator();
-
-            while (it.hasNext()) {
-                DataPacket packet = it.next();
-                if (packet.getSeq() == index)
-                    return packet;
-
-            }
-
+        this.rl.lock();
+        try {
+            this.fifo.signal();
+        } finally {
+            this.rl.unlock();
         }
-
+            // procura o index
+        return index;
     }
 
     class StreamState {

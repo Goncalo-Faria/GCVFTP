@@ -1,4 +1,4 @@
-package Transport;
+package Transport.Receiver;
 
 public abstract class Interval<V> {
 

@@ -15,54 +15,79 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-/* structure for saving traveling packets*/
+/* structure for 'accounting' traveling packets*/
 class Accountant {
 
-    private LinkedBlockingDeque<DataPacket> uncounted = new LinkedBlockingDeque<DataPacket>();
+    private LinkedBlockingDeque<DataPacket> uncounted;
+    /*
+     * List containing the packets in order that haven't been acked or are waiting to be sent.
+     *
+     * TODO : Make it a circular List.
+     * */
     private ConcurrentSkipListMap<Integer,StreamState> streams = new ConcurrentSkipListMap<Integer,StreamState>(); // stream_id -> stream_state
+    /*
+     * Map that contains information of a stream state.
+     * */
     private LinkedBlockingDeque<Packet> sending = new LinkedBlockingDeque<Packet>();
+    /*
+     * Packet Sending queue.
+     *      the elements of the queue are either :
+     *      - datapackets.
+     *      - null when refering to the element in the top.
+     *
+     * obs: why null? we want to keep the order in control packets.
+     * */
     private LinkedBlockingQueue<ControlPacket> control = new LinkedBlockingQueue<ControlPacket>();
+    /*
+     * List of control packets waiting to be sent.
+     * */
     private AtomicBoolean at = new AtomicBoolean(true);
-    private long buffersize;
-
-    private FlowWindow window; /* sempre que for alterada é lançado um signal All*/
-    private AtomicInteger storage = new AtomicInteger(0);
-    private AtomicInteger seq;
+    /*
+     * true : if the accountant is active.
+     * false : otherwise.
+     * */
+    private FlowWindow window;
+    /*
+     * Adjusts the number of packets that can be sent per SYN based on connection state information.
+     * */
+    private AtomicInteger seq;/* TODO : make sure 0 > the max numbers */
+    /*
+     * Current sequence number.
+     *  */
 
     private ReentrantLock rl = new ReentrantLock();
-    private Condition fifo = rl.newCondition();
+    /*
+     * Usado para permitir a cada stream esperar pelo envio dos seus pacotes.
+     * */
 
-    public Accountant(long stock, int seq,FlowWindow window){
-        this.buffersize = stock;
+    public Accountant(int stock, int seq, FlowWindow window){
+        this.uncounted = new LinkedBlockingDeque<DataPacket>(stock);
         this.seq = new AtomicInteger(seq);
         this.window = window;
-        this.window.warn(this.fifo);
+
     }
 
     void data( DataPacket value) throws InterruptedException{
 
+        uncounted.putLast(value);
+        /* espera pela oportunidade para colocar o pacote no sistema*/
+
         int stream_id = value.getMessageNumber();
+        /* extrai o número de stream do pacote*/
 
         if( this.streams.containsKey(stream_id) ){
+            /* regista a mensagem como pertencendo ao stream */
             this.streams.get(stream_id).increment(value);
         }else{
+            /* cria um novo stream */
             this.streams.put(stream_id,new StreamState(value,this.rl.newCondition()));
         }
 
-        this.rl.lock();
-        try {
-            while (this.storage.get() > this.buffersize)
-                this.fifo.await();
-
-            value.setSeq(this.seq());
-            uncounted.putLast(value);
-        }finally {
-            this.rl.unlock();
-        }
+        value.setSeq(this.seq());
+        /* atribui um número de sequência ao datapacket */
 
         sending.putLast(value);
-
-        this.storage.addAndGet(1);
+        /* põe o datapacket na fila de envio */
     }
 
     void ack(int x) throws NotActiveException, InterruptedException{
@@ -73,10 +98,11 @@ class Accountant {
 
         do{
             packet = this.uncounted.takeFirst();
-            this.storage.addAndGet(-1);
             this.streams.get(packet.getMessageNumber()).decrement();
+            /* decrementa o número de pacotes em falta do stream*/
 
-        }while( packet.getSeq() < x );
+        }while( packet.getSeq() < x );/* todos os pacotes com número de sequência inferior */
+        /* TODO: Assegurar que é suportada ordem circular */
 
     }
 
@@ -84,18 +110,12 @@ class Accountant {
         if( !this.at.get() )
             throw new NotActiveException();
 
-        sending.putFirst(null);
-        control.put(p);
+        sending.putFirst(null);/*põe indicação de pacote de controlo no inicio da fila de envio*/
+
+        control.put(p);/* põe pacote de controlo na fila  de pacotes de controlo*/
     }
 
     void nack(List<Integer> missing) throws InterruptedException, NotActiveException {
-        /* Assuming it's sorted*/
-
-        /*
-        mete na lista de entrega os pacotes no nack
-        como os pacotes serão muito provavelmente os mais antigos
-        começa a procurar da cabeça até à cauda
-        */
 
         if( !this.at.get() )
             throw new NotActiveException();
@@ -104,40 +124,27 @@ class Accountant {
 
         for( Integer mss : missing)
             while (it.hasnext()) {
-                DataPacket p = it.next();
-                if(p.getSeq() == mss) { this.sending.putFirst(p); }
+                DataPacket packet = it.next();
+                if(packet.getSeq() == mss) { this.sending.putFirst(packet); }
             }
     }
 
     public boolean hasTerminated(){
-        return !this.at.get();
+        return !this.at.get();/*queries if the accountant has termianted*/
     }
 
     void terminate(){
+        /*deactivates the accountat*/
         at.set(false);
 
         this.uncounted.clear();
+        this.streams.clear();
+        this.sending.clear();
 
-        /* saving variable values */
-        long tmpstock = this.buffersize;
-
-        /* leting the blocked threads leave*/
-        this.buffersize = Integer.MAX_VALUE;
-
-        this.rl.lock();
-        try {
-            this.fifo.signalAll();
-        }finally {
-            this.rl.unlock();
-        }
-
-        /* restauring variable values*/
-        this.buffersize = tmpstock;
-
-        this.window.purge(this.fifo);
     }
 
     private int seq(){
+        /*TODO: assegurar que é um lista circular */
         return this.seq.accumulateAndGet(0,
                 (x,y) -> Integer.max(++x % Integer.MAX_VALUE, y)
         );
@@ -151,32 +158,25 @@ class Accountant {
         try{
             StreamState st = this.streams.get(stream_id);
 
-            while ( st.hasfinished() )
+            while ( st.hasfinished() )/* espera passivamente pelo o termino do stream*/
                 st.await();
         }finally {
             this.rl.unlock();
         }
 
-        this.streams.remove(stream_id);
+        this.streams.remove(stream_id);/* remove o stream do accountant*/
 
     }
 
     Packet get() throws InterruptedException, NotActiveException{
-
+        /* método para o sendworker*/
         if( !this.at.get() )
             throw new NotActiveException();
 
         Packet index = sending.takeFirst();
 
-        if (index == null)
+        if (index == null)/* tem de mandar pacote de controlo*/
                 return control.take();
-
-        this.rl.lock();
-        try {
-            this.fifo.signal();
-        } finally {
-            this.rl.unlock();
-        }
             // procura o index
         return index;
     }

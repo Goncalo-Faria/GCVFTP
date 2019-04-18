@@ -24,7 +24,7 @@ public class SendWorker extends TimerTask {
         this.channel = ch;
         this.send_time = new Timer();
         long period1 = period;
-        this.send_time.scheduleAtFixedRate( this, 0, period1);
+        this.send_time.scheduleAtFixedRate( this, 0, this.period1);
         this.flow_window = window;
         SenderProperties properties1 = properties;
     }

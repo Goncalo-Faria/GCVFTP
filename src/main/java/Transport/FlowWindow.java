@@ -8,16 +8,14 @@ import java.util.concurrent.locks.Condition;
 
 public class FlowWindow {
 
-    private ConcurrentHashMap.KeySetView<Condition,Boolean> listeners = ConcurrentHashMap.newKeySet();
+    private volatile long roundTripTime;
+    private volatile long roundTripTimeVariance;
+    private volatile long packetArrivalRate;
+    private volatile long estimatedLinkCapacity;
+    private volatile double sendPeriod;
+    private volatile long congestionWindowSize;
+
     private AtomicInteger value = new AtomicInteger(2);
-
-    public void warn(Condition c){
-        listeners.add(c);
-    }
-
-    public void purge(Condition c){
-        listeners.remove(c);
-    }
 
     public int value(){
         return value.get();

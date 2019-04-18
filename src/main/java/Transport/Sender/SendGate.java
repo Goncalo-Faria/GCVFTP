@@ -30,7 +30,7 @@ public class SendGate {
 
     private AtomicInteger backery_ticket = new AtomicInteger(0);
 
-    private FlowWindow window = new FlowWindow();
+    private FlowWindow window = new FlowWindow();/* number of packets traveling */
 
 
     /* receiver
@@ -76,8 +76,6 @@ public class SendGate {
     public void send( byte[] data) throws IOException, InterruptedException{
 
         int ticket = this.getTicket();
-
-
 
         DataPacket packet = new DataPacket(
                 data,

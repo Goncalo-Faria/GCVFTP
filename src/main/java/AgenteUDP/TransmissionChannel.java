@@ -29,6 +29,7 @@ public class TransmissionChannel implements Channel {
                                StationProperties send,
                                StationProperties receive) throws SocketException {
         this.cs = cs;
+        this.cs.setSoTimeout(0);
         this.cs.setSendBufferSize( send.channel_buffer_size() );
         this.cs.setReceiveBufferSize( receive.channel_buffer_size() );
         this.cs.connect(receive.ip(),receive.port());

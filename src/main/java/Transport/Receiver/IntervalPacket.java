@@ -84,7 +84,6 @@ public class IntervalPacket {
     public synchronized Packet take(){
         this.min++;
         return l.poll();
-
     }
 
     public LinkedList<DataPacket> getpackets(){
@@ -95,9 +94,6 @@ public class IntervalPacket {
 
         IntervalPacket a = ( this.toString().compareTo(x.toString()) < 0 ) ? this : x;
         IntervalPacket b = ( this.toString().compareTo(x.toString()) < 0 ) ? x : this;
-        //System.out.println(x.min() + " - " + " - " + x.max());
-        //System.out.println(this.min + " - " + " - " + this.max);
-
 
         synchronized (a) {
             synchronized (b) {
@@ -106,13 +102,11 @@ public class IntervalPacket {
                     this.max = x.max();
 
                     this.l.addAll( x.getpackets() );
-                    System.out.println(" .. ");
                     return 1;
                 }else if( x.max() + 1 == this.min ){
                     this.min = x.min();
                 
                     this.l.addAll( 0, x.getpackets() );
-                    System.out.println(" .. ");
                     return -1;
                 }
 

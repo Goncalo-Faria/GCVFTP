@@ -19,8 +19,9 @@ public class Server {
 
             while (isRunning)
             {
-                byte[] data = cs.receive();
-                System.out.println("says: " + new String(data));
+                //byte[] data = cs.receive();
+                //System.out.println("says: " + new String(data));
+                Thread.sleep(10000);
             }
 
         }catch(IOException|InterruptedException e){

@@ -3,6 +3,7 @@ package Transport.Start;
 import Transport.ControlPacketTypes.HI;
 import Transport.GCVConnection;
 import Transport.Sender.SenderProperties;
+import Transport.Receiver.ReceiverProperties;
 import Transport.Socket;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.Packet;
@@ -15,7 +16,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class GCVConnector implements Connector {
 
-    private byte[] connection_message;
     private AtomicBoolean active = new AtomicBoolean(true);
 
     private SenderProperties in_properties;
@@ -32,10 +32,7 @@ public class GCVConnector implements Connector {
                     mtu,
                     max_window,
                     GCVConnection.send_buffer_size);
-
-            HI p = new HI((short)0,0,mtu,max_window);
-
-            this.connection_message = p.serialize();
+            
         }catch(UnknownHostException e){
             e.getStackTrace();
         }
@@ -52,8 +49,18 @@ public class GCVConnector implements Connector {
 
         this.active.set(true);
 
+        HI hello_packet = new HI(
+            (short)0,
+            0,
+            this.in_properties.packetsize(),
+            this.in_properties.window().getMaxWindow()
+        );
+
+        byte[] connection_message = hello_packet.serialize();
+
         DatagramPacket send_message = new DatagramPacket(
-                connection_message,0,
+                connection_message,
+                0,
                 connection_message.length,
                 ip,
                 GCVConnection.port);
@@ -78,16 +85,16 @@ public class GCVConnector implements Connector {
                     ControlPacket cdu = (ControlPacket)du;
 
                     if( cdu instanceof HI ){
-                        HI hi = (HI)cdu;
+                        HI response_hello_packet = (HI)cdu;
                         this.active.set(false);
-                        TransportStationProperties out_properties = new TransportStationProperties(
+                        ReceiverProperties out_properties = new ReceiverProperties(
                                 ip,
                                 received_message.getPort(),
-                                hi.getMTU(),
+                                response_hello_packet.getMTU(),
                                 GCVConnection.receive_buffer_size
                                 );
 
-                        return new Socket(cs,this.in_properties, out_properties, hi.getSeq());
+                        return new Socket(cs,this.in_properties, out_properties, hello_packet.getSeq() ,response_hello_packet.getSeq());
                     }
                 }
 

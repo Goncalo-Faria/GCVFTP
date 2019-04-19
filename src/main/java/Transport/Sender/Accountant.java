@@ -62,8 +62,7 @@ class Accountant {
 
     public Accountant(int stock, int seq, FlowWindow window){
         this.uncounted = new LinkedBlockingDeque<DataPacket>(stock);
-        /*this.seq = new AtomicInteger(seq);*/
-        this.seq = new AtomicInteger(1);
+        this.seq = new AtomicInteger(seq);
         this.window = window;
 
     }
@@ -85,6 +84,7 @@ class Accountant {
         }
 
         value.setSeq(this.seq());
+
         /* atribui um número de sequência ao datapacket */
 
         sending.putLast(value);

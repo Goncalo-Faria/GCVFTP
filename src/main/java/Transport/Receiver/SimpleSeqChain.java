@@ -89,4 +89,10 @@ public class SimpleSeqChain {
 
         return t;
     }
+
+    public void clear(){
+        this.min = Integer.MAX_VALUE;
+        this.max = Integer.MIN_VALUE;
+        list = new LList<>();
+    }
 }

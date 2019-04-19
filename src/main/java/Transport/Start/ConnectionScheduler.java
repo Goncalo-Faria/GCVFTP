@@ -55,7 +55,7 @@ public class ConnectionScheduler implements Runnable{
         return queue.take().get();
     }
 
-    ConnectionScheduler.StampedControlPacket getstamped()
+    public ConnectionScheduler.StampedControlPacket getstamped()
             throws InterruptedException{
 
         return queue.take();
@@ -119,7 +119,7 @@ public class ConnectionScheduler implements Runnable{
         }
     }
 
-    class StampedControlPacket {
+    public class StampedControlPacket {
         private ControlPacket obj;
         private int port;
         private InetAddress address;
@@ -135,13 +135,13 @@ public class ConnectionScheduler implements Runnable{
             return cleartime.isAfter(t);
         }
 
-        ControlPacket get(){
+        public ControlPacket get(){
             return this.obj;
         }
 
-        int port(){ return this.port;}
+        public int port(){ return this.port;}
 
-        InetAddress ip(){ return this.address; }
+        public InetAddress ip(){ return this.address; }
 
     }
 }

@@ -47,8 +47,7 @@ public class SendGate {
         System.out.println("SendGate created");
         this.ch = ch;
         this.properties = me;
-
-        this.send_buffer = new Accountant(GCVConnection.send_buffer_size,seq,me.window());
+        this.send_buffer = new Accountant(me.transmissionchannel_buffer_size(),seq,me.window());
         this.worker = new SendWorker(ch, send_buffer,initialperiod,me);
     }
 
@@ -57,11 +56,17 @@ public class SendGate {
         this.ch.sendPacket( new SURE(SURE.ack_hi,this.connection_time()));
     }
 
-    public void handshake() throws IOException{
-        this.ch.sendPacket(new HI((short)0,
-                        this.connection_time() ,
-                        this.ch.getSelfStationProperties().packetsize(),
-                       this.properties.window().getMaxWindow() ));
+    public int handshake() throws IOException{
+        HI hello_packet = new HI(
+            (short)0,
+            this.connection_time() ,
+            this.ch.getSelfStationProperties().packetsize(),
+            this.properties.window().getMaxWindow() 
+        );
+
+        this.ch.sendPacket(hello_packet);
+
+        return hello_packet.getSeq();
     }
 
     public void bye( short code ) throws IOException{
@@ -137,6 +142,7 @@ public class SendGate {
     }
 
     public void close() throws IOException{
+        System.out.println("SendGate closed");
         this.worker.stop();
         this.send_buffer.terminate();
 

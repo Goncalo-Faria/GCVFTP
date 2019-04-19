@@ -3,6 +3,7 @@ package Transport.Receiver;
 import Transport.TransportChannel;
 import Transport.Unit.Packet;
 
+import java.lang.Thread;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -15,10 +16,11 @@ public class ReceiveWorker implements Runnable{
     private ReceiverProperties properties;
     private Examiner buffer;
 
-    public ReceiveWorker(ReceiverProperties properties, TransportChannel ch, Examiner buffer){
+    public ReceiveWorker(TransportChannel ch, Examiner buffer, ReceiverProperties properties){
         this.ch = ch;
         this.properties = properties;
         this.buffer = buffer;
+        (new Thread(this)).start();
     }
 
     public void stop(){

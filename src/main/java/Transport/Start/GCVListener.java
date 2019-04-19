@@ -4,6 +4,7 @@ package Transport.Start;
 import Transport.ControlPacketTypes.HI;
 import Transport.GCVConnection;
 import Transport.Sender.SenderProperties;
+import Transport.Receiver.ReceiverProperties;
 import Transport.Socket;
 import Transport.Unit.ControlPacket;
 
@@ -84,7 +85,7 @@ public class GCVListener implements Listener {
                     this.maxwindow,
                     this.stock);
 
-            TransportStationProperties caller_station_properties = new TransportStationProperties(
+            ReceiverProperties caller_station_properties = new ReceiverProperties(
                     caller_ip,
                     caller_port,
                     packet.getMTU(),

@@ -1,9 +1,10 @@
 package Transport;
 
 import Transport.Sender.SendGate;
+import Transport.Receiver.ReceiveGate;
 import Transport.Start.GCVListener;
 import Transport.Sender.SenderProperties;
-import Transport.Start.TransportStationProperties;
+import Transport.Receiver.ReceiverProperties;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.DataPacket;
 import Transport.Unit.Packet;
@@ -16,77 +17,65 @@ public class Socket {
 
     private long initial_sending_period = 100;
 
-    private SendGate ingate ;
+    private SendGate sgate ;
+    private ReceiveGate rgate;
+
     private TransmissionTransportChannel channel ;
 
 
-    public Socket(SenderProperties me, TransportStationProperties caller, int seq) throws IOException {
+    public Socket(SenderProperties me, ReceiverProperties caller, int send_seq) throws IOException {
         System.out.println("Socket created");
         this.channel = new TransmissionTransportChannel(
                 me,
                 caller);
 
-        this.ingate = new SendGate(me,channel,seq,initial_sending_period);
+        this.sgate = new SendGate(me,channel,send_seq,initial_sending_period);
+        this.rgate = new ReceiveGate(caller,channel,this.sgate.handshake());
 
-        this.ingate.handshake();
     }
 
-    public Socket(DatagramSocket in, SenderProperties me, TransportStationProperties caller, int seq) throws IOException {
+    public Socket(DatagramSocket in, SenderProperties me, ReceiverProperties caller, int send_seq , int receive_seq) throws IOException {
         System.out.println("Socket created");
         this.channel = new TransmissionTransportChannel(
                 in,
                 me,
                 caller);
 
-        this.ingate = new SendGate(me,channel,seq,initial_sending_period);
+        this.sgate = new SendGate(me,channel,send_seq,initial_sending_period);
+        this.rgate = new ReceiveGate(caller,channel,receive_seq);
 
-        this.ingate.confirm_handshake();
+        this.sgate.confirm_handshake();
     }
 
     public void close( short code ) throws IOException{
-
+        System.out.println("Socket closed");
         GCVListener.closeConnection(
                 this.channel.getOtherStationProperties().ip().toString() + this.channel.getOtherStationProperties().port());
 
-        this.ingate.bye(code);
+        this.sgate.bye(code);
 
-        this.ingate.close();
+        this.sgate.close();
+
+        this.rgate.close();
 
         this.channel.close();
 
     }
 
     public void send( byte[] data) throws IOException, InterruptedException {
-        this.ingate.send(data);
+        this.sgate.send(data);
     }
 
     public void send( InputStream io ) throws  IOException, InterruptedException{
-        this.ingate.send(io);
+        this.sgate.send(io);
     }
 
     public byte[] receive() throws IOException {
-        Packet p = this.channel.receivePacket();
-        if(p instanceof DataPacket) {
-            DataPacket dp = (DataPacket) p;
-            System.out.println("x-----------x-----------x--------x-------x----x--x--x-x-x-x--x ");
-            System.out.println("flag " + dp.getFlag());
-            System.out.println("seq " + dp.getSeq());
-            System.out.println("timestamp " + dp.getTimestamp());
-            System.out.println("streamid " + dp.getMessageNumber());
-            return dp.getData();
-        }else{
-            ControlPacket cp = (ControlPacket)p;
-            System.out.println("x-----------x-----------x--------x-------x----x--x--x-x-x-x--x ");
-            System.out.println("type " + cp.getType());
-            System.out.println("extcode " + cp.getExtendedtype());
-            System.out.println("timestamp " + cp.getTimestamp());
-        }
-
         return new byte[0];
     }
 
     public void restart() throws IOException{
-        this.ingate.handshake();
+        this.sgate.handshake();
     }
 
 }

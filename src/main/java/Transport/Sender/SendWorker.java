@@ -37,6 +37,7 @@ public class SendWorker extends TimerTask {
 
                 for(int i= 0; i< this.properties.window().value() ; i++)
                     channel.sendPacket(send_buffer.get());
+                
             }
 
         }catch ( InterruptedException| IOException e){

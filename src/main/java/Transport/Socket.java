@@ -1,8 +1,6 @@
 package Transport;
 
-
 import Transport.Sender.SendGate;
-
 import Transport.Start.GCVListener;
 import Transport.Sender.SenderProperties;
 import Transport.Start.TransportStationProperties;

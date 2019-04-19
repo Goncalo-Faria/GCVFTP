@@ -1,6 +1,6 @@
 package Transport.ControlPacketTypes;
 
-import Estado.BitManipulator;
+import Common.BitManipulator;
 import Transport.Unit.ControlPacket;
 
 public class NOPE extends ControlPacket {

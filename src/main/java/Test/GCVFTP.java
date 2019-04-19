@@ -1,6 +1,9 @@
 package Test;
 
 import Transport.ControlPacketTypes.*;
+import Transport.Receiver.IntervalPacket;
+import Transport.Receiver.LList;
+import Transport.Receiver.SimpleSeqChain;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.DataPacket;
 import Transport.Unit.Packet;
@@ -44,6 +47,42 @@ public class GCVFTP {
             System.out.println(" it's control ");
         }
 
+
+        System.out.println("examinar checks");
+
+        SimpleSeqChain l = new SimpleSeqChain(30);
+
+        for(int i = 1; i< 22; i = i + 2) {
+            DataPacket packet = new DataPacket(new byte[20], 0, i, 4, DataPacket.Flag.SOLO);
+
+            l.add( packet );
+
+        }
+
+        System.out.println(" max seq " + l.maxseq());
+
+        System.out.println(" min seq " + l.minseq());
+
+        l.show();
+
+
+
+        DataPacket packet = new DataPacket(new byte[20], 0, 2, 4, DataPacket.Flag.SOLO);
+
+        l.add( packet );
+
+        packet = new DataPacket(new byte[20], 0, 4, 4, DataPacket.Flag.SOLO);
+
+        l.add( packet );
+
+        l.show();
+
+        IntervalPacket tmp = l.take();
+
+        System.out.println(tmp.min() + " - " + tmp.max());
+
+        for(DataPacket pac : tmp.getpackets())
+            System.out.println(pac.getSeq());
 
     }
 }

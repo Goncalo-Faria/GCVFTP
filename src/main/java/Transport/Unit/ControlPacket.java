@@ -1,6 +1,6 @@
 package Transport.Unit;
 
-import Estado.BitManipulator;
+import Common.BitManipulator;
 import Transport.ControlPacketTypes.*;
 
 public abstract class ControlPacket extends Packet {

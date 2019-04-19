@@ -8,18 +8,16 @@ import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-class IntervalPacket {
+public class IntervalPacket {
 
     private int min;
     private int max;
 
     private LinkedList<DataPacket> l = new LinkedList<>();
 
-
-    public synchronized boolean greater(IntervalPacket x){
-        /*argument is greater than*/
-
-        return (this.max < x.min );
+    public IntervalPacket( DataPacket p){
+        this.min = this.max = p.getSeq();
+        l.add(p);
     }
 
     public synchronized int min(){
@@ -34,11 +32,6 @@ class IntervalPacket {
         return this.max == this.min;
     }
 
-    public synchronized boolean greater(int x){
-        /*argument is greater than*/
-        return (this.max < x );
-    }
-
     public synchronized  boolean less(IntervalPacket x){
         IntervalPacket a = ( this.toString().compareTo(x.toString()) < 0 ) ? this : x;
         IntervalPacket b = ( this.toString().compareTo(x.toString()) < 0 ) ? x : this;
@@ -46,7 +39,7 @@ class IntervalPacket {
         synchronized (a) {
             synchronized (b) {
                 /*argument is less than*/
-                return (this.min > x.max());
+                return (this.max < x.min());
             }
         }
     }
@@ -89,41 +82,41 @@ class IntervalPacket {
     }
 
     public synchronized Packet take(){
-        this.min--;
+        this.min++;
         return l.poll();
 
     }
 
     public LinkedList<DataPacket> getpackets(){
-        return new LinkedList<>(this.l);
+        return new LinkedList<DataPacket>(this.l);
     }
 
-    public boolean merge( IntervalPacket x ){
+    public int merge( IntervalPacket x ){
 
         IntervalPacket a = ( this.toString().compareTo(x.toString()) < 0 ) ? this : x;
         IntervalPacket b = ( this.toString().compareTo(x.toString()) < 0 ) ? x : this;
+        //System.out.println(x.min() + " - " + " - " + x.max());
+        //System.out.println(this.min + " - " + " - " + this.max);
+
 
         synchronized (a) {
             synchronized (b) {
-
-                int init_min = this.min;
-                int init_max = this.max;
 
                 if ( x.min() == this.max + 1 ) {/*se são contiguos integra*/
                     this.max = x.max();
 
                     this.l.addAll( x.getpackets() );
-
-                    return true;
+                    System.out.println(" .. ");
+                    return 1;
                 }else if( x.max() + 1 == this.min ){
-                    this.max = x.min();
-
+                    this.min = x.min();
+                
                     this.l.addAll( 0, x.getpackets() );
-
-                    return true;
+                    System.out.println(" .. ");
+                    return -1;
                 }
 
-                return false;
+                return 0;
                 /*indica se o merge foi feito*/
             }
         }

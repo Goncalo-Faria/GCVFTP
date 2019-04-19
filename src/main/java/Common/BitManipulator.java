@@ -1,4 +1,4 @@
-package Estado;
+package Common;
 
 import java.nio.ByteBuffer;
 

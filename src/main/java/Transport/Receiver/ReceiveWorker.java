@@ -34,7 +34,7 @@ public class ReceiveWorker implements Runnable{
                 this.buffer.supply(packet);
             }
 
-        }catch ( IOException e){
+        }catch ( InterruptedException | IOException e){
             e.printStackTrace();
         }
     }

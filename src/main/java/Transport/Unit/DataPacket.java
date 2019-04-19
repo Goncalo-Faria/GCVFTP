@@ -1,6 +1,6 @@
 package Transport.Unit;
 
-import Estado.BitManipulator;
+import Common.BitManipulator;
 
 import java.nio.ByteBuffer;
 

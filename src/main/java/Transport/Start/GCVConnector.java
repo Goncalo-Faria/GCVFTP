@@ -2,6 +2,7 @@ package Transport.Start;
 
 import Transport.ControlPacketTypes.HI;
 import Transport.GCVConnection;
+import Transport.Sender.SenderProperties;
 import Transport.Socket;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.Packet;
@@ -19,18 +20,18 @@ public class GCVConnector implements Connector {
 
     private SenderProperties in_properties;
 
-    public GCVConnector(int my_port, int max_window,int stock) {
-        this(my_port,GCVConnection.stdmtu, max_window, stock);
+    public GCVConnector(int my_port, int max_window) {
+        this(my_port,GCVConnection.stdmtu, max_window);
     }
 
-    public GCVConnector(int my_port, int mtu, int max_window, int stock){
+    public GCVConnector(int my_port, int mtu, int max_window){
         try {
             this.in_properties = new SenderProperties(
                     InetAddress.getLocalHost(),
                     my_port,
                     mtu,
                     max_window,
-                    stock);
+                    GCVConnection.send_buffer_size);
 
             HI p = new HI((short)0,0,mtu,max_window);
 
@@ -72,7 +73,6 @@ public class GCVConnector implements Connector {
             try {
                 System.out.println(":localport " + cs.getLocalPort() );
                 cs.receive(received_message);
-                System.out.println("--got in--");
                 Packet du = Packet.parse(received_message.getData());
                 if(du instanceof ControlPacket){
                     ControlPacket cdu = (ControlPacket)du;
@@ -84,8 +84,8 @@ public class GCVConnector implements Connector {
                                 ip,
                                 received_message.getPort(),
                                 hi.getMTU(),
-                                hi.getMaxWindow());
-                        System.out.println(cdu.serialize().length);
+                                GCVConnection.receive_buffer_size
+                                );
 
                         return new Socket(cs,this.in_properties, out_properties, hi.getSeq());
                     }

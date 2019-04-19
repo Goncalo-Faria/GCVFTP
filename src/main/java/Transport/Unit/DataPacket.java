@@ -68,7 +68,6 @@ public class DataPacket extends Packet {
         this.flag = Flag.SOLO.parse(BitManipulator.msb2(data, 8));
         this.message_number = extrator.flip2().getInt();
 
-        //System.out.println(this.flag);
         this.information = new byte[data.length - DataPacket.header_size ];
 
         ByteBuffer.wrap(data,DataPacket.header_size,data.length - DataPacket.header_size).

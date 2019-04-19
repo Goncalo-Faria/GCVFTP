@@ -6,28 +6,34 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 
+import static Transport.GCVConnection.udp_receive_buffer_size;
+
 public class TransmissionChannel implements Channel {
     private final DatagramSocket cs;
     private final StationProperties in;
     private final StationProperties out;
     private final byte[] data_buffer ;
 
-    public TransmissionChannel(StationProperties in,
-                               StationProperties out) throws SocketException {
-        this.cs = new DatagramSocket(in.port());
-        this.cs.connect(out.ip(),out.port());
-        this.in = in;
-        this.out = out;
+    public TransmissionChannel(StationProperties send,
+                               StationProperties receive) throws SocketException {
+        this.cs = new DatagramSocket(send.port());
+        this.cs.setSendBufferSize( send.channel_buffer_size() );
+        this.cs.setReceiveBufferSize( receive.channel_buffer_size() );
+        this.cs.connect(receive.ip(),receive.port());
+        this.in = send;
+        this.out = receive;
         this.data_buffer = new byte[in.packetsize()];
     }
 
     public TransmissionChannel(DatagramSocket cs,
-                               StationProperties in,
-                               StationProperties out) throws SocketException {
+                               StationProperties send,
+                               StationProperties receive) throws SocketException {
         this.cs = cs;
-        this.cs.connect(out.ip(),out.port());
-        this.in=in;
-        this.out = out;
+        this.cs.setSendBufferSize( send.channel_buffer_size() );
+        this.cs.setReceiveBufferSize( receive.channel_buffer_size() );
+        this.cs.connect(receive.ip(),receive.port());
+        this.in = send;
+        this.out = receive;
         this.data_buffer = new byte[in.packetsize()];
     }
 

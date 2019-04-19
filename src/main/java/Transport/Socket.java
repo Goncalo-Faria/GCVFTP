@@ -4,7 +4,7 @@ package Transport;
 import Transport.Sender.SendGate;
 
 import Transport.Start.GCVListener;
-import Transport.Start.SenderProperties;
+import Transport.Sender.SenderProperties;
 import Transport.Start.TransportStationProperties;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.DataPacket;
@@ -24,7 +24,9 @@ public class Socket {
 
     public Socket(SenderProperties me, TransportStationProperties caller, int seq) throws IOException {
         System.out.println("Socket created");
-        this.channel = new TransmissionTransportChannel( me, caller);
+        this.channel = new TransmissionTransportChannel(
+                me,
+                caller);
 
         this.ingate = new SendGate(me,channel,seq,initial_sending_period);
 
@@ -33,7 +35,10 @@ public class Socket {
 
     public Socket(DatagramSocket in, SenderProperties me, TransportStationProperties caller, int seq) throws IOException {
         System.out.println("Socket created");
-        this.channel = new TransmissionTransportChannel( in, me, caller);
+        this.channel = new TransmissionTransportChannel(
+                in,
+                me,
+                caller);
 
         this.ingate = new SendGate(me,channel,seq,initial_sending_period);
 
@@ -69,7 +74,7 @@ public class Socket {
             System.out.println("flag " + dp.getFlag());
             System.out.println("seq " + dp.getSeq());
             System.out.println("timestamp " + dp.getTimestamp());
-            System.out.println("message number " + dp.getMessageNumber());
+            System.out.println("streamid " + dp.getMessageNumber());
             return dp.getData();
         }else{
             ControlPacket cp = (ControlPacket)p;

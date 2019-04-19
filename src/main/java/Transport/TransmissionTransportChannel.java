@@ -11,15 +11,16 @@ import java.net.SocketException;
 public class TransmissionTransportChannel extends TransmissionChannel implements TransportChannel {
 
     public TransmissionTransportChannel(
-            TransportStationProperties in,
-            TransportStationProperties out) throws SocketException {
-        super(in,out);
+            TransportStationProperties send,
+            TransportStationProperties receive) throws SocketException {
+        super(send,receive);
     }
 
     public TransmissionTransportChannel(DatagramSocket cs,
-                                        TransportStationProperties in,
-                                        TransportStationProperties out) throws SocketException {
-        super(cs,in,out);
+                                        TransportStationProperties send,
+                                        TransportStationProperties receive
+                                        ) throws SocketException {
+        super(cs,send,receive);
     }
 
     public void sendPacket(Packet p) throws IOException {

@@ -14,9 +14,10 @@ public final class GCVConnection {
 
     public static long rate_control_interval_sending = 100 ;
     public static long rate_control_interval_receiving = 100;
+
     public static int send_buffer_size =8192 ;
     public static int receive_buffer_size = 8192;
-    public static int udp_send_buffer_size = 65536;
+    public static int udp_send_buffer_size = send_buffer_size * stdmtu;
     public static int udp_receive_buffer_size = receive_buffer_size * stdmtu;
 
     public static int send_timeout = -1; // não dá timeout

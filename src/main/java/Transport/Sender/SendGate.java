@@ -4,8 +4,7 @@ package Transport.Sender;
 import Transport.ControlPacketTypes.BYE;
 import Transport.ControlPacketTypes.HI;
 import Transport.ControlPacketTypes.SURE;
-import Transport.FlowWindow;
-import Transport.Start.SenderProperties;
+import Transport.GCVConnection;
 import Transport.TransmissionTransportChannel;
 import Transport.Unit.DataPacket;
 
@@ -30,7 +29,7 @@ public class SendGate {
 
     private AtomicInteger backery_ticket = new AtomicInteger(0);
 
-    private FlowWindow window = new FlowWindow();/* number of packets traveling */
+    private SenderProperties properties;
 
 
     /* receiver
@@ -47,9 +46,10 @@ public class SendGate {
     public SendGate(SenderProperties me, TransmissionTransportChannel ch, int seq, long initialperiod) throws IOException {
         System.out.println("SendGate created");
         this.ch = ch;
+        this.properties = me;
 
-        this.send_buffer = new Accountant(me.getBufferSize(),seq,this.window);
-        this.worker = new SendWorker(ch, send_buffer,initialperiod,me,this.window);
+        this.send_buffer = new Accountant(GCVConnection.send_buffer_size,seq,me.window());
+        this.worker = new SendWorker(ch, send_buffer,initialperiod,me);
     }
 
     public void confirm_handshake() throws  IOException{
@@ -61,7 +61,7 @@ public class SendGate {
         this.ch.sendPacket(new HI((short)0,
                         this.connection_time() ,
                         this.ch.getSelfStationProperties().packetsize(),
-                        this.ch.getSelfStationProperties().window()));
+                       this.properties.window().getMaxWindow() ));
     }
 
     public void bye( short code ) throws IOException{

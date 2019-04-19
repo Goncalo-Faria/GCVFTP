@@ -1,10 +1,6 @@
 package Transport;
 
-import java.util.Collections;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Condition;
 
 public class FlowWindow {
 
@@ -15,12 +11,19 @@ public class FlowWindow {
     private volatile double sendPeriod;
     private volatile long congestionWindowSize;
 
+    private final int maxwindow;
+
     private AtomicInteger value = new AtomicInteger(2);
 
-    public FlowWindow(){
-
+    public FlowWindow( int maxwindow){
+        this.maxwindow = maxwindow;
     }
+
     public int value(){
         return value.get();
+    }
+
+    public int getMaxWindow(){
+        return maxwindow;
     }
 }

@@ -1,7 +1,5 @@
 package Transport.Sender;
 
-import Transport.FlowWindow;
-import Transport.Start.SenderProperties;
 import Transport.TransportChannel;
 
 import java.io.IOException;
@@ -17,16 +15,14 @@ public class SendWorker extends TimerTask {
     private TransportChannel channel;
     private Timer send_time;
     private AtomicBoolean active = new AtomicBoolean(true);
-    private FlowWindow flow_window;
+    private SenderProperties properties;
 
-    public SendWorker(TransportChannel ch, Accountant send, long period, SenderProperties properties, FlowWindow window) throws NotActiveException {
+    public SendWorker(TransportChannel ch, Accountant send, long period, SenderProperties properties) throws NotActiveException {
         this.send_buffer = send;
         this.channel = ch;
         this.send_time = new Timer();
-        long period1 = period;
         this.send_time.scheduleAtFixedRate( this, 0, period);
-        this.flow_window = window;
-        SenderProperties properties1 = properties;
+        this.properties = properties;
     }
 
     public void stop(){
@@ -39,7 +35,7 @@ public class SendWorker extends TimerTask {
 
             if( active.get() ) {
 
-                for(int i= 0; i< this.flow_window.value() ; i++)
+                for(int i= 0; i< this.properties.window().value() ; i++)
                     channel.sendPacket(send_buffer.get());
             }
 

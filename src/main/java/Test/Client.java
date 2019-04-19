@@ -9,7 +9,7 @@ import java.util.concurrent.TimeoutException;
 
 public class Client {
 
-    private static GCVConnector connect = new GCVConnector(7220,1000,20,2);
+    private static GCVConnector connect = new GCVConnector(7220,1000,20);
     private static boolean isRunning = true;
 
     public static void main( String[] args )  {

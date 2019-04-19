@@ -3,6 +3,7 @@ package Transport.Start;
 
 import Transport.ControlPacketTypes.HI;
 import Transport.GCVConnection;
+import Transport.Sender.SenderProperties;
 import Transport.Socket;
 import Transport.Unit.ControlPacket;
 

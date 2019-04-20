@@ -1,6 +1,8 @@
-package Estado;
+package Common;
 
 import java.nio.ByteBuffer;
+
+import static java.nio.ByteBuffer.wrap;
 
 public class BitManipulator {
 
@@ -11,7 +13,7 @@ public class BitManipulator {
 
     public static boolean msb(byte[] q, int byteindex){
 
-        return ( ByteBuffer.wrap(q).get(byteindex) < 0 );
+        return ( wrap(q).get(byteindex) < 0 );
     }
 
     public static BitManipulator allocate(int n){
@@ -21,23 +23,39 @@ public class BitManipulator {
 
     public static boolean[] msb2(byte[] q, int byteindex){
 
-        byte selected =  ByteBuffer.wrap(q).get(byteindex);
+
+        ByteBuffer bb = ByteBuffer.wrap(q);
+
+        bb.getInt();
+        bb.getInt();
+
+        char[] bitss = Integer.toBinaryString(bb.getInt()).toCharArray();
+
+        StringBuilder sbuilder = new StringBuilder();
+
+        for(int i = bitss.length; i < 32; i++)
+            sbuilder.append('0');
+
+        sbuilder.append(bitss);
+
         boolean[] ansb = new boolean[2];
-        ansb[0] = ( selected < 0 );
-        ansb[1] = (selected >= 64) || (selected <= -64);
+
+        ansb[0] = (sbuilder.charAt(0) == '1');
+        ansb[1] = (sbuilder.charAt(1) == '1');
+
         return ansb;
     }
 
     public BitManipulator(byte[] raw){
 
         this.cache = raw;
-        this.view = ByteBuffer.wrap(raw);
+        this.view = wrap(raw);
     }
 
     BitManipulator( int n ){
 
         this.cache = new byte[n];
-        this.view = ByteBuffer.wrap(cache);
+        this.view = wrap(cache);
     }
 
     public int getInt(){
@@ -46,15 +64,21 @@ public class BitManipulator {
 
         if( this.mod2){
 
-            int q = (int)Math.pow(2,30);
-            int a = Math.abs(ans);
+            char[] bitss = Integer.toBinaryString(ans).toCharArray();
 
-            if( a >= q )
-            {
-                ans = a - q;
-            }else{
-                ans =  a;
-            }
+            StringBuilder sbuilder = new StringBuilder();
+
+            for(int i = bitss.length; i < 32; i++)
+                sbuilder.append('0');
+
+            sbuilder.append(bitss);
+
+
+            sbuilder.setCharAt(0,'0');
+            sbuilder.setCharAt(1,'0');
+
+            ans = Integer.parseInt(sbuilder.toString(),2);
+
         }
 
         if( this.mod1){
@@ -98,6 +122,12 @@ public class BitManipulator {
         this.mod2 = false;
 
         return ans;
+    }
+
+    public BitManipulator skip(int num){
+        for(int i=0;i<num;i++)
+                view.get();
+        return this;
     }
 
     public byte getByte(){
@@ -213,14 +243,24 @@ public class BitManipulator {
         this.mod2 = false;
         int s=0;
 
+        char[] bitss = Integer.toBinaryString(value).toCharArray();
+
+        StringBuilder sbuilder = new StringBuilder();
+
+        for(int i = bitss.length; i < 32; i++)
+            sbuilder.append('0');
+
+        sbuilder.append(bitss);
+
         if(booleans[1])
-            s += Math.pow(2,14);
+            sbuilder.setCharAt(1,'1');
+        else
+            sbuilder.setCharAt(1,'0');
 
-        if(booleans[0]) {
-            value = (-1)*( value+s );
-        }
+        value = Integer.parseInt( sbuilder.toString() ,2);
 
-        //System.out.println(value);
+        if(booleans[0])
+            value += -2147483648;
 
         this.view.putInt( value );
 

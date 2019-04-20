@@ -1,10 +1,8 @@
 package Transport.Unit;
 
-import Estado.BitManipulator;
+import Common.BitManipulator;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.BitSet;
 
 public class DataPacket extends Packet {
 
@@ -52,9 +50,11 @@ public class DataPacket extends Packet {
 
     }
 
+    public static int header_size = 12;
+
     private int timestamp=0;
     private int seq=0;
-    private int window=0;
+    private int message_number=0;
     private byte[] information = new byte[0];
     private Flag flag;
 
@@ -66,22 +66,31 @@ public class DataPacket extends Packet {
         this.seq = extrator.getInt();
         this.timestamp = extrator.getInt();
         this.flag = Flag.SOLO.parse(BitManipulator.msb2(data, 8));
-        this.window = extrator.flip2().getInt();
+        this.message_number = extrator.flip2().getInt();
 
-        this.information = new byte[data.length - Packet.header_size ];
+        this.information = new byte[data.length - DataPacket.header_size ];
 
-        ByteBuffer.wrap(data,Packet.header_size,data.length - Packet.header_size).
+        ByteBuffer.wrap(data,DataPacket.header_size,data.length - DataPacket.header_size).
                 get(this.information,
                 0,
-                data.length  - Packet.header_size );
+                data.length  - DataPacket.header_size );
     }
 
-    public DataPacket(byte[] data, int timestamp, int seq, int window, DataPacket.Flag flag){
-        this.information = data;
+    public DataPacket(byte[] data, int datalen, int timestamp, int seq, int message_number, DataPacket.Flag flag){
         this.timestamp = timestamp;
         this.seq = seq;
-        this.window = window;
+        this.message_number = message_number;
         this.flag = flag;
+        this.information = new byte[datalen];
+        ByteBuffer.wrap(data).get(this.information,0,datalen);
+    }
+
+    public DataPacket(byte[] data, int timestamp, int seq, int message_number, DataPacket.Flag flag){
+        this(data,data.length,timestamp,seq,message_number,flag);
+    }
+
+    public void setSeq(int seq){
+        this.seq = seq;
     }
 
     public int getTimestamp() {
@@ -96,8 +105,8 @@ public class DataPacket extends Packet {
         return seq;
     }
 
-    public int getWindow() {
-        return window;
+    public int getMessageNumber() {
+        return message_number;
     }
 
     public DataPacket.Flag getFlag() {
@@ -106,13 +115,12 @@ public class DataPacket extends Packet {
 
     public byte[] serialize(){
 
-        return BitManipulator.allocate(Packet.header_size + this.information.length).
+        return BitManipulator.allocate(DataPacket.header_size + this.information.length).
                 put(this.seq).
                 put(this.timestamp).
-                put(this.window, this.flag.mark(this.flag)).
+                put(this.message_number, this.flag.mark(this.flag)).
                 put(this.information).
                 array();
-
     }
 
     @Override
@@ -134,7 +142,7 @@ public class DataPacket extends Packet {
         return acc &&
                 (cp.getFlag().equals(this.flag)) &&
                 (cp.getSeq() == this.seq) &&
-                (cp.getWindow() == this.window) &&
+                (cp.getMessageNumber() == this.message_number) &&
                 (cp.getTimestamp() == this.timestamp);
 
     }

@@ -1,4 +1,4 @@
-package TransfereCC;
+package Test;
 
 import Transport.Socket;
 import Transport.Start.GCVListener;
@@ -14,12 +14,14 @@ public class Server {
     public static void main( String[] args ) {
 
         try {
+
             Socket cs = listener.accept();
 
             while (isRunning)
             {
-                byte[] data = cs.receive();
-                System.out.println("says: " + new String(data));
+                //byte[] data = cs.receive();
+                //System.out.println("says: " + new String(data));
+                Thread.sleep(10000);
             }
 
         }catch(IOException|InterruptedException e){

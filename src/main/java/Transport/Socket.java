@@ -49,6 +49,7 @@ public class Socket {
 
     public void close( short code ) throws IOException{
         System.out.println("Socket closed");
+        
         GCVListener.closeConnection(
                 this.channel.getOtherStationProperties().ip().toString() + this.channel.getOtherStationProperties().port());
 

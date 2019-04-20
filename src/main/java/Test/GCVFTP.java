@@ -63,9 +63,6 @@ public class GCVFTP {
 
         System.out.println(" min seq " + l.minseq());
 
-        l.show();
-
-
 
         DataPacket packet = new DataPacket(new byte[20], 0, 2, 4, DataPacket.Flag.SOLO);
 
@@ -74,9 +71,7 @@ public class GCVFTP {
         packet = new DataPacket(new byte[20], 0, 4, 4, DataPacket.Flag.SOLO);
 
         l.add( packet );
-
-        l.show();
-
+        
         IntervalPacket tmp = l.take();
 
         System.out.println(tmp.min() + " - " + tmp.max());

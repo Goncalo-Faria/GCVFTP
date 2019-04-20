@@ -7,11 +7,15 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class IntervalPacket {
 
     private int min;
     private int max;
+    ReadWriteLock wrl = new ReentrantReadWriteLock();
 
     private LinkedList<DataPacket> l = new LinkedList<>();
 
@@ -20,33 +24,57 @@ public class IntervalPacket {
         l.add(p);
     }
 
-    public synchronized int min(){
-        return min;
-    }
-
-    public synchronized int max(){
-        return max;
-    }
-
-    public synchronized boolean isSingleton(){
-        return this.max == this.min;
-    }
-
-    public synchronized  boolean less(IntervalPacket x){
-        IntervalPacket a = ( this.toString().compareTo(x.toString()) < 0 ) ? this : x;
-        IntervalPacket b = ( this.toString().compareTo(x.toString()) < 0 ) ? x : this;
-
-        synchronized (a) {
-            synchronized (b) {
-                /*argument is less than*/
-                return (this.max < x.min());
-            }
+    public int min(){
+        wrl.readLock().lock();
+        try {
+            return min;
+        }finally {
+            wrl.readLock().unlock();
         }
     }
 
-    public synchronized boolean less(int x){
+    public int max(){
+        wrl.readLock().lock();
+        try {
+            return max;
+        }finally {
+            wrl.readLock().unlock();
+        }
+    }
+
+    public boolean isSingleton(){
+        wrl.readLock().lock();
+        try {
+            return this.max == this.min;
+        }finally {
+            wrl.readLock().unlock();
+        }
+    }
+
+    public boolean less(IntervalPacket x){
+        IntervalPacket a = ( this.toString().compareTo(x.toString()) < 0 ) ? this : x;
+        IntervalPacket b = ( this.toString().compareTo(x.toString()) < 0 ) ? x : this;
+
+        a.wrl.readLock().lock();
+        b.wrl.readLock().lock();
+
+        try{
+            return (this.max < x.min());
+        }finally{
+            a.wrl.readLock().unlock();
+            b.wrl.readLock().unlock();   
+        }
+
+    }
+
+    public boolean less(int x){
         /*argument is less than*/
-        return (this.min > x );
+        wrl.readLock().lock();
+        try {
+            return (this.min > x );
+        }finally {
+            wrl.readLock().unlock();
+        }
     }
 
     public boolean intersects(IntervalPacket x){
@@ -54,40 +82,59 @@ public class IntervalPacket {
         IntervalPacket a = ( this.toString().compareTo(x.toString()) < 0 ) ? this : x;
         IntervalPacket b = ( this.toString().compareTo(x.toString()) < 0 ) ? x : this;
 
-        synchronized (a) {
-            synchronized (b) {
-                return (x.max() <= this.max && x.max() >= this.min()) || (x.min() <= this.max && x.min() >= this.min);
-            }
+        a.wrl.readLock().lock();
+        b.wrl.readLock().lock();
+
+        try{
+            return (x.max() <= this.max && x.max() >= this.min()) || (x.min() <= this.max && x.min() >= this.min);
+        }finally{
+            a.wrl.readLock().unlock();
+            b.wrl.readLock().unlock();   
         }
+        
     }
 
     public boolean canMerge(IntervalPacket x){
         IntervalPacket a = ( this.toString().compareTo(x.toString()) < 0 ) ? this : x;
         IntervalPacket b = ( this.toString().compareTo(x.toString()) < 0 ) ? x : this;
 
-        synchronized (a) {
-            synchronized (b) {
+        a.wrl.readLock().lock();
+        b.wrl.readLock().lock();
 
-                return (x.min() == this.max + 1) || (x.max() + 1 == this.min);
-            }
+        try{
+            return (x.min() == this.max + 1) || (x.max() + 1 == this.min);
+        }finally{
+            a.wrl.readLock().unlock();
+            b.wrl.readLock().unlock();   
         }
     }
 
-    public synchronized boolean contains(int x){
-        return ( this.min <= x ) && ( x <= this.max );
+    public boolean contains(int x){
+        wrl.readLock().lock();
+        try {
+            return ( this.min <= x ) && ( x <= this.max );
+        }finally {
+            wrl.readLock().unlock();
+        }
     }
 
-    public IntervalPacket(int x, DataPacket p){
-        l.add(p);
-    }
-
-    public synchronized Packet take(){
-        this.min++;
-        return l.poll();
+    public Packet take(){
+        this.wrl.writeLock().lock();
+        try{
+            this.min++;
+            return l.poll();
+        }finally{
+            this.wrl.writeLock().unlock();
+        }
     }
 
     public LinkedList<DataPacket> getpackets(){
-        return new LinkedList<DataPacket>(this.l);
+        wrl.readLock().lock();
+        try {
+            return new LinkedList<DataPacket>(this.l);
+        }finally{
+            wrl.readLock().unlock();
+        }
     }
 
     public int merge( IntervalPacket x ){
@@ -95,25 +142,32 @@ public class IntervalPacket {
         IntervalPacket a = ( this.toString().compareTo(x.toString()) < 0 ) ? this : x;
         IntervalPacket b = ( this.toString().compareTo(x.toString()) < 0 ) ? x : this;
 
-        synchronized (a) {
-            synchronized (b) {
+        a.wrl.writeLock().lock();
+        b.wrl.writeLock().lock();
 
-                if ( x.min() == this.max + 1 ) {/*se são contiguos integra*/
-                    this.max = x.max();
+        try{
 
-                    this.l.addAll( x.getpackets() );
-                    return 1;
-                }else if( x.max() + 1 == this.min ){
-                    this.min = x.min();
+            if ( x.min() == this.max + 1 ) {/*se são contiguos integra*/
+                this.max = x.max();
+
+                this.l.addAll( x.getpackets() );
+                return 1;
+            }else if( x.max() + 1 == this.min ){
+                this.min = x.min();
                 
-                    this.l.addAll( 0, x.getpackets() );
-                    return -1;
-                }
-
-                return 0;
-                /*indica se o merge foi feito*/
+                this.l.addAll( 0, x.getpackets() );
+                return -1;
             }
+
+            return 0;
+            /*indica se o merge foi feito*/
+        }finally{
+            a.wrl.writeLock().unlock();
+            b.wrl.writeLock().unlock();   
+        
         }
     }
+        
+    
 
 }

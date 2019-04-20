@@ -19,6 +19,10 @@ public class OK extends ControlPacket {
         this.ack = ack;
     }
 
+    public int getAck(){
+        return this.ack;
+    }
+
     public int size(){
         return size;
     }

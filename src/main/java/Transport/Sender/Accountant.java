@@ -18,7 +18,7 @@ import java.util.concurrent.locks.ReentrantLock;
 /* structure for 'accounting' traveling packets*/
 class Accountant {
 
-    private LinkedBlockingDeque<DataPacket> uncounted;
+    private LinkedBlockingQueue<DataPacket> uncounted;
     /*
      * List containing the packets in order that haven't been acked or are waiting to be sent.
      *
@@ -28,7 +28,7 @@ class Accountant {
     /*
      * Map that contains information of a stream state.
      * */
-    private LinkedBlockingDeque<Packet> sending = new LinkedBlockingDeque<Packet>();
+    private LinkedBlockingQueue<DataPacket> sending = new LinkedBlockingQueue<DataPacket>();
     /*
      * Packet Sending queue.
      *      the elements of the queue are either :
@@ -37,7 +37,6 @@ class Accountant {
      *
      * obs: why null? we want to keep the order in control packets.
      * */
-    private LinkedBlockingQueue<ControlPacket> control = new LinkedBlockingQueue<ControlPacket>();
     /*
      * List of control packets waiting to be sent.
      * */
@@ -61,7 +60,7 @@ class Accountant {
      * */
 
     public Accountant(int stock, int seq, FlowWindow window){
-        this.uncounted = new LinkedBlockingDeque<DataPacket>(stock);
+        this.uncounted = new LinkedBlockingQueue<DataPacket>(stock);
         this.seq = new AtomicInteger(seq);
         this.window = window;
 
@@ -69,7 +68,6 @@ class Accountant {
 
     void data( DataPacket value) throws InterruptedException{
 
-        uncounted.putLast(value);
         /* espera pela oportunidade para colocar o pacote no sistema*/
 
         int stream_id = value.getMessageNumber();
@@ -84,10 +82,11 @@ class Accountant {
         }
 
         value.setSeq(this.seq());
+        uncounted.put(value);
 
         /* atribui um número de sequência ao datapacket */
 
-        sending.putLast(value);
+        sending.put(value);
         /* põe o datapacket na fila de envio */
     }
 
@@ -98,22 +97,13 @@ class Accountant {
         DataPacket packet;
 
         do{
-            packet = this.uncounted.takeFirst();
+            packet = this.uncounted.take();
             this.streams.get(packet.getMessageNumber()).decrement();
             /* decrementa o número de pacotes em falta do stream*/
 
         }while( packet.getSeq() < x );/* todos os pacotes com número de sequência inferior */
         /* TODO: Assegurar que é suportada ordem circular */
 
-    }
-
-    void control(ControlPacket p) throws InterruptedException, NotActiveException{
-        if( !this.at.get() )
-            throw new NotActiveException();
-
-        sending.putFirst(null);/*põe indicação de pacote de controlo no inicio da fila de envio*/
-
-        control.put(p);/* põe pacote de controlo na fila  de pacotes de controlo*/
     }
 
     void nack(List<Integer> missing) throws InterruptedException, NotActiveException {
@@ -126,7 +116,7 @@ class Accountant {
         for( Integer mss : missing)
             while (it.hasNext()) {
                 DataPacket packet = it.next();
-                if(packet.getSeq() == mss) { this.sending.putFirst(packet); }
+                if(packet.getSeq() == mss) { this.sending.put(packet); }
             }
     }
 
@@ -169,16 +159,25 @@ class Accountant {
 
     }
 
-    Packet get() throws InterruptedException, NotActiveException{
-        /* método para o sendworker*/
+    DataPacket get() throws InterruptedException, NotActiveException{
+        /* método para o sendworker */
         if( !this.at.get() )
             throw new NotActiveException();
 
-        Packet index = sending.takeFirst();
+        DataPacket index = sending.take();
 
-        if (index == null)/* tem de mandar pacote de controlo*/
-                return control.take();
-            // procura o index
+        // procura o index
+        return index;
+    }
+
+    DataPacket poll() throws InterruptedException, NotActiveException{
+        /* método para o sendworker */
+        if( !this.at.get() )
+            throw new NotActiveException();
+
+        DataPacket index = sending.poll();
+
+        // procura o index
         return index;
     }
 

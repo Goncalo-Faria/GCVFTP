@@ -3,6 +3,7 @@ package Transport.Sender;
 
 import Transport.ControlPacketTypes.BYE;
 import Transport.ControlPacketTypes.HI;
+import Transport.ControlPacketTypes.OK;
 import Transport.ControlPacketTypes.SURE;
 import Transport.GCVConnection;
 import Transport.TransmissionTransportChannel;
@@ -11,6 +12,7 @@ import Transport.Unit.DataPacket;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.NotActiveException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -43,16 +45,23 @@ public class SendGate {
      * manda dados
      * */
 
-    public SendGate(SenderProperties me, TransmissionTransportChannel ch, int seq, long initialperiod) throws IOException {
+    public SendGate(SenderProperties me, TransmissionTransportChannel ch, int our_seq, long initialperiod) throws IOException {
         System.out.println("SendGate created");
         this.ch = ch;
         this.properties = me;
-        this.send_buffer = new Accountant(me.transmissionchannel_buffer_size(),seq,me.window());
-        this.worker = new SendWorker(ch, send_buffer,initialperiod,me);
+        this.send_buffer = new Accountant(me.transmissionchannel_buffer_size(),our_seq ,me.window());
+        this.worker = new SendWorker(ch, send_buffer, initialperiod, me);
+    }
+
+    public SendGate(SenderProperties me, TransmissionTransportChannel ch, long initialperiod) throws IOException {
+        System.out.println("SendGate created");
+        this.ch = ch;
+        this.properties = me;
+        this.send_buffer = new Accountant(me.transmissionchannel_buffer_size(), this.handshake(), me.window());
+        this.worker = new SendWorker(ch, send_buffer, initialperiod, me);
     }
 
     public void confirm_handshake() throws  IOException{
-
         this.ch.sendPacket( new SURE(SURE.ack_hi,this.connection_time()));
     }
 
@@ -72,6 +81,13 @@ public class SendGate {
     public void bye( short code ) throws IOException{
         this.ch.sendPacket(new BYE(code,
                 this.connection_time()));
+    }
+    
+    public void ok(int last_seq) throws IOException{
+        this.ch.sendPacket( 
+            new OK((short)0, 
+            this.connection_time(), 
+            last_seq) );
     }
 
     private int connection_time(){

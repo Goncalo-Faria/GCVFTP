@@ -71,7 +71,7 @@ public class GCVFTP {
         packet = new DataPacket(new byte[20], 0, 4, 4, DataPacket.Flag.SOLO);
 
         l.add( packet );
-        
+
         IntervalPacket tmp = l.take();
 
         System.out.println(tmp.min() + " - " + tmp.max());

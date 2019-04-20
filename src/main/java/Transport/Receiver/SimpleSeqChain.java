@@ -105,6 +105,15 @@ public class SimpleSeqChain {
         }
     }
 
+    public IntervalPacket peek(){
+        wrl.readLock().lock();
+        try {
+            return list.peek();
+        }finally {
+            wrl.readLock().unlock();
+        }
+    }
+
     public void clear(){
         wrl.writeLock().lock();
         try{

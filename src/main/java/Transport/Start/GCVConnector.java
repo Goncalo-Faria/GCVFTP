@@ -94,7 +94,7 @@ public class GCVConnector implements Connector {
                                 GCVConnection.receive_buffer_size
                                 );
 
-                        return new Socket(cs,this.in_properties, out_properties, hello_packet.getSeq() ,response_hello_packet.getSeq());
+                        return new Socket(cs,this.in_properties, out_properties, response_hello_packet.getSeq(), hello_packet.getSeq());
                     }
                 }
 

@@ -3,6 +3,7 @@ package Transport.Receiver;
 import java.time.LocalDateTime;
 import Transport.TransmissionTransportChannel;
 import Transport.Receiver.ReceiveWorker;
+import Transport.Unit.*;
 
 public class ReceiveGate {
 
@@ -27,8 +28,20 @@ public class ReceiveGate {
         );
 
         this.worker = new ReceiveWorker(channel, receive_buffer, me);
+        
     }
 
+    public int getLastSeq(){
+        return receive_buffer.getLastAck();
+    }
+
+    public ControlPacket control() throws InterruptedException{
+        return this.receive_buffer.getControlPacket();
+    }
+
+    public DataPacket data() throws InterruptedException{
+        return this.receive_buffer.getDataPacket();
+    }
 
     public void close(){
         System.out.println("ReceiveGate closed");

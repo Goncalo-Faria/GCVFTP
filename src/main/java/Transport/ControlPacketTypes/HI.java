@@ -15,7 +15,7 @@ public class HI extends ControlPacket {
         super(ControlPacket.Type.HI,extendedtype,timestamp);
         this.maxpacket=maxpacket;
         this.maxwindow=maxwindow;
-        this.seq= 1;//(int)(Math.random()*Integer.MAX_VALUE);
+        this.seq = (int)(Math.random()*Integer.MAX_VALUE);
     }
 
     public HI( BitManipulator extrator ){

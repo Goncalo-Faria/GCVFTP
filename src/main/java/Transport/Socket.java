@@ -11,7 +11,10 @@ import Transport.Unit.Packet;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.DatagramSocket;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 
 public class Socket {
 
@@ -27,18 +30,18 @@ public class Socket {
     private TransmissionTransportChannel channel ;
 
 
-    public Socket(SenderProperties me, ReceiverProperties caller, int send_seq) throws IOException {
-        this(me,caller,send_seq,1);
+    public Socket(SenderProperties me, ReceiverProperties caller, int their_seq) throws IOException {
+        this(me,caller,their_seq,1);
     }
 
-    public Socket(SenderProperties me, ReceiverProperties caller, int send_seq, int num_executors) throws IOException {
+    public Socket(SenderProperties me, ReceiverProperties caller, int their_seq, int num_executors) throws IOException {
         System.out.println("Socket created");
         this.channel = new TransmissionTransportChannel(
                 me,
                 caller);
 
-        this.sgate = new SendGate(me,channel,send_seq,initial_sending_period);
-        this.rgate = new ReceiveGate(caller,channel,this.sgate.handshake());
+        this.sgate = new SendGate(me,channel,initial_sending_period);
+        this.rgate = new ReceiveGate(caller, channel, their_seq);
         this.actuary = new Executor(sgate, rgate);
 
         this.workers = new Thread[num_executors];
@@ -49,19 +52,19 @@ public class Socket {
         }
     }
 
-    public Socket(DatagramSocket in, SenderProperties me, ReceiverProperties caller, int send_seq , int receive_seq) throws IOException {
-        this(in,me,caller,send_seq, receive_seq,1);
+    public Socket(DatagramSocket in, SenderProperties me, ReceiverProperties caller, int their_seq, int our_seq) throws IOException {
+        this(in,me,caller,their_seq,our_seq,1);
     }
 
-    public Socket(DatagramSocket in, SenderProperties me, ReceiverProperties caller, int send_seq , int receive_seq, int num_executors) throws IOException {
+    public Socket(DatagramSocket in, SenderProperties me, ReceiverProperties caller, int their_seq, int our_seq, int num_executors) throws IOException {
         System.out.println("Socket created");
         this.channel = new TransmissionTransportChannel(
                 in,
                 me,
                 caller);
 
-        this.sgate = new SendGate(me,channel,send_seq,initial_sending_period);
-        this.rgate = new ReceiveGate(caller,channel,receive_seq);
+        this.sgate = new SendGate(me,channel,our_seq,initial_sending_period);
+        this.rgate = new ReceiveGate(caller,channel,their_seq);
 
         this.sgate.confirm_handshake();
 
@@ -102,8 +105,15 @@ public class Socket {
         this.sgate.send(io);
     }
 
-    public byte[] receive() throws IOException {
-        return new byte[0];
+    public OutputStream send() throws  IOException, InterruptedException{
+        PipedOutputStream producer = new PipedOutputStream();
+        PipedInputStream consumer = new PipedInputStream(producer);
+        this.sgate.send(consumer);
+        return producer;
+    }
+
+    public InputStream receive() throws InterruptedException {
+        return this.actuary.getStream();
     }
 
     public void restart() throws IOException{

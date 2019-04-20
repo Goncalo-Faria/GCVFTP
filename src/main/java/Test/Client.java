@@ -22,7 +22,7 @@ public class Client {
                 cs.send(message.getBytes());
                 Thread.sleep(500);
             }
-            cs.close((short)69);
+
         } catch(IOException | TimeoutException| InterruptedException e){
             e.printStackTrace();
         }

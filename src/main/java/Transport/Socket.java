@@ -20,10 +20,18 @@ public class Socket {
     private SendGate sgate ;
     private ReceiveGate rgate;
 
+    private Thread[] workers;
+
+    private Executor actuary;
+
     private TransmissionTransportChannel channel ;
 
 
     public Socket(SenderProperties me, ReceiverProperties caller, int send_seq) throws IOException {
+        this(me,caller,send_seq,1);
+    }
+
+    public Socket(SenderProperties me, ReceiverProperties caller, int send_seq, int num_executors) throws IOException {
         System.out.println("Socket created");
         this.channel = new TransmissionTransportChannel(
                 me,
@@ -31,10 +39,21 @@ public class Socket {
 
         this.sgate = new SendGate(me,channel,send_seq,initial_sending_period);
         this.rgate = new ReceiveGate(caller,channel,this.sgate.handshake());
+        this.actuary = new Executor(sgate, rgate);
 
+        this.workers = new Thread[num_executors];
+        
+        for( int i = 0; i < num_executors; i++){
+            this.workers[i] = new Thread(this.actuary);
+            this.workers[i].start();
+        }
     }
 
     public Socket(DatagramSocket in, SenderProperties me, ReceiverProperties caller, int send_seq , int receive_seq) throws IOException {
+        this(in,me,caller,send_seq, receive_seq,1);
+    }
+
+    public Socket(DatagramSocket in, SenderProperties me, ReceiverProperties caller, int send_seq , int receive_seq, int num_executors) throws IOException {
         System.out.println("Socket created");
         this.channel = new TransmissionTransportChannel(
                 in,
@@ -45,11 +64,23 @@ public class Socket {
         this.rgate = new ReceiveGate(caller,channel,receive_seq);
 
         this.sgate.confirm_handshake();
+
+        this.actuary = new Executor(sgate, rgate);
+
+        this.workers = new Thread[num_executors];
+
+        for( int i = 0; i < num_executors; i++){
+            this.workers[i] = new Thread(this.actuary);
+            this.workers[i].start();
+        }
+
     }
 
     public void close( short code ) throws IOException{
         System.out.println("Socket closed");
         
+        this.actuary.terminate();
+
         GCVListener.closeConnection(
                 this.channel.getOtherStationProperties().ip().toString() + this.channel.getOtherStationProperties().port());
 

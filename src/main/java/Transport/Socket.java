@@ -1,5 +1,6 @@
 package Transport;
 
+import Transport.ControlPacketTypes.SURE;
 import Transport.Sender.SendGate;
 import Transport.Receiver.ReceiveGate;
 import Transport.Start.GCVListener;
@@ -15,14 +16,15 @@ import java.io.OutputStream;
 import java.net.DatagramSocket;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Socket {
 
-    private long initial_sending_period = GCVConnection.rate_control_interval;
+    private final long initial_sending_period = GCVConnection.rate_control_interval;
 
     private SendGate sgate ;
     private ReceiveGate rgate;
-
+    private AtomicBoolean persistent = new AtomicBoolean(true);
     private Thread[] workers;
 
     private Executor actuary;
@@ -66,7 +68,7 @@ public class Socket {
         this.sgate = new SendGate(me,channel,our_seq,initial_sending_period);
         this.rgate = new ReceiveGate(caller,channel,their_seq);
 
-        this.sgate.confirm_handshake();
+        this.sgate.sendSure(SURE.ack_hi);
 
         this.actuary = new Executor(sgate, rgate,their_seq);
 
@@ -87,7 +89,7 @@ public class Socket {
         GCVListener.closeConnection(
                 this.channel.getOtherStationProperties().ip().toString() + this.channel.getOtherStationProperties().port());
 
-        this.sgate.bye(code);
+        this.sgate.sendBye(code);
 
         this.sgate.close();
 
@@ -117,7 +119,7 @@ public class Socket {
     }
 
     public void restart() throws IOException{
-        this.sgate.handshake();
+        this.sgate.sendHandshake((short)0);
     }
 
 }

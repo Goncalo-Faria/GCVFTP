@@ -36,11 +36,18 @@ public class SendWorker extends TimerTask {
         try {
             Executor.add(Executor.ActionType.SYN);
             if( active.get() ) {
+                int sent = 0;
                 for(int i= 0; i< this.properties.window().value() ; i++){
                     DataPacket packet = send_buffer.poll();
                     if( packet != null)
                         channel.sendPacket(packet);
+                    else
+                        sent++;
                 }
+
+                if(sent == 0)
+                    Executor.add(Executor.ActionType.KEEPALIVE);
+
             }
         }catch ( InterruptedException| IOException e){
             e.printStackTrace();

@@ -13,7 +13,7 @@ public class FlowWindow {
 
     private final int maxwindow;
 
-    private AtomicInteger value = new AtomicInteger(10);
+    private AtomicInteger value = new AtomicInteger(100);
 
     public FlowWindow( int maxwindow){
         this.maxwindow = maxwindow;
@@ -25,5 +25,10 @@ public class FlowWindow {
 
     public int getMaxWindow(){
         return maxwindow;
+    }
+
+    public int getTimeout(){
+        /* calculate the current timeout time */
+        return 100000;
     }
 }

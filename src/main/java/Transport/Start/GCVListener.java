@@ -81,7 +81,8 @@ public class GCVListener implements Listener {
                     message_port,
                     this.mtu,
                     this.maxwindow,
-                    GCVConnection.send_buffer_size);
+                    GCVConnection.send_buffer_size,
+                    false);
 
             ReceiverProperties caller_station_properties = new ReceiverProperties(
                     caller_ip,

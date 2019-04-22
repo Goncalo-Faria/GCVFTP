@@ -4,21 +4,28 @@ import Transport.FlowWindow;
 import Transport.Start.TransportStationProperties;
 
 import java.net.InetAddress;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 public class SenderProperties extends TransportStationProperties {
 
 
     private FlowWindow  window;
+    private AtomicBoolean persistent;
 
-    public SenderProperties(InetAddress ip, int port, int maxpacket, int maxwindow, int buffer){
+    public SenderProperties(InetAddress ip, int port, int maxpacket, int maxwindow, int buffer, boolean isPersistent){
         super(ip,port,maxpacket, buffer);
         this.window = new FlowWindow(maxwindow);
+        this.persistent = new AtomicBoolean(isPersistent);
 
     }
 
     public FlowWindow window(){
         return this.window;
+    }
+
+    public boolean isPersistent(){
+        return persistent.get();
     }
 
 }

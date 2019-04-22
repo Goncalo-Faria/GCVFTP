@@ -1,10 +1,7 @@
 package Transport.Sender;
 
 
-import Transport.ControlPacketTypes.BYE;
-import Transport.ControlPacketTypes.HI;
-import Transport.ControlPacketTypes.OK;
-import Transport.ControlPacketTypes.SURE;
+import Transport.ControlPacketTypes.*;
 import Transport.GCVConnection;
 import Transport.TransmissionTransportChannel;
 import Transport.Unit.DataPacket;
@@ -15,6 +12,7 @@ import java.io.InputStream;
 import java.io.NotActiveException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class SendGate {
@@ -57,17 +55,17 @@ public class SendGate {
         System.out.println("SendGate created");
         this.ch = ch;
         this.properties = me;
-        this.send_buffer = new Accountant(me.transmissionchannel_buffer_size(), this.handshake(), me.window());
+        this.send_buffer = new Accountant(me.transmissionchannel_buffer_size(), this.sendHandshake((short)0), me.window());
         this.worker = new SendWorker(ch, send_buffer, initialperiod, me);
     }
 
-    public void confirm_handshake() throws  IOException{
-        this.ch.sendPacket( new SURE(SURE.ack_hi,this.connection_time()));
+    public void sendSure(short extcode) throws  IOException{
+        this.ch.sendPacket( new SURE(extcode,this.connection_time()));
     }
 
-    public int handshake() throws IOException{
+    public int sendHandshake(short extcode) throws IOException{
         HI hello_packet = new HI(
-            (short)0,
+            extcode,
             this.connection_time() ,
             this.ch.getSelfStationProperties().packetsize(),
             this.properties.window().getMaxWindow() 
@@ -78,23 +76,49 @@ public class SendGate {
         return hello_packet.getSeq();
     }
 
-    public void bye( short code ) throws IOException{
-        this.ch.sendPacket(new BYE(code,
+    public void sendBye( short extcode ) throws IOException{
+        this.ch.sendPacket(new BYE(extcode,
+                this.connection_time()));
+    }
+
+    public void sendSup(short extcode) throws IOException{
+        this.ch.sendPacket(new SUP(extcode,
                 this.connection_time()));
     }
     
-    public void sendok(int last_seq) throws IOException{
+    public void sendOk(short extcode, int last_seq) throws IOException{
         this.ch.sendPacket( 
-            new OK((short)0, 
+            new OK(extcode,
             this.connection_time(), 
             last_seq) );
+    }
+
+    public void sendForgetit(short extcode)throws IOException {
+        this.ch.sendPacket( new FORGETIT(extcode, this.connection_time()) );
+    }
+
+    public void sendNack(short extcode ,List<Integer> losslist ) throws IOException{
+        if(!losslist.isEmpty()){
+            this.ch.sendPacket(
+                    new NOPE(extcode,
+                            this.connection_time(),
+                            losslist) );
+        }
     }
 
     public void gotok(int seq) throws InterruptedException, NotActiveException {
         this.send_buffer.ack(seq);
     }
 
-    private int connection_time(){
+    public void gotnack( List<Integer> losslist ) throws NotActiveException, InterruptedException{
+        this.send_buffer.nack(losslist);
+    }
+
+    public int getTimeout(){
+        return this.properties.window().getTimeout();
+    }
+
+    public int connection_time(){
         return (int)this.connection_start_time.until(LocalDateTime.now(), ChronoUnit.MILLIS);
     }
 

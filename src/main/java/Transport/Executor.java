@@ -24,7 +24,8 @@ public class Executor implements Runnable{
     public enum ActionType{
         CONTROL,
         DATA,
-        SYN
+        SYN,
+        KEEPALIVE
     }
 
     private static LinkedBlockingDeque<ActionType> executorQueue = new LinkedBlockingDeque<ActionType>();
@@ -45,6 +46,7 @@ public class Executor implements Runnable{
                 //}
                 break;
             case DATA : executorQueue.put(action); break;
+            case KEEPALIVE: executorQueue.put(action); break;
         }
     }
 
@@ -53,6 +55,7 @@ public class Executor implements Runnable{
             case CONTROL : self.control(); break;
             case DATA :  self.data(); break;
             case SYN :  self.syn(); break;
+            case KEEPALIVE: self.keepalive(); break;
         }
     }
 
@@ -62,6 +65,7 @@ public class Executor implements Runnable{
     private LinkedBlockingQueue<ExecutorPipe> socketoutput = new LinkedBlockingQueue<>();
     private AtomicBoolean active = new AtomicBoolean(true);
     private AtomicInteger lastsentack;
+    private AtomicInteger lastPacketTime = new AtomicInteger(-1);
 
     Executor(SendGate sgate, ReceiveGate rgate, int startseq){
         this.sgate = sgate;
@@ -74,6 +78,7 @@ public class Executor implements Runnable{
     }
 
     private void control(){
+        this.lastPacketTime.set(this.sgate.connection_time());
         try{
             ControlPacket packet = this.rgate.control();
             switch( packet.getType() ){
@@ -99,11 +104,11 @@ public class Executor implements Runnable{
         /* distribuir os dados em streams */
         /* encaminhar para streams */
         /*-------------------------*/
-
+        this.lastPacketTime.set(this.sgate.connection_time());
         try{
             DataPacket packet = this.rgate.data();
 
-            System.out.println(" ::::> DATA <:::: " + packet.getSeq() +  " ops ::" );
+            //System.out.println(" ::::> DATA <:::: " + packet.getSeq() +  " ops ::" );
 
             if ( packet.getFlag().equals(DataPacket.Flag.FIRST) || packet.getFlag().equals(DataPacket.Flag.SOLO) ){
                 ExecutorPipe inc = new Executor.ExecutorPipe();
@@ -130,14 +135,40 @@ public class Executor implements Runnable{
 
     private void syn(){
         /*verificar condições maradas e mandar nack ou ack */
-        try {
-            int curack = this.rgate.getLastSeq();
-            if(curack > this.lastsentack.get() ) {
-                this.sgate.sendok(this.rgate.getLastSeq());
-                this.lastsentack.set(curack);
-                System.out.println("SENT ACK");
+        int difs = this.sgate.connection_time() - this.lastPacketTime.get();
+
+        if( difs >= this.sgate.getTimeout() ){
+            try {
+                this.sgate.sendForgetit((short) 303);
+                /* do something about it*/
+                /* like close socket */
+                System.out.println("TIMEOUT");
+            }catch(IOException e){
+                e.printStackTrace();
             }
-        }catch( IOException e ){
+
+        }else {
+            try {
+                int curack = this.rgate.getLastSeq();
+                if (curack > this.lastsentack.get()) {
+                    /**/
+                    this.sgate.sendOk((short)0,this.rgate.getLastSeq());
+                    this.lastsentack.set(curack);
+                    System.out.println("SENT ACK");
+                } else {
+                    this.sgate.sendNack((short)0,this.rgate.getLossList());
+                }
+            } catch (IOException e) {
+                System.out.println("SENT NACK");
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void keepalive(){
+        try {
+            this.sgate.sendSup((short) 0);
+        }catch (IOException e){
             e.printStackTrace();
         }
     }
@@ -161,12 +192,19 @@ public class Executor implements Runnable{
     }
     private void sup(SUP packet){
         System.out.println(" ::::> received a sup packet <::::");
+        this.lastPacketTime.set(this.sgate.connection_time());
     }
     private void forgetit(FORGETIT packet){
         System.out.println(" ::::> received a forgetit packet <::::");
     }
-    private void nope(NOPE packet){
+    private void nope(NOPE packet) {
         System.out.println(" ::::> received a nope packet <::::");
+        try{
+            this.sgate.gotnack(packet.getLossList());
+        }catch (InterruptedException|NotActiveException e){
+            e.printStackTrace();
+        }
+
     }
 
     public void run(){

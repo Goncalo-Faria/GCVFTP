@@ -18,7 +18,7 @@ public class Client {
         try {
             Socket cs = connect.bind(InetAddress.getLocalHost());
             int i = 0;
-            while ( ++i < 40 ) {
+            while ( ++i < 2000 ) {
                 cs.send((message + " " + i).getBytes());
                 Thread.sleep(100);
                 //System.out.println("::::: i'm sending shit " + i );

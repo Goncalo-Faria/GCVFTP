@@ -3,6 +3,7 @@ package Transport.Receiver;
 import Transport.Unit.DataPacket;
 
 import java.util.LinkedList;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -78,6 +79,31 @@ public class SimpleSeqChain {
         }
     }
 
+    public List<Integer> dual(){
+        wrl.readLock().lock();
+        try{
+            List<Integer> dualrep = new LinkedList<Integer>();
+
+            list.start();
+
+            IntervalPacket pst = null,cur;
+
+            while(list.hasNext()){
+                cur = list.next().value();
+
+                if( cur != null && pst != null ){
+                    dualrep.add(pst.max() + 1);
+                    dualrep.add(cur.min() - 1);
+                }
+                pst = cur;
+            }
+
+            return dualrep;
+
+        }finally {
+            wrl.readLock().unlock();
+        }
+    }
 
     public IntervalPacket take(){
         wrl.writeLock().lock();

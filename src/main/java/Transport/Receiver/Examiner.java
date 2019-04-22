@@ -54,28 +54,30 @@ public class Examiner {
         if( !this.at.get() )
             throw new NotActiveException();
 
-        uncounted.add(packet);
-        /* verificar se posso tirar acks*/
+        if( packet.getSeq() > this.last_acked_seq.get() ) {
+            uncounted.add(packet);
+            /* verificar se posso tirar acks*/
 
-        if( last_acked_seq.get() + 1 == uncounted.minseq() ){
-            IntervalPacket p = uncounted.take();
+            if (last_acked_seq.get() + 1 == uncounted.minseq()) {
+                IntervalPacket p = uncounted.take();
 
-            last_acked_seq.set(p.max());
+                last_acked_seq.set(p.max());
 
-            List<DataPacket> lisp = p.getpackets();
+                List<DataPacket> lisp = p.getpackets();
 
-            this.data.addAll(lisp);
+                this.data.addAll(lisp);
 
-            lisp.forEach(
-                    lisppacket ->
-                {
-                    try{
-                        Executor.add(Executor.ActionType.DATA);
-                    }catch(Exception e){
-                        e.getStackTrace();
-                    }
-                }
-            );
+                lisp.forEach(
+                        lisppacket ->
+                        {
+                            try {
+                                Executor.add(Executor.ActionType.DATA);
+                            } catch (Exception e) {
+                                e.getStackTrace();
+                            }
+                        }
+                );
+            }
         }
     }
 
@@ -94,6 +96,10 @@ public class Examiner {
 
     public DataPacket getDataPacket() throws InterruptedException{
         return this.data.take();
+    }
+
+    public List<Integer> getLossList(){
+        return uncounted.dual();
     }
 
     public void terminate(){

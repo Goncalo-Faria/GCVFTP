@@ -1,6 +1,8 @@
 package Transport.Receiver;
 
 import java.time.LocalDateTime;
+import java.util.List;
+
 import Transport.TransmissionTransportChannel;
 import Transport.Receiver.ReceiveWorker;
 import Transport.Unit.*;
@@ -33,6 +35,10 @@ public class ReceiveGate {
 
     public int getLastSeq(){
         return receive_buffer.getLastAck();
+    }
+
+    public List<Integer> getLossList(){
+        return receive_buffer.getLossList();
     }
 
     public ControlPacket control() throws InterruptedException{

@@ -31,7 +31,8 @@ public class GCVConnector implements Connector {
                     my_port,
                     mtu,
                     max_window,
-                    GCVConnection.send_buffer_size);
+                    GCVConnection.send_buffer_size,
+                    true);
             
         }catch(UnknownHostException e){
             e.getStackTrace();

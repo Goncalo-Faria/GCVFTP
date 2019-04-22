@@ -83,11 +83,15 @@ public class SendGate {
                 this.connection_time()));
     }
     
-    public void ok(int last_seq) throws IOException{
+    public void sendok(int last_seq) throws IOException{
         this.ch.sendPacket( 
             new OK((short)0, 
             this.connection_time(), 
             last_seq) );
+    }
+
+    public void gotok(int seq) throws InterruptedException, NotActiveException {
+        this.send_buffer.ack(seq);
     }
 
     private int connection_time(){
@@ -101,13 +105,10 @@ public class SendGate {
         DataPacket packet = new DataPacket(
                 data,
                 this.connection_time(),
-                0,
                 ticket,
                 DataPacket.Flag.SOLO);
 
         this.send_buffer.data(packet);
-
-        this.send_buffer.finish(ticket);/*espera que seja tudo enviado e confirmado*/
 
     }
 
@@ -134,7 +135,6 @@ public class SendGate {
                         data,
                         flag,
                         this.connection_time(),
-                        0,
                         ticket,
                         DataPacket.Flag.SOLO);
 
@@ -146,14 +146,10 @@ public class SendGate {
                 new byte[0],
                 0,
                 this.connection_time(),
-                0,
                 ticket,
                 DataPacket.Flag.LAST);
 
         this.send_buffer.data( dp);
-
-        this.send_buffer.finish(ticket);/*espera que seja tudo enviado e confirmado*/
-
         /* desencrava*/
     }
 

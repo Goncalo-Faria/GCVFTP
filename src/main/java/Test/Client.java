@@ -9,8 +9,8 @@ import java.util.concurrent.TimeoutException;
 
 public class Client {
 
-    private static GCVConnector connect = new GCVConnector(7220,1000,20);
-    private static boolean isRunning = true;
+    private static GCVConnector connect = new GCVConnector(7220,200);
+
 
     public static void main( String[] args )  {
         String message = "very useful data, so they say";
@@ -18,9 +18,10 @@ public class Client {
         try {
             Socket cs = connect.bind(InetAddress.getLocalHost());
             int i = 0;
-            while (isRunning && ++i < 40 ) {
-                cs.send(message.getBytes());
-                Thread.sleep(500);
+            while ( ++i < 40 ) {
+                cs.send((message + " " + i).getBytes());
+                Thread.sleep(100);
+                //System.out.println("::::: i'm sending shit " + i );
             }
 
         } catch(IOException | TimeoutException| InterruptedException e){
@@ -28,7 +29,4 @@ public class Client {
         }
     }
 
-    public static void stop() {
-        isRunning = false;
-    }
 }

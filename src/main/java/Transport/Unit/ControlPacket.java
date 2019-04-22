@@ -82,4 +82,14 @@ public abstract class ControlPacket extends Packet {
                 (cp.getTimestamp() == this.timestamp);
 
     }
+
+    @Override
+    public String toString(){
+        StringBuilder sb = new StringBuilder();
+        sb.append("x-----------x-----------x--------x-------x----x--x--x-x-x-x--x \n");
+        sb.append("type " + this.getType());
+        sb.append("extcode " + this.getExtendedtype());
+        sb.append("timestamp " + this.getTimestamp());
+        return sb.toString();
+    }
 }

@@ -18,7 +18,7 @@ import java.io.PipedOutputStream;
 
 public class Socket {
 
-    private long initial_sending_period = 100;
+    private long initial_sending_period = GCVConnection.rate_control_interval;
 
     private SendGate sgate ;
     private ReceiveGate rgate;
@@ -42,7 +42,7 @@ public class Socket {
 
         this.sgate = new SendGate(me,channel,initial_sending_period);
         this.rgate = new ReceiveGate(caller, channel, their_seq);
-        this.actuary = new Executor(sgate, rgate);
+        this.actuary = new Executor(sgate, rgate, their_seq);
 
         this.workers = new Thread[num_executors];
         
@@ -68,7 +68,7 @@ public class Socket {
 
         this.sgate.confirm_handshake();
 
-        this.actuary = new Executor(sgate, rgate);
+        this.actuary = new Executor(sgate, rgate,their_seq);
 
         this.workers = new Thread[num_executors];
 

@@ -11,6 +11,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import Transport.Receiver.Examiner;
 import Transport.Receiver.ReceiveGate;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import Transport.Sender.SendGate;
 import Transport.Unit.*;
 import Transport.ControlPacketTypes.*;
@@ -30,8 +32,19 @@ public class Executor implements Runnable{
     public static void add(ActionType action) throws InterruptedException{
         switch( action ){
             case CONTROL : executorQueue.putFirst(action); break;
-            case SYN : executorQueue.putFirst(action); break;
-            case DATA :  executorQueue.put(action); break;
+            case SYN :
+
+                //try {
+                    //if (!executorQueue.peek().equals(ActionType.SYN)) {
+                        executorQueue.putFirst(action);
+                        //System.out. println(" PUT SYN ");
+                    //}
+                //}catch (NullPointerException e){
+                 //   System.out. println(" PUT SYN ");
+                  //  executorQueue.putFirst(action);
+                //}
+                break;
+            case DATA : executorQueue.put(action); break;
         }
     }
 
@@ -48,10 +61,12 @@ public class Executor implements Runnable{
     private ConcurrentHashMap< Integer, ExecutorPipe > map = new ConcurrentHashMap<>();
     private LinkedBlockingQueue<ExecutorPipe> socketoutput = new LinkedBlockingQueue<>();
     private AtomicBoolean active = new AtomicBoolean(true);
+    private AtomicInteger lastsentack;
 
-    Executor(SendGate sgate, ReceiveGate rgate){
+    Executor(SendGate sgate, ReceiveGate rgate, int startseq){
         this.sgate = sgate;
         this.rgate = rgate;
+        this.lastsentack = new AtomicInteger(startseq);
     }
 
     public void terminate(){
@@ -84,6 +99,7 @@ public class Executor implements Runnable{
         /* distribuir os dados em streams */
         /* encaminhar para streams */
         /*-------------------------*/
+
         try{
             DataPacket packet = this.rgate.data();
 
@@ -115,7 +131,12 @@ public class Executor implements Runnable{
     private void syn(){
         /*verificar condições maradas e mandar nack ou ack */
         try {
-            this.sgate.ok(this.rgate.getLastSeq());
+            int curack = this.rgate.getLastSeq();
+            if(curack > this.lastsentack.get() ) {
+                this.sgate.sendok(this.rgate.getLastSeq());
+                this.lastsentack.set(curack);
+                System.out.println("SENT ACK");
+            }
         }catch( IOException e ){
             e.printStackTrace();
         }
@@ -124,8 +145,13 @@ public class Executor implements Runnable{
     private void hi(HI packet){
         System.out.println(" ::::> received an hi packet <:::: ");
     }
-    private void ok(OK packet){
+    private void ok(OK packet) throws InterruptedException{
         System.out.println(" ::::> received an " + packet.getAck() + " ok " + packet.getAck() + " packet <::::");
+        try{
+            this.sgate.gotok(packet.getAck());
+        }catch(NotActiveException e){
+            e.printStackTrace();
+        }
     }
     private void sure(SURE packet){
         System.out.println(" ::::> received a sure packet <::::");
@@ -145,9 +171,9 @@ public class Executor implements Runnable{
 
     public void run(){
         try{
-            System.out.println(" I AM ALIVE ");
-            while( active.get() )
+            while( active.get() ) {
                 Executor.get(this);
+            }
         }catch( InterruptedException e ){
             e.printStackTrace();
         }

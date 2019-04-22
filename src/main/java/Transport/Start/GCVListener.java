@@ -35,7 +35,6 @@ public class GCVListener implements Listener {
 
     private int mtu = GCVConnection.stdmtu;
     private int maxwindow = 1024*8;
-    private int stock = 10;
     private InetAddress localhost;
 
     public GCVListener(){
@@ -54,10 +53,9 @@ public class GCVListener implements Listener {
 
     }
 
-    public GCVListener( int mtu, int maxwindow, int sendingstock) throws UnknownHostException{
+    public GCVListener( int mtu, int maxwindow) throws UnknownHostException{
         this.mtu = mtu;
         this.maxwindow = maxwindow;
-        this.stock = sendingstock;
         this.localhost = InetAddress.getLocalHost();
         GCVListener.activate();
     }
@@ -83,13 +81,13 @@ public class GCVListener implements Listener {
                     message_port,
                     this.mtu,
                     this.maxwindow,
-                    this.stock);
+                    GCVConnection.send_buffer_size);
 
             ReceiverProperties caller_station_properties = new ReceiverProperties(
                     caller_ip,
                     caller_port,
                     packet.getMTU(),
-                    packet.getMaxWindow());
+                    GCVConnection.receive_buffer_size);
 
             System.out.println("Almost there");
 

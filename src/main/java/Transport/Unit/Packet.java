@@ -11,10 +11,10 @@ public abstract class Packet {
         boolean type = BitManipulator.msb(udp_data,0);
 
         if(type){
-            System.out.print("ctrl : ");
+            System.out.println("ctrl : ");
             return ControlPacket.parseControl(udp_data);
         }else{
-            System.out.print("data : ");
+            System.out.println("data : ");
             return new DataPacket(udp_data);
         }
     }

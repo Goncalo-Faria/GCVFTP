@@ -24,10 +24,6 @@ class Accountant {
      *
      * TODO : Make it a circular List.
      * */
-    private ConcurrentSkipListMap<Integer,StreamState> streams = new ConcurrentSkipListMap<Integer,StreamState>(); // stream_id -> stream_state
-    /*
-     * Map that contains information of a stream state.
-     * */
     private LinkedBlockingQueue<DataPacket> sending = new LinkedBlockingQueue<DataPacket>();
     /*
      * Packet Sending queue.
@@ -70,17 +66,6 @@ class Accountant {
 
         /* espera pela oportunidade para colocar o pacote no sistema*/
 
-        int stream_id = value.getMessageNumber();
-        /* extrai o número de stream do pacote*/
-
-        if( this.streams.containsKey(stream_id) ){
-            /* regista a mensagem como pertencendo ao stream */
-            this.streams.get(stream_id).increment(value);
-        }else{
-            /* cria um novo stream */
-            this.streams.put(stream_id,new StreamState(value,this.rl.newCondition()));
-        }
-
         value.setSeq(this.seq());
         uncounted.put(value);
 
@@ -98,7 +83,7 @@ class Accountant {
 
         do{
             packet = this.uncounted.take();
-            this.streams.get(packet.getMessageNumber()).decrement();
+
             /* decrementa o número de pacotes em falta do stream*/
 
         }while( packet.getSeq() < x );/* todos os pacotes com número de sequência inferior */
@@ -129,7 +114,7 @@ class Accountant {
         at.set(false);
 
         this.uncounted.clear();
-        this.streams.clear();
+
         this.sending.clear();
 
     }
@@ -139,24 +124,6 @@ class Accountant {
         return this.seq.accumulateAndGet(0,
                 (x,y) -> Integer.max(++x % Integer.MAX_VALUE, y)
         );
-    }
-
-    public void finish(int stream_id) throws InterruptedException, NotActiveException, StreamCorruptedException {
-        if( !this.at.get() )
-            throw new NotActiveException();
-
-        this.rl.lock();
-        try{
-            StreamState st = this.streams.get(stream_id);
-
-            while ( st.hasfinished() )/* espera passivamente pelo o termino do stream*/
-                st.await();
-        }finally {
-            this.rl.unlock();
-        }
-
-        this.streams.remove(stream_id);/* remove o stream do accountant*/
-
     }
 
     DataPacket get() throws InterruptedException, NotActiveException{
@@ -184,12 +151,10 @@ class Accountant {
     class StreamState {
 
         private boolean itsfinal;
-        private Condition finished;
         private int count = 1;
 
-        StreamState(DataPacket p, Condition c){
+        StreamState(DataPacket p){
             this.itsfinal = p.getFlag().equals(DataPacket.Flag.SOLO) ;
-            this.finished = c;
         }
 
         synchronized void increment(DataPacket p){
@@ -200,8 +165,8 @@ class Accountant {
         synchronized void decrement(){
             count--;
 
-            if(count == 0)
-                finished.signalAll();
+            if(count == 0 && this.itsfinal)
+                this.notifyAll();
 
         }
 
@@ -209,8 +174,8 @@ class Accountant {
             return itsfinal && (count == 0);
         }
 
-        void await() throws InterruptedException{
-            this.finished.await();
+        synchronized void await() throws InterruptedException{
+            this.wait();
         }
 
     }

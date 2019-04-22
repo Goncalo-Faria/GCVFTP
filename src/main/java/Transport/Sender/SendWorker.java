@@ -34,7 +34,6 @@ public class SendWorker extends TimerTask {
 
     public void run(){
         try {
-            System.out.println("SYN");
             Executor.add(Executor.ActionType.SYN);
             if( active.get() ) {
                 for(int i= 0; i< this.properties.window().value() ; i++){

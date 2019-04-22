@@ -76,17 +76,16 @@ public class DataPacket extends Packet {
                 data.length  - DataPacket.header_size );
     }
 
-    public DataPacket(byte[] data, int datalen, int timestamp, int seq, int message_number, DataPacket.Flag flag){
+    public DataPacket(byte[] data, int datalen, int timestamp, int message_number, DataPacket.Flag flag){
         this.timestamp = timestamp;
-        this.seq = seq;
         this.message_number = message_number;
         this.flag = flag;
         this.information = new byte[datalen];
         ByteBuffer.wrap(data).get(this.information,0,datalen);
     }
 
-    public DataPacket(byte[] data, int timestamp, int seq, int message_number, DataPacket.Flag flag){
-        this(data,data.length,timestamp,seq,message_number,flag);
+    public DataPacket(byte[] data, int timestamp, int message_number, DataPacket.Flag flag){
+        this(data,data.length,timestamp, message_number,flag);
     }
 
     public void setSeq(int seq){
@@ -145,5 +144,17 @@ public class DataPacket extends Packet {
                 (cp.getMessageNumber() == this.message_number) &&
                 (cp.getTimestamp() == this.timestamp);
 
+    }
+
+    @Override
+    public String toString(){
+        StringBuilder sb = new StringBuilder();
+        sb.append("x-----------x-----------x--------x-------x----x--x--x-x-x-x--x \n");
+        sb.append("flag " + this.getFlag() + "\n");
+        sb.append("seq " + this.getSeq() + "\n");
+        sb.append("timestamp " + this.getTimestamp()+ "\n");
+        sb.append("streamid " + this.getMessageNumber()+ "\n");
+        sb.append(new String(this.getData()) + "\n");
+        return sb.toString();
     }
 }

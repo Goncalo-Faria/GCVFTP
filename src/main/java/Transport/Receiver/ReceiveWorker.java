@@ -34,7 +34,6 @@ public class ReceiveWorker implements Runnable{
             while( active.get() ) {
                 Packet packet = ch.receivePacket();
                 this.buffer.supply(packet);
-                System.out.println("got them");
             }
 
         }catch ( InterruptedException | IOException e){

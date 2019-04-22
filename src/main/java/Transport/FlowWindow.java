@@ -13,7 +13,7 @@ public class FlowWindow {
 
     private final int maxwindow;
 
-    private AtomicInteger value = new AtomicInteger(2);
+    private AtomicInteger value = new AtomicInteger(10);
 
     public FlowWindow( int maxwindow){
         this.maxwindow = maxwindow;

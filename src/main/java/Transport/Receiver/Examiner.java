@@ -21,6 +21,7 @@ public class Examiner {
 
     public Examiner(int maxcontrol, int maxdata, int seq){
         System.out.println(">>>>> theirs " + seq + "<<<<<<<");
+        //System.out.println("maxcontrol: " + maxcontrol + " maxdata: " + maxdata);
         this.control = new LinkedBlockingQueue<>(maxcontrol);
         this.uncounted =  new SimpleSeqChain(maxdata);
         this.last_acked_seq = new AtomicInteger(seq);
@@ -29,22 +30,6 @@ public class Examiner {
     public void supply(Packet packet) throws InterruptedException, NotActiveException{
         if( !this.at.get() )
             throw new NotActiveException();
-            
-        if(packet instanceof DataPacket) {
-            DataPacket dp = (DataPacket) packet;
-            System.out.println("x-----------x-----------x--------x-------x----x--x--x-x-x-x--x ");
-            System.out.println("flag " + dp.getFlag());
-            System.out.println("seq " + dp.getSeq());
-            System.out.println("timestamp " + dp.getTimestamp());
-            System.out.println("streamid " + dp.getMessageNumber());
-
-        }else{
-            ControlPacket cp = (ControlPacket)packet;
-            System.out.println("x-----------x-----------x--------x-------x----x--x--x-x-x-x--x ");
-            System.out.println("type " + cp.getType());
-            System.out.println("extcode " + cp.getExtendedtype());
-            System.out.println("timestamp " + cp.getTimestamp());
-        }
 
         if( packet instanceof ControlPacket)
             this.control((ControlPacket)packet);
@@ -71,6 +56,7 @@ public class Examiner {
 
         uncounted.add(packet);
         /* verificar se posso tirar acks*/
+
         if( last_acked_seq.get() + 1 == uncounted.minseq() ){
             IntervalPacket p = uncounted.take();
 

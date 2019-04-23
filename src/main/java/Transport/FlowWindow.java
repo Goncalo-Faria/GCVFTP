@@ -13,7 +13,7 @@ public class FlowWindow {
 
     private final int maxwindow;
 
-    private AtomicInteger value = new AtomicInteger(100);
+    private AtomicInteger value = new AtomicInteger(GCVConnection.initial_window_size);
 
     public FlowWindow( int maxwindow){
         this.maxwindow = maxwindow;

@@ -5,6 +5,7 @@ import Transport.Unit.ControlPacket;
 import Transport.Unit.DataPacket;
 import Transport.Unit.Packet;
 
+import javax.xml.crypto.Data;
 import java.io.NotActiveException;
 import java.io.StreamCorruptedException;
 import java.util.*;
@@ -55,10 +56,13 @@ class Accountant {
      * Usado para permitir a cada stream esperar pelo envio dos seus pacotes.
      * */
 
+    private final int firstSeq;
+
     public Accountant(int stock, int seq, FlowWindow window){
         this.uncounted = new LinkedBlockingQueue<DataPacket>(stock);
         this.seq = new AtomicInteger(seq);
         this.window = window;
+        this.firstSeq = seq;
 
     }
 
@@ -89,6 +93,17 @@ class Accountant {
         }while( packet.getSeq() < x );/* todos os pacotes com número de sequência inferior */
         /* TODO: Assegurar que é suportada ordem circular */
 
+    }
+
+    int lastOk() throws NullPointerException{
+        DataPacket oldestpacket = this.uncounted.peek();
+        int ok;
+        if( oldestpacket == null ){
+            ok = this.seq.get();
+        }else{
+            ok = this.uncounted.peek().getSeq() - 1;
+        }
+        return ok;
     }
 
     void nack(List<Integer> missing) throws InterruptedException, NotActiveException {

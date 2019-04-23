@@ -1,5 +1,6 @@
 package Transport;
 
+import Transport.ControlPacketTypes.HI;
 import Transport.ControlPacketTypes.SURE;
 import Transport.Sender.SendGate;
 import Transport.Receiver.ReceiveGate;
@@ -42,9 +43,18 @@ public class Socket {
                 me,
                 caller);
 
-        this.sgate = new SendGate(me,channel,initial_sending_period);
+        HI hello_packet = new HI(
+                (short)0,
+                0 ,
+                this.channel.getSelfStationProperties().packetsize(),
+                me.window().getMaxWindow()
+        );
+
+        this.channel.sendPacket(hello_packet);
+        this.sgate = new SendGate(me,channel,hello_packet.getSeq(),initial_sending_period);
+
         this.rgate = new ReceiveGate(caller, channel, their_seq);
-        this.actuary = new Executor(sgate, rgate, their_seq);
+        this.actuary = new Executor(sgate, rgate, their_seq, hello_packet.getSeq());
 
         this.workers = new Thread[num_executors];
         
@@ -68,9 +78,9 @@ public class Socket {
         this.sgate = new SendGate(me,channel,our_seq,initial_sending_period);
         this.rgate = new ReceiveGate(caller,channel,their_seq);
 
-        this.sgate.sendSure(SURE.ack_hi);
+        this.sgate.confirmHandshake();
 
-        this.actuary = new Executor(sgate, rgate,their_seq);
+        this.actuary = new Executor(sgate, rgate,their_seq,our_seq);
 
         this.workers = new Thread[num_executors];
 
@@ -116,10 +126,6 @@ public class Socket {
 
     public InputStream receive() throws InterruptedException {
         return this.actuary.getStream();
-    }
-
-    public void restart() throws IOException{
-        this.sgate.sendHandshake((short)0);
     }
 
 }

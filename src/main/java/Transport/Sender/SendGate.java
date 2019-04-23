@@ -51,29 +51,12 @@ public class SendGate {
         this.worker = new SendWorker(ch, send_buffer, initialperiod, me);
     }
 
-    public SendGate(SenderProperties me, TransmissionTransportChannel ch, long initialperiod) throws IOException {
-        System.out.println("SendGate created");
-        this.ch = ch;
-        this.properties = me;
-        this.send_buffer = new Accountant(me.transmissionchannel_buffer_size(), this.sendHandshake((short)0), me.window());
-        this.worker = new SendWorker(ch, send_buffer, initialperiod, me);
+    public void confirmHandshake() throws  IOException{
+        this.ch.sendPacket( new SURE(SURE.ack_hi,this.connection_time()));
     }
 
-    public void sendSure(short extcode) throws  IOException{
-        this.ch.sendPacket( new SURE(extcode,this.connection_time()));
-    }
-
-    public int sendHandshake(short extcode) throws IOException{
-        HI hello_packet = new HI(
-            extcode,
-            this.connection_time() ,
-            this.ch.getSelfStationProperties().packetsize(),
-            this.properties.window().getMaxWindow() 
-        );
-
-        this.ch.sendPacket(hello_packet);
-
-        return hello_packet.getSeq();
+    public void sendSure(int ack) throws  IOException{
+        this.ch.sendPacket( new SURE(SURE.ack_ok,this.connection_time(),ack));
     }
 
     public void sendBye( short extcode ) throws IOException{
@@ -175,6 +158,10 @@ public class SendGate {
 
         this.send_buffer.data( dp);
         /* desencrava*/
+    }
+
+    public int getLastOk(){
+        return this.send_buffer.lastOk();
     }
 
     public void close() throws IOException{

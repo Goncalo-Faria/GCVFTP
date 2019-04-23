@@ -32,7 +32,7 @@ public class GCVConnector implements Connector {
                     mtu,
                     max_window,
                     GCVConnection.send_buffer_size,
-                    true);
+                    false);
             
         }catch(UnknownHostException e){
             e.getStackTrace();

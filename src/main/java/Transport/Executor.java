@@ -65,12 +65,15 @@ public class Executor implements Runnable{
     private LinkedBlockingQueue<ExecutorPipe> socketoutput = new LinkedBlockingQueue<>();
     private AtomicBoolean active = new AtomicBoolean(true);
     private AtomicInteger lastsentack;
+    private AtomicInteger lastreceivedack;
+
     private AtomicInteger lastPacketTime = new AtomicInteger(-1);
 
-    Executor(SendGate sgate, ReceiveGate rgate, int startseq){
+    Executor(SendGate sgate, ReceiveGate rgate, int their_startseq, int our_start_seq){
         this.sgate = sgate;
         this.rgate = rgate;
-        this.lastsentack = new AtomicInteger(startseq);
+        this.lastsentack = new AtomicInteger(their_startseq);
+        this.lastreceivedack = new AtomicInteger(our_start_seq);
     }
 
     public void terminate(){
@@ -108,12 +111,13 @@ public class Executor implements Runnable{
         try{
             DataPacket packet = this.rgate.data();
 
-            //System.out.println(" ::::> DATA <:::: " + packet.getSeq() +  " ops ::" );
+            System.out.println(" ::::> DATA <:::: " + packet.getSeq() +  " ops ::" );
 
             if ( packet.getFlag().equals(DataPacket.Flag.FIRST) || packet.getFlag().equals(DataPacket.Flag.SOLO) ){
                 ExecutorPipe inc = new Executor.ExecutorPipe();
                 this.map.put(packet.getMessageNumber(), inc );
                 this.socketoutput.put(inc);
+
             }
                 
             this.map.
@@ -141,6 +145,7 @@ public class Executor implements Runnable{
             try {
                 this.sgate.sendForgetit((short) 303);
                 /* do something about it*/
+                this.sgate.sendBye((short)303);
                 /* like close socket */
                 System.out.println("TIMEOUT");
             }catch(IOException e){
@@ -152,12 +157,20 @@ public class Executor implements Runnable{
                 int curack = this.rgate.getLastSeq();
                 if (curack > this.lastsentack.get()) {
                     /**/
-                    this.sgate.sendOk((short)0,this.rgate.getLastSeq());
+                    this.sgate.sendOk((short)0,curack);
                     this.lastsentack.set(curack);
                     System.out.println("SENT ACK");
                 } else {
                     this.sgate.sendNack((short)0,this.rgate.getLossList());
                 }
+                int curok = this.sgate.getLastOk();
+
+                if(curok > this.lastreceivedack.get()){
+                    this.sgate.sendSure(curok);
+                    this.lastreceivedack.set(curack);
+                    System.out.println("SENT SURE" + " curok : " + curok + " receivedack : " + this.lastreceivedack.get());
+                }
+
             } catch (IOException e) {
                 System.out.println("SENT NACK");
                 e.printStackTrace();
@@ -185,7 +198,7 @@ public class Executor implements Runnable{
         }
     }
     private void sure(SURE packet){
-        System.out.println(" ::::> received a sure packet <::::");
+        System.out.println(" ::::> received an " + packet.getOK() + " sure " + packet.getOK() + " packet <::::");
     }
     private void bye(BYE packet){
         System.out.println(" ::::> received a bye packet <::::");

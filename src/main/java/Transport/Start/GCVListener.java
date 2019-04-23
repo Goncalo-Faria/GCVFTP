@@ -82,7 +82,7 @@ public class GCVListener implements Listener {
                     this.mtu,
                     this.maxwindow,
                     GCVConnection.send_buffer_size,
-                    false);
+                    true);
 
             ReceiverProperties caller_station_properties = new ReceiverProperties(
                     caller_ip,

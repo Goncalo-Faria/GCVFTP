@@ -4,6 +4,7 @@ import Common.BitManipulator;
 import Transport.Unit.ControlPacket;
 
 import java.nio.BufferOverflowException;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -23,7 +24,7 @@ public class NOPE extends ControlPacket {
             try {
                 Integer val = extrator.getInt();
                 losslist.add(val);
-            }catch(BufferOverflowException e){
+            }catch(BufferOverflowException| BufferUnderflowException e){
                 break;
             }
         }
@@ -40,12 +41,10 @@ public class NOPE extends ControlPacket {
 
     public byte[] extendedSerialize( BitManipulator extractor ){
 
-        ByteBuffer tmp = ByteBuffer.allocate(ControlPacket.header_size + losslist.size()*4).put(extractor.array());
-
         for(Integer val : this.losslist )
-            tmp.putInt(val);
+            extractor.put(val);
 
-        return tmp.array();
+        return extractor.array();
     }
 
     public List<Integer> getLossList(){

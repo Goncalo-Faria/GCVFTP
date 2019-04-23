@@ -5,6 +5,10 @@ import Transport.Start.GCVListener;
 import Transport.Start.Listener;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.CharBuffer;
+import java.util.Scanner;
 
 
 public class Server {
@@ -17,11 +21,21 @@ public class Server {
 
             Socket cs = listener.accept();
 
+            InputStream io = cs.receive();
+
+            Scanner s = new Scanner(io).useDelimiter("\\A");
+
+
             while (isRunning)
             {
-                //byte[] data = cs.receive();
-                //System.out.println("says: " + new String(data));
-                Thread.sleep(10000);
+                if(!s.hasNext()){
+                    io = cs.receive();
+                    s = new Scanner(io).useDelimiter("\\A");
+                }
+
+                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>");
+                System.out.print(s.hasNext() ? s.next() : "");
+                Thread.sleep(1000);
             }
 
         }catch(IOException|InterruptedException e){

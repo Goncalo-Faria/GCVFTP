@@ -19,7 +19,7 @@ public class Client {
             Socket cs = connect.bind(InetAddress.getLocalHost());
             int i = 0;
             while ( ++i < 2000 ) {
-                cs.send((message + " " + i).getBytes());
+                cs.send((message + " " + i + "\n").getBytes());
                 Thread.sleep(100);
                 //System.out.println("::::: i'm sending shit " + i );
             }

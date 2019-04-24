@@ -173,7 +173,7 @@ public class BitManipulator {
         this.mod1 = false;
         this.mod2 = false;
 
-        //System.out.println(value);
+        //System.out.println(congestionWindowValue);
 
         this.view.putInt(value);
 
@@ -192,7 +192,7 @@ public class BitManipulator {
         this.mod1 = false;
         this.mod2 = false;
 
-        //System.out.println(value);
+        //System.out.println(congestionWindowValue);
 
         this.view.putShort(value);
 

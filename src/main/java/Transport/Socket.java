@@ -1,15 +1,11 @@
 package Transport;
 
 import Transport.ControlPacketTypes.HI;
-import Transport.ControlPacketTypes.SURE;
 import Transport.Sender.SendGate;
 import Transport.Receiver.ReceiveGate;
 import Transport.Start.GCVListener;
 import Transport.Sender.SenderProperties;
 import Transport.Receiver.ReceiverProperties;
-import Transport.Unit.ControlPacket;
-import Transport.Unit.DataPacket;
-import Transport.Unit.Packet;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,7 +21,6 @@ public class Socket {
 
     private SendGate sgate ;
     private ReceiveGate rgate;
-    private AtomicBoolean active = new AtomicBoolean(true);
     private Thread worker;
     private Executor actuary;
     private int ourseq;
@@ -42,8 +37,8 @@ public class Socket {
         HI hello_packet = new HI(
                 (short)0,
                 0 ,
-                this.channel.getSelfStationProperties().packetsize(),
-                me.window().getMaxWindow()
+                this.channel.getSelfStationProperties().mtu(),
+                me.window().getMaxWindowSize()
         );
 
         this.ourseq = hello_packet.getSeq();
@@ -71,8 +66,8 @@ public class Socket {
 
         this.sgate.confirmHandshake();
 
-        me.window().setLastSentAck(their_seq);
-        me.window().setLastReceivedAck(our_seq);
+        me.window().setLastSentOk(their_seq);
+        me.window().setLastReceivedOk(our_seq);
 
         this.actuary = new Executor(sgate, rgate, me.window() );
 
@@ -127,8 +122,8 @@ public class Socket {
         this.channel.sendPacket( new HI(
                 (short)0,
                 this.sgate.connection_time(),
-                this.channel.getSelfStationProperties().packetsize(),
-                this.sgate.properties().window().getMaxWindow()
+                this.channel.getSelfStationProperties().mtu(),
+                this.sgate.properties().window().getMaxWindowSize()
         ));
     }
 

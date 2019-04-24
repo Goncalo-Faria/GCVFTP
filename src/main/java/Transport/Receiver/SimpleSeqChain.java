@@ -4,7 +4,6 @@ import Transport.Unit.DataPacket;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -13,11 +12,11 @@ public class SimpleSeqChain {
     LList<IntervalPacket> list = new LList<>();
     private int min = Integer.MAX_VALUE;
     private int max = Integer.MIN_VALUE;
-    private int amplitude;
+    private int maxAmplitude;
     private ReadWriteLock wrl = new ReentrantReadWriteLock();
 
-    public SimpleSeqChain( int maxamplitude ){
-        this.amplitude = maxamplitude;
+    public SimpleSeqChain( int maxAmplitude){
+        this.maxAmplitude = maxAmplitude;
     }
 
     public void add(DataPacket packet){
@@ -25,14 +24,13 @@ public class SimpleSeqChain {
         try{
             int seq = packet.getSeq();
 
-            if( seq > amplitude + min && !list.empty() )
+            if( seq > maxAmplitude + min && !list.empty() )
                 return;
 
             this.min = ( this.min > seq ) ? seq : this.min;
             this.max = ( this.max < seq ) ? seq : this.max;
 
             IntervalPacket ip = new IntervalPacket(packet);
-            boolean append = true;
 
             list.start();
 
@@ -61,7 +59,7 @@ public class SimpleSeqChain {
         }
     }
 
-    public int minseq(){ 
+    public int minSeq(){
         wrl.readLock().lock();
         try{ 
             return this.min;
@@ -70,7 +68,7 @@ public class SimpleSeqChain {
         }
     }
 
-    public int maxseq(){ 
+    public int maxSeq(){
         wrl.readLock().lock();
         try{ 
             return this.max;
@@ -82,7 +80,7 @@ public class SimpleSeqChain {
     public List<Integer> dual(){
         wrl.readLock().lock();
         try{
-            List<Integer> dualrep = new LinkedList<Integer>();
+            List<Integer> dualRep = new LinkedList<Integer>();
 
             list.start();
 
@@ -92,13 +90,13 @@ public class SimpleSeqChain {
                 cur = list.next().value();
 
                 if( cur != null && pst != null ){
-                    dualrep.add(pst.max() + 1);
-                    dualrep.add(cur.min() - 1);
+                    dualRep.add(pst.max() + 1);
+                    dualRep.add(cur.min() - 1);
                 }
                 pst = cur;
             }
 
-            return dualrep;
+            return dualRep;
 
         }finally {
             wrl.readLock().unlock();

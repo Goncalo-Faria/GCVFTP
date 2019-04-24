@@ -1,19 +1,14 @@
 package Transport.Sender;
 
 import Transport.FlowWindow;
-import Transport.Unit.ControlPacket;
 import Transport.Unit.DataPacket;
-import Transport.Unit.Packet;
 
-import javax.xml.crypto.Data;
 import java.io.NotActiveException;
-import java.io.StreamCorruptedException;
 import java.util.*;
 import java.util.concurrent.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /* structure for 'accounting' traveling packets*/
@@ -37,33 +32,20 @@ class Accountant {
     /*
      * List of control packets waiting to be sent.
      * */
-    private AtomicBoolean at = new AtomicBoolean(true);
+    private AtomicBoolean ative = new AtomicBoolean(true);
     /*
      * true : if the accountant is active.
      * false : otherwise.
      * */
-    private FlowWindow window;
-    /*
-     * Adjusts the number of packets that can be sent per SYN based on connection state information.
-     * */
-    private AtomicInteger seq;/* TODO : make sure 0 > the max numbers */
+
+    private AtomicInteger seq;/* TODO : make sentSure 0 > the max numbers */
     /*
      * Current sequence number.
      *  */
 
-    private ReentrantLock rl = new ReentrantLock();
-    /*
-     * Usado para permitir a cada stream esperar pelo envio dos seus pacotes.
-     * */
-
-    private final int firstSeq;
-
-    public Accountant(int stock, int seq, FlowWindow window){
+    Accountant(int stock, int seq){
         this.uncounted = new LinkedBlockingQueue<DataPacket>(stock);
         this.seq = new AtomicInteger(seq);
-        this.window = window;
-        this.firstSeq = seq;
-
     }
 
     void data( DataPacket value) throws InterruptedException{
@@ -79,19 +61,20 @@ class Accountant {
         /* põe o datapacket na fila de envio */
     }
 
-    void ack(int x) throws NotActiveException, InterruptedException{
-        if( !this.at.get() )
+    void ok(int x) throws NotActiveException, InterruptedException{
+        if( !this.ative.get() )
             throw new NotActiveException();
 
         DataPacket packet;
+        if( !this.uncounted.isEmpty() ) {
+            do {
+                packet = this.uncounted.take();
 
-        do{
-            packet = this.uncounted.take();
+                /* decrementa o número de pacotes em falta do stream*/
 
-            /* decrementa o número de pacotes em falta do stream*/
-
-        }while( packet.getSeq() < x );/* todos os pacotes com número de sequência inferior */
-        /* TODO: Assegurar que é suportada ordem circular */
+            } while (packet.getSeq() < x);/* todos os pacotes com número de sequência inferior */
+            /* TODO: Assegurar que é suportada ordem circular */
+        }
 
     }
 
@@ -106,9 +89,9 @@ class Accountant {
         return ok;
     }
 
-    void nack(List<Integer> missing) throws InterruptedException, NotActiveException {
+    void nope(List<Integer> missing) throws InterruptedException, NotActiveException {
 
-        if( !this.at.get() )
+        if( !this.ative.get() )
             throw new NotActiveException();
 
         Iterator<DataPacket> it = this.uncounted.iterator();
@@ -120,18 +103,11 @@ class Accountant {
             }
     }
 
-    public boolean hasTerminated(){
-        return !this.at.get();/*queries if the accountant has termianted*/
-    }
-
     void terminate(){
-        /*deactivates the accountat*/
-        at.set(false);
-
+        /*deactivates the accountant*/
+        ative.set(false);
         this.uncounted.clear();
-
         this.sending.clear();
-
     }
 
     private int seq(){
@@ -141,58 +117,15 @@ class Accountant {
         );
     }
 
-    DataPacket get() throws InterruptedException, NotActiveException{
+    DataPacket poll() throws NotActiveException{
         /* método para o sendworker */
-        if( !this.at.get() )
-            throw new NotActiveException();
-
-        DataPacket index = sending.take();
-
-        // procura o index
-        return index;
-    }
-
-    DataPacket poll() throws InterruptedException, NotActiveException{
-        /* método para o sendworker */
-        if( !this.at.get() )
+        if( !this.ative.get() )
             throw new NotActiveException();
 
         DataPacket index = sending.poll();
 
         // procura o index
         return index;
-    }
-
-    class StreamState {
-
-        private boolean itsfinal;
-        private int count = 1;
-
-        StreamState(DataPacket p){
-            this.itsfinal = p.getFlag().equals(DataPacket.Flag.SOLO) ;
-        }
-
-        synchronized void increment(DataPacket p){
-            this.itsfinal = this.itsfinal || (p.getFlag().equals(DataPacket.Flag.LAST));
-            count++;
-        }
-
-        synchronized void decrement(){
-            count--;
-
-            if(count == 0 && this.itsfinal)
-                this.notifyAll();
-
-        }
-
-        synchronized boolean hasfinished(){
-            return itsfinal && (count == 0);
-        }
-
-        synchronized void await() throws InterruptedException{
-            this.wait();
-        }
-
     }
 
 }

@@ -26,19 +26,19 @@ public class ConnectionScheduler implements Runnable{
     private BlockingQueue<StampedControlPacket> queue = new LinkedBlockingQueue<>();
     private final Timer alarm = new Timer(true);
     private LocalDateTime clearTime = LocalDateTime.now();
-    private ControlPacket.Type packet_type;
-    private int maxpacket = 0;
+    private ControlPacket.Type packetType;
+    private int maxPacket;
     private ConcurrentHashMap<String, Socket> connections = new ConcurrentHashMap<>();
 
     ConnectionScheduler(int port,
                         long connection_request_ttl,
                         ControlPacket.Type control_packet_type,
-                        int maxpacket)
+                        int maxPacket)
             throws SocketException {
 
-        this.packet_type = control_packet_type;
+        this.packetType = control_packet_type;
         this.connection = new DatagramSocket(port);
-        this.maxpacket = maxpacket;
+        this.maxPacket = maxPacket;
 
        new Thread(this).start();
 
@@ -55,7 +55,7 @@ public class ConnectionScheduler implements Runnable{
         return queue.take().get();
     }
 
-    public ConnectionScheduler.StampedControlPacket getstamped()
+    public ConnectionScheduler.StampedControlPacket getStamped()
             throws InterruptedException{
 
         return queue.take();
@@ -73,7 +73,7 @@ public class ConnectionScheduler implements Runnable{
 
         try {
             while (this.active.get()) {
-                DatagramPacket packet = new DatagramPacket(new byte[this.maxpacket], this.maxpacket);
+                DatagramPacket packet = new DatagramPacket(new byte[this.maxPacket], this.maxPacket);
                 this.connection.receive(packet);
 
                 Packet synpacket = Packet.parse(packet.getData());
@@ -82,7 +82,7 @@ public class ConnectionScheduler implements Runnable{
                     ControlPacket cpacket = (ControlPacket)synpacket;
                     ControlPacket.Type packettype = cpacket.getType();
 
-                    if(packettype.equals(this.packet_type)) {
+                    if(packettype.equals(this.packetType)) {
                         System.out.println("got " + packet.getLength() + " bytes ::-:: ip = " + packet.getAddress() + " port= " + packet.getPort());
 
                         if( connections.containsKey(packet.getAddress().toString() + packet.getPort()) )
@@ -102,14 +102,6 @@ public class ConnectionScheduler implements Runnable{
         this.active.set(false);
         this.alarm.cancel();
         this.connection.close();
-    }
-
-    public boolean isActive(){
-        return this.active.get();
-    }
-
-    public boolean isCloses(){
-        return !this.active.get();
     }
 
     private class RemoveExpired extends TimerTask{

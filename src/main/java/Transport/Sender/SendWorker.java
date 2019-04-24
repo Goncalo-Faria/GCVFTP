@@ -1,6 +1,5 @@
 package Transport.Sender;
 
-import Transport.ControlPacketTypes.SUP;
 import Transport.Executor;
 import Transport.TransportChannel;
 import Transport.Unit.DataPacket;
@@ -14,31 +13,31 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SendWorker extends TimerTask {
 
-    private Accountant send_buffer;
+    private Accountant sendBuffer;
     private TransportChannel channel;
-    private Timer send_time;
+    private Timer sendTimer;
     private AtomicBoolean active = new AtomicBoolean(true);
     private SenderProperties properties;
 
     public SendWorker(TransportChannel ch, Accountant send, long period, SenderProperties properties) throws NotActiveException {
-        this.send_buffer = send;
+        this.sendBuffer = send;
         this.channel = ch;
-        this.send_time = new Timer();
-        this.send_time.scheduleAtFixedRate( this, 0, period);
+        this.sendTimer = new Timer();
+        this.sendTimer.scheduleAtFixedRate( this, 0, period);
         this.properties = properties;
     }
 
     public void stop(){
         this.active.set(false);
-        send_time.cancel();
+        sendTimer.cancel();
     }
 
     public void run(){
         try {
             Executor.add(Executor.ActionType.SYN);
             if( active.get() ) {
-                for(int i= 0; i< this.properties.window().value() ; i++){
-                    DataPacket packet = send_buffer.poll();
+                for(int i = 0; i< this.properties.window().congestionWindowValue() ; i++){
+                    DataPacket packet = sendBuffer.poll();
                     if( packet != null) {
                         channel.sendPacket(packet);
                         System.out.println("SENT DATA");
@@ -48,9 +47,11 @@ public class SendWorker extends TimerTask {
 
                 if( this.properties.isPersistent() && this.properties.window().synHasPassed() )
                     Executor.add(Executor.ActionType.KEEPALIVE);
-                
+
             }
-        }catch ( InterruptedException| IOException e){
+        }catch (NotActiveException other){
+            active.set(false);
+        } catch ( InterruptedException| IOException e){
             e.printStackTrace();
         }
     }

@@ -34,7 +34,7 @@ public class GCVListener implements Listener {
     }
 
     private int mtu = GCVConnection.stdmtu;
-    private int maxwindow = 1024*8;
+    private int maxWindow = 1024*8;
     private InetAddress localhost;
 
     public GCVListener(){
@@ -44,26 +44,25 @@ public class GCVListener implements Listener {
     static public void announceConnection(String key, Socket cs){
         if( common_daemon != null)
             GCVListener.common_daemon.announceConnection(key,cs);
-
     }
 
     static public void closeConnection(String key){
         if( common_daemon != null)
             GCVListener.common_daemon.closeConnection(key);
-
     }
 
-    public GCVListener( int mtu, int maxwindow) throws UnknownHostException{
+    public GCVListener( int mtu, int maxWindow) throws UnknownHostException{
         this.mtu = mtu;
-        this.maxwindow = maxwindow;
+        this.maxWindow = maxWindow;
         this.localhost = InetAddress.getLocalHost();
         GCVListener.activate();
     }
 
     public Socket accept() throws InterruptedException, IOException {
 
+            ConnectionScheduler.StampedControlPacket packets =
+                    GCVListener.common_daemon.getStamped();
 
-            ConnectionScheduler.StampedControlPacket packets = GCVListener.common_daemon.getstamped();
             HI packet = (HI)packets.get();/*waiting for datagram*/
 
             int caller_port = packets.port();
@@ -80,7 +79,7 @@ public class GCVListener implements Listener {
                     this.localhost,
                     message_port,
                     this.mtu,
-                    this.maxwindow,
+                    this.maxWindow,
                     GCVConnection.send_buffer_size,
                     true);
 
@@ -97,7 +96,6 @@ public class GCVListener implements Listener {
             announceConnection(caller_ip.toString() + caller_port, cs);
 
             return cs;
-
     }
 
     public void close(){

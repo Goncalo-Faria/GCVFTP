@@ -5,14 +5,14 @@ import java.net.InetAddress;
 public class StationProperties {
     private int port;
     private final InetAddress ip;
-    private final int maxpacket;
+    private final int mtu;
     private final int bufferSize;
 
-    public StationProperties(InetAddress ip,  int port,  int maxpacket, int bufferSize){
+    public StationProperties(InetAddress ip, int port, int mtu, int bufferSize){
 
         this.port = port;
         this.ip = ip;
-        this.maxpacket = maxpacket;
+        this.mtu = mtu;
         this.bufferSize = bufferSize;
     }
 
@@ -26,9 +26,9 @@ public class StationProperties {
 
     public void setPort(int port){ this.port = port; }
 
-    public int packetsize(){ return this.maxpacket;}
+    public int mtu(){ return this.mtu;}
 
-    public int channel_buffer_size(){
+    public int channelBufferSize(){
         return this.bufferSize;
     }
 

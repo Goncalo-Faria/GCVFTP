@@ -11,7 +11,7 @@ import java.util.concurrent.TimeoutException;
 
 public class Client {
 
-    private static GCVConnector connect = new GCVConnector(7220,200);
+    private static GCVConnector connect = new GCVConnector(7220,200,true);
 
 
     public static void main( String[] args )  {

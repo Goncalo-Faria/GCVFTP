@@ -1,18 +1,13 @@
 package Transport;
 
-import java.beans.IntrospectionException;
 import java.io.*;
 import java.lang.Runnable;
-import java.util.Map;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import Transport.Receiver.Examiner;
 import Transport.Receiver.ReceiveGate;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import Transport.Sender.SendGate;
 import Transport.Unit.*;
@@ -52,6 +47,7 @@ public class Executor implements Runnable{
     }
 
     private static void get(Executor self) throws InterruptedException{
+
         switch( executorQueue.take() ){
             case CONTROL : self.control(); break;
             case DATA :  self.data(); break;
@@ -63,7 +59,7 @@ public class Executor implements Runnable{
     private SendGate sgate; /* mandar pacotes de controlo */
     private ReceiveGate rgate; /* tirar pacotes */
     private ConcurrentHashMap< Integer, ExecutorPipe > map = new ConcurrentHashMap<>();
-    private LinkedBlockingQueue<ExecutorPipe> socketoutput = new LinkedBlockingQueue<>();
+    private LinkedBlockingQueue<ExecutorPipe> socketOutput = new LinkedBlockingQueue<>();
     private AtomicBoolean active = new AtomicBoolean(true);
     private FlowWindow window;
 
@@ -74,7 +70,7 @@ public class Executor implements Runnable{
         this.window.gotTransmission();
     }
 
-    public void terminate(short code) throws IOException{
+    void terminate(short code) throws IOException{
         if(this.active.get()) {
             System.out.println("CHANNEL CLOSED");
             this.sgate.sendBye(code);
@@ -85,7 +81,7 @@ public class Executor implements Runnable{
         }
     }
 
-    public boolean hasTerminated(){
+    boolean hasTerminated(){
         return !this.active.get();
     }
 
@@ -108,8 +104,8 @@ public class Executor implements Runnable{
         }
     }
 
-    public InputStream getStream() throws InterruptedException{
-        return this.socketoutput.take().consumer;
+    InputStream getStream() throws InterruptedException{
+        return this.socketOutput.take().consumer;
     }
 
 
@@ -139,7 +135,7 @@ public class Executor implements Runnable{
             if ( packet.getFlag().equals(DataPacket.Flag.LAST) || packet.getFlag().equals(DataPacket.Flag.SOLO) ){
 
                 ExecutorPipe ep = this.map.remove(packet.getMessageNumber());
-                this.socketoutput.put(ep);
+                this.socketOutput.put(ep);
                 ep.close();
             }
 
@@ -150,9 +146,8 @@ public class Executor implements Runnable{
     }
 
     private void syn() {
-        /*verificar condições maradas e mandar nack ou ack */
+        /*verificar condições maradas e mandar sentNope ou ack */
         this.window.syn();
-
         if( this.window.hasTimeout() ){
             try {
                 this.sgate.sendForgetit((short) 0);/*especifica o stream a fechar 0 significa todos*/
@@ -169,26 +164,22 @@ public class Executor implements Runnable{
             try {
                 int curack = this.rgate.getLastSeq();
 
-                if (curack > this.window.getLastSentAck() ) {
+                if (curack > this.window.getLastSentOk() ) {
                     /**/
-                    this.window.ack( this.sgate.sendOk((short)0,curack,this.rgate.getWindowSize()) );
-                    System.out.println("SENT ACK");
+                    this.window.sentOk( this.sgate.sendOk((short)0,curack,this.rgate.getWindowSize()) );
+                    System.out.println(curack +" SENT ACK " + " :: " + this.window.getLastSentOk()  );
 
                 } else {
 
-                    if( this.window.nack() ) {
+                    if( this.window.sentNope() )
                         this.sgate.sendNack(this.rgate.getLossList());
-                        System.out.println("SENT NACK FAKE");
-                    }
 
                 }
 
-                int curok = this.sgate.getLastOk();
+                int curreceivedok = this.sgate.getLastOk();
 
-                if(curok > this.window.getLastReceivedAck()){
-
-                    this.sgate.sendSure(curok);
-                    this.window.setLastReceivedAck(curok);
+                if(curreceivedok > this.window.getLastReceivedOk()){
+                    this.sgate.sendSure(curreceivedok);
                     System.out.println("SENT SURE");
                 }
 
@@ -211,21 +202,23 @@ public class Executor implements Runnable{
     private void hi(HI packet){
         System.out.println(" ::::> received an hi packet <:::: ");
     }
+
     private void ok(OK packet) throws InterruptedException{
-        System.out.println(" ::::> received an " + packet.getAck() + " ok " + packet.getAck() + " packet <::::");
+        System.out.println(" ::::> received an " + packet.getSeq() + " ok " + packet.getSeq() + " packet <::::");
         try{
             this.window.setRtt(packet.getRtt());
             this.window.setRttVar(packet.getRttVar());
-            this.window.setReceiveBufferSize(packet.getWindow());
-            this.sgate.gotok(packet.getAck());
+            this.window.setReceiverBuffer(packet.getWindow());
+            this.sgate.gotok(packet.getSeq());
         }catch(NotActiveException e){
             e.printStackTrace();
         }
     }
+
     private void sure(SURE packet){
-        System.out.println(" ::::> received an " + packet.getOK() + " sure " + packet.getOK() + " packet <::::");
+        System.out.println(" ::::> received an " + packet.getOK() + " sentSure " + packet.getOK() + " packet <::::");
         //this.sgate.gotsure(packet.getOK());
-        this.window.sure(packet);
+        this.window.sentSure(packet);
     }
     private void bye(BYE packet){
         System.out.println(" ::::> received a bye packet <::::");
@@ -252,7 +245,7 @@ public class Executor implements Runnable{
 
     }
     private void nope(NOPE packet) {
-        System.out.println(" ::::> received a nope packet <::::");
+        System.out.println(" ::::> received a sentNope packet <::::");
         try{
             this.sgate.gotnack(packet.getLossList());
         }catch (InterruptedException|NotActiveException e){

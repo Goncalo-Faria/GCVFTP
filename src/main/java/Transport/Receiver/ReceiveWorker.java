@@ -3,6 +3,7 @@ package Transport.Receiver;
 import Transport.TransportChannel;
 import Transport.Unit.Packet;
 
+import java.io.NotActiveException;
 import java.lang.Thread;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -12,12 +13,12 @@ public class ReceiveWorker implements Runnable{
 
     /* para impedir denial of service atacks */
     private AtomicBoolean active = new AtomicBoolean(true);
-    private TransportChannel ch;
+    private TransportChannel channel;
     private ReceiverProperties properties;
     private Examiner buffer;
 
-    public ReceiveWorker(TransportChannel ch, Examiner buffer, ReceiverProperties properties){
-        this.ch = ch;
+    public ReceiveWorker(TransportChannel channel, Examiner buffer, ReceiverProperties properties){
+        this.channel = channel;
         this.properties = properties;
         this.buffer = buffer;
         (new Thread(this)).start();
@@ -25,18 +26,19 @@ public class ReceiveWorker implements Runnable{
 
     public void stop(){
         this.active.set(false);
-
     }
 
     public void run(){
         try {
 
             while( active.get() ) {
-                Packet packet = ch.receivePacket();
+                Packet packet = channel.receivePacket();
                 this.buffer.supply(packet);
             }
 
-        }catch ( InterruptedException | IOException e){
+        }catch (NotActiveException other){
+            active.set(false);
+        }catch ( InterruptedException| IOException e) {
             e.printStackTrace();
         }
     }

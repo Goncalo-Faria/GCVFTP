@@ -6,8 +6,6 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 
-import static Transport.GCVConnection.udp_receive_buffer_size;
-
 public class TransmissionChannel implements Channel {
     private final DatagramSocket cs;
     private final StationProperties in;
@@ -17,12 +15,12 @@ public class TransmissionChannel implements Channel {
     public TransmissionChannel(StationProperties send,
                                StationProperties receive) throws SocketException {
         this.cs = new DatagramSocket(send.port());
-        this.cs.setSendBufferSize( send.channel_buffer_size() );
-        this.cs.setReceiveBufferSize( receive.channel_buffer_size() );
+        this.cs.setSendBufferSize( send.channelBufferSize() );
+        this.cs.setReceiveBufferSize( receive.channelBufferSize() );
         this.cs.connect(receive.ip(),receive.port());
         this.in = send;
         this.out = receive;
-        this.data_buffer = new byte[in.packetsize()];
+        this.data_buffer = new byte[in.mtu()];
     }
 
     public TransmissionChannel(DatagramSocket cs,
@@ -30,25 +28,25 @@ public class TransmissionChannel implements Channel {
                                StationProperties receive) throws SocketException {
         this.cs = cs;
         this.cs.setSoTimeout(0);
-        this.cs.setSendBufferSize( send.channel_buffer_size() );
-        this.cs.setReceiveBufferSize( receive.channel_buffer_size() );
+        this.cs.setSendBufferSize( send.channelBufferSize() );
+        this.cs.setReceiveBufferSize( receive.channelBufferSize() );
         this.cs.connect(receive.ip(),receive.port());
         this.in = send;
         this.out = receive;
-        this.data_buffer = new byte[in.packetsize()];
+        this.data_buffer = new byte[in.mtu()];
     }
 
     public void send(byte[] data) throws IOException {
         int sz = data.length;
 
-        if(data.length > out.packetsize())
-            sz = out.packetsize();
+        if(data.length > out.mtu())
+            sz = out.mtu();
 
         cs.send(new DatagramPacket(data, 0, sz, out.ip(), out.port()));
     }
 
     public byte[] receive() throws IOException{
-        DatagramPacket packet = new DatagramPacket(this.data_buffer,in.packetsize());
+        DatagramPacket packet = new DatagramPacket(this.data_buffer,in.mtu());
 
         //System.out.println(new String(this.data_buffer));
 

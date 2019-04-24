@@ -15,14 +15,8 @@ public final class GCVConnection {
     public static final float rrt_factor = 0.125F;
     public static final float var_rrt_factor = 0.25F;
 
-
-    public static final long rate_control_interval_sending = 100 ;
-    public static final long rate_control_interval_receiving = 100 ;
-
     public static final int send_buffer_size = 8192 ;
     public static final int receive_buffer_size = 8192;
-    public static final int udp_send_buffer_size = send_buffer_size * stdmtu;
-    public static final int udp_receive_buffer_size = receive_buffer_size * stdmtu;
 
     public static final int send_timeout = -1; // não dá timeout
     public static final int receive_timeout = -1; // não dá timeout

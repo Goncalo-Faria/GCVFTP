@@ -2,8 +2,6 @@ package Transport.Sender;
 
 
 import Transport.ControlPacketTypes.*;
-import Transport.GCVConnection;
-import Transport.Receiver.ReceiveGate;
 import Transport.TransmissionTransportChannel;
 import Transport.Unit.DataPacket;
 
@@ -11,12 +9,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.NotActiveException;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class SendGate {
@@ -35,7 +28,7 @@ public class SendGate {
 
 
     /* receiver
-     * manda ack e avisa o port
+     * manda ok e avisa o port
      * fica à escuta de dados
      * espera ack2
      * */
@@ -49,7 +42,7 @@ public class SendGate {
         System.out.println("SendGate created");
         this.ch = ch;
         this.properties = me;
-        this.send_buffer = new Accountant(me.transmissionchannel_buffer_size(),our_seq ,me.window());
+        this.send_buffer = new Accountant(me.transmissionChannelBufferSize(),our_seq);
         this.worker = new SendWorker(ch, send_buffer, initialperiod, me);
     }
 
@@ -60,6 +53,7 @@ public class SendGate {
 
     public void sendSure(int ack) throws  IOException{
         this.properties.window().sentTransmission();
+        this.properties.window().setLastReceivedOk(ack);
         this.ch.sendPacket( new SURE(SURE.ack_ok,this.connection_time(),ack));
 
     }
@@ -114,12 +108,12 @@ public class SendGate {
     }
 
     public void gotok(int seq) throws InterruptedException, NotActiveException {
-        this.send_buffer.ack(seq);
+        this.send_buffer.ok(seq);
     }
 
     public void gotnack( List<Integer> losslist ) throws NotActiveException, InterruptedException{
         this.gotok(losslist.get(0)-1);
-        this.send_buffer.nack(losslist);
+        this.send_buffer.nope(losslist);
     }
 
     public int connection_time(){

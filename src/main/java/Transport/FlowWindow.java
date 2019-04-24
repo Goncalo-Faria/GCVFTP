@@ -16,11 +16,11 @@ public class FlowWindow {
     private AtomicInteger rttVar =  new AtomicInteger(3600 * 1000);
 
 
-    private AtomicInteger lastReceived = new AtomicInteger(0);
-    private AtomicInteger lastSent = new AtomicInteger(-1);
+    private AtomicInteger timeLastReceived = new AtomicInteger(0);
+    private AtomicInteger timeLastSent = new AtomicInteger(-1);
+    private AtomicInteger timeLastNackSent = new AtomicInteger(0);
 
-    private AtomicInteger lastReceivedSure = new AtomicInteger(-1);
-    private AtomicInteger lastNackSent = new AtomicInteger(0);
+    private AtomicInteger lastSureReceived = new AtomicInteger(-1);
     private AtomicInteger lastOkSent = new AtomicInteger(0);
     private AtomicInteger lastOkReceived = new AtomicInteger(0);
 
@@ -62,12 +62,18 @@ public class FlowWindow {
     public boolean sentNope(){
         int curtime = connectionTime();
 
-        if( curtime - lastNackSent.get() > getTimeout() ){
-            lastNackSent.set(curtime);
+        if( curtime - timeLastNackSent.get() > getTimeout() ){
+            timeLastNackSent.set(curtime);
             return true;
         }else{
             return false;
         }
+    }
+
+    void boot(int lastOkSent, int lastOkReceived){
+        this.lastOkSent.set(lastOkSent);
+        this.lastOkReceived.set(lastOkReceived);
+        this.lastSureReceived.set(lastOkSent);
     }
 
     public int rtt(){
@@ -107,7 +113,7 @@ public class FlowWindow {
                         + GCVConnection.var_rrt_factor * Math.abs(srtt - rtt.get())));
             }
 
-            lastReceivedSure.getAndUpdate(x -> (x > seq) ? x : seq );
+            lastSureReceived.getAndUpdate(x -> (x > seq) ? x : seq );
 
         }else{
             rttVar.set(rtt.get());
@@ -139,18 +145,25 @@ public class FlowWindow {
     }
 
     boolean hasTimeout(){
-        int difs = this.connectionTime() - this.lastReceived.get();
+        int difs = this.connectionTime() - this.timeLastReceived.get();
         return(difs > this.getTimeout());
     }
 
     void gotTransmission(){
-        this.lastReceived.set(this.connectionTime());
+        this.timeLastReceived.set(this.connectionTime());
     }
 
-    public void sentTransmission(){ this.lastSent.set(this.connectionTime()); }
+    public void sentTransmission(){ this.timeLastSent.set(this.connectionTime()); }
 
     public boolean synHasPassed(){
-        return (this.connectionTime() - this.lastSent.get() > 100);
+        return (this.connectionTime() - this.timeLastSent.get() > 100);
     }
 
+    boolean okMightHaveBeenLost(){
+        if( this.lastSureReceived.get() < this.lastOkSent.get() )
+            return (this.connectionTime() - this.sentOkCache.get( this.lastOkSent.get())) > this.rtt.get();
+
+
+        return false;
+    }
 }

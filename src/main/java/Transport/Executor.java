@@ -174,6 +174,11 @@ public class Executor implements Runnable{
                     if( this.window.sentNope() )
                         this.sgate.sendNack(this.rgate.getLossList());
 
+                    if( this.window.okMightHaveBeenLost() ){
+                        this.window.sentOk( this.sgate.sendOk((short)0,curack,this.rgate.getWindowSize()) );
+                        System.out.println(curack +" ReSENT ACK " + " :: " + this.window.getLastSentOk()  );
+
+                    }
                 }
 
                 int curreceivedok = this.sgate.getLastOk();

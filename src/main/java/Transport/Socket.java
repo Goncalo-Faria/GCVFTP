@@ -66,8 +66,7 @@ public class Socket {
 
         this.sgate.confirmHandshake();
 
-        me.window().setLastSentOk(their_seq);
-        me.window().setLastReceivedOk(our_seq);
+        me.window().boot(their_seq,our_seq);
 
         this.actuary = new Executor(sgate, rgate, me.window() );
 

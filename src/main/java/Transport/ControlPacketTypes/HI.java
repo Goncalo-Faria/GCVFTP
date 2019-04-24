@@ -26,7 +26,6 @@ public class HI extends ControlPacket {
     }
 
     public byte[] extendedSerialize( BitManipulator extractor ){
-
         return  extractor.put(this.maxpacket).put(this.seq).put(this.maxwindow).array();
 
     }

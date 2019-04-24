@@ -1,7 +1,6 @@
 package Transport;
 
 import AgenteUDP.TransmissionChannel;
-import Transport.Start.TransportStationProperties;
 import Transport.Unit.Packet;
 
 import java.io.IOException;

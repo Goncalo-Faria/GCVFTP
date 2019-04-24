@@ -1,6 +1,5 @@
-package Transport.Start;
+package Transport;
 
-import Transport.Socket;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.Packet;
 
@@ -28,7 +27,7 @@ public class ConnectionScheduler implements Runnable{
     private LocalDateTime clearTime = LocalDateTime.now();
     private ControlPacket.Type packetType;
     private int maxPacket;
-    private ConcurrentHashMap<String, Socket> connections = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, GCVSocket> connections = new ConcurrentHashMap<>();
 
     ConnectionScheduler(int port,
                         long connection_request_ttl,
@@ -55,17 +54,17 @@ public class ConnectionScheduler implements Runnable{
         return queue.take().get();
     }
 
-    public ConnectionScheduler.StampedControlPacket getStamped()
+    ConnectionScheduler.StampedControlPacket getStamped()
             throws InterruptedException{
 
         return queue.take();
     }
 
-    public void announceConnection( String key , Socket cs ){
+    void announceConnection( String key , GCVSocket cs ){
         this.connections.put(key,cs);
     }
 
-    public void closeConnection( String key ){
+    void closeConnection( String key ){
         this.connections.remove(key);
     }
 
@@ -98,7 +97,7 @@ public class ConnectionScheduler implements Runnable{
 
     }
 
-    public void close(){
+    void close(){
         this.active.set(false);
         this.alarm.cancel();
         this.connection.close();
@@ -131,9 +130,9 @@ public class ConnectionScheduler implements Runnable{
             return this.obj;
         }
 
-        public int port(){ return this.port;}
+        int port(){ return this.port;}
 
-        public InetAddress ip(){ return this.address; }
+        InetAddress ip(){ return this.address; }
 
     }
 }

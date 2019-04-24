@@ -1,6 +1,6 @@
 package Test;
 
-import Transport.Socket;
+import Transport.GCVSocket;
 
 import java.io.IOException;
 
@@ -14,7 +14,7 @@ public class Server {
 
         try {
 
-            Socket cs = new Socket();
+            GCVSocket cs = new GCVSocket();
 
             cs.listen();
 

@@ -1,6 +1,6 @@
 package Test;
 
-import Transport.Socket;
+import Transport.GCVSocket;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,7 +16,7 @@ public class Client {
 
         try {
 
-            Socket cs = new Socket(200,true);
+            GCVSocket cs = new GCVSocket(200,true);
 
             cs.connect(InetAddress.getLocalHost(),7220);
 

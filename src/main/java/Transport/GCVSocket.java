@@ -17,14 +17,14 @@ import java.io.PipedOutputStream;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class Socket {
+public class GCVSocket {
 
     private static ConnectionScheduler common_daemon=null;
 
     private static void activate(){
         if( common_daemon == null){
             try {
-                Socket.common_daemon = new ConnectionScheduler(
+                GCVSocket.common_daemon = new ConnectionScheduler(
                         GCVConnection.port,
                         GCVConnection.connection_receive_ttl,
                         ControlPacket.Type.HI,
@@ -36,23 +36,23 @@ public class Socket {
         }
     }
 
-    private static void announceSocketConnection(String key, Socket cs){
+    private static void announceSocketConnection(String key, GCVSocket cs){
         if( common_daemon != null)
-            Socket.common_daemon.announceConnection(key,cs);
+            GCVSocket.common_daemon.announceConnection(key,cs);
     }
 
     private static void closeSocketConnection(String key){
         if( common_daemon != null)
-            Socket.common_daemon.closeConnection(key);
+            GCVSocket.common_daemon.closeConnection(key);
     }
 
     private static ConnectionScheduler.StampedControlPacket getStampedPacket() throws InterruptedException{
-        return Socket.common_daemon.getStamped();
+        return GCVSocket.common_daemon.getStamped();
     }
 
     public static void closeConnection(){
-        Socket.common_daemon.close();
-        Socket.common_daemon = null;
+        GCVSocket.common_daemon.close();
+        GCVSocket.common_daemon = null;
     }
 
     private Executor actuary;
@@ -66,12 +66,12 @@ public class Socket {
 
     private TransmissionTransportChannel channel ;
 
-    public Socket() throws IOException {
-        System.out.println("Socket created");
+    public GCVSocket() throws IOException {
+        System.out.println("GCVSocket created");
         this.localhost = InetAddress.getLocalHost();
     }
 
-    public Socket(int maxWindow, boolean persistent) throws IOException {
+    public GCVSocket(int maxWindow, boolean persistent) throws IOException {
         this.localhost = InetAddress.getLocalHost();
         this.persistent = persistent;
         this.maxWindow = maxWindow;
@@ -96,10 +96,10 @@ public class Socket {
 
     public void listen() throws InterruptedException, IOException{
 
-        Socket.activate();
+        GCVSocket.activate();
 
         ConnectionScheduler.StampedControlPacket receivedStampedPacket =
-                Socket.getStampedPacket();
+                GCVSocket.getStampedPacket();
 
         HI hiPacket = (HI)receivedStampedPacket.get();/*waiting for datagram*/
 
@@ -134,7 +134,7 @@ public class Socket {
 
         this.boot(senderProp, receiveProp, hiPacket.getSeq(), reponseHiPacket.getSeq());
 
-        Socket.announceSocketConnection(receivedStampedPacket.ip().toString() + receivedStampedPacket.port(), this);
+        GCVSocket.announceSocketConnection(receivedStampedPacket.ip().toString() + receivedStampedPacket.port(), this);
     }
 
     public void connect(String ip, int intendedPort) throws IOException, TimeoutException {
@@ -215,11 +215,11 @@ public class Socket {
     }
 
     public void close() throws IOException{
-        System.out.println("Socket closed");
+        System.out.println("GCVSocket closed");
         if( !this.actuary.hasTerminated() )
             this.actuary.terminate((short)0);
 
-        Socket.closeSocketConnection(
+        GCVSocket.closeSocketConnection(
                     this.channel.getOtherStationProperties().ip().toString()
                             + this.channel.getOtherStationProperties().port());
 
@@ -228,21 +228,21 @@ public class Socket {
 
     public void send( byte[] data) throws IOException, InterruptedException {
         if(this.actuary.hasTerminated())
-            throw new IOException("Socket has disconnected");
+            throw new IOException("GCVSocket has disconnected");
 
         this.actuary.send(data);
     }
 
     public void send( InputStream io ) throws  IOException, InterruptedException{
         if(this.actuary.hasTerminated())
-            throw new IOException("Socket has disconnected");
+            throw new IOException("GCVSocket has disconnected");
 
         this.actuary.send(io);
     }
 
     public OutputStream send() throws  IOException, InterruptedException{
         if(this.actuary.hasTerminated())
-            throw new IOException("Socket has disconnected");
+            throw new IOException("GCVSocket has disconnected");
 
         PipedOutputStream producer = new PipedOutputStream();
         PipedInputStream consumer = new PipedInputStream(producer);

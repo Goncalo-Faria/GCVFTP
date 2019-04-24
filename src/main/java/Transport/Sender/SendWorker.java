@@ -1,5 +1,6 @@
 package Transport.Sender;
 
+import Transport.ControlPacketTypes.SUP;
 import Transport.Executor;
 import Transport.TransportChannel;
 import Transport.Unit.DataPacket;
@@ -36,18 +37,18 @@ public class SendWorker extends TimerTask {
         try {
             Executor.add(Executor.ActionType.SYN);
             if( active.get() ) {
-                int sent = 0;
                 for(int i= 0; i< this.properties.window().value() ; i++){
                     DataPacket packet = send_buffer.poll();
-                    if( packet != null)
+                    if( packet != null) {
                         channel.sendPacket(packet);
-                    else
-                        sent++;
+                        System.out.println("SENT DATA");
+                        this.properties.window().sentTransmission();
+                    }
                 }
 
-                if(sent == 0)
+                if( this.properties.isPersistent() && this.properties.window().synHasPassed() )
                     Executor.add(Executor.ActionType.KEEPALIVE);
-
+                
             }
         }catch ( InterruptedException| IOException e){
             e.printStackTrace();

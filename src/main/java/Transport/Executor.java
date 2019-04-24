@@ -3,6 +3,7 @@ package Transport;
 import java.beans.IntrospectionException;
 import java.io.*;
 import java.lang.Runnable;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -64,24 +65,33 @@ public class Executor implements Runnable{
     private ConcurrentHashMap< Integer, ExecutorPipe > map = new ConcurrentHashMap<>();
     private LinkedBlockingQueue<ExecutorPipe> socketoutput = new LinkedBlockingQueue<>();
     private AtomicBoolean active = new AtomicBoolean(true);
-    private AtomicInteger lastsentack;
-    private AtomicInteger lastreceivedack;
+    private FlowWindow window;
 
-    private AtomicInteger lastPacketTime = new AtomicInteger(-1);
-
-    Executor(SendGate sgate, ReceiveGate rgate, int their_startseq, int our_start_seq){
+    Executor(SendGate sgate, ReceiveGate rgate, FlowWindow window){
         this.sgate = sgate;
         this.rgate = rgate;
-        this.lastsentack = new AtomicInteger(their_startseq);
-        this.lastreceivedack = new AtomicInteger(our_start_seq);
+        this.window = window;
+        this.window.gotTransmission();
     }
 
-    public void terminate(){
-        this.active.set(false);
+    public void terminate(short code) throws IOException{
+        if(this.active.get()) {
+            System.out.println("CHANNEL CLOSED");
+            this.sgate.sendBye(code);
+            this.active.set(false);
+            this.sgate.close();
+            this.rgate.close();
+            this.map.clear();
+        }
+    }
+
+    public boolean hasTerminated(){
+        return !this.active.get();
     }
 
     private void control(){
-        this.lastPacketTime.set(this.sgate.connection_time());
+        this.window.gotTransmission();
+
         try{
             ControlPacket packet = this.rgate.control();
             switch( packet.getType() ){
@@ -107,7 +117,9 @@ public class Executor implements Runnable{
         /* distribuir os dados em streams */
         /* encaminhar para streams */
         /*-------------------------*/
-        this.lastPacketTime.set(this.sgate.connection_time());
+        this.window.gotTransmission();
+
+
         try{
             DataPacket packet = this.rgate.data();
 
@@ -116,10 +128,8 @@ public class Executor implements Runnable{
             if ( packet.getFlag().equals(DataPacket.Flag.FIRST) || packet.getFlag().equals(DataPacket.Flag.SOLO) ){
                 ExecutorPipe inc = new Executor.ExecutorPipe();
                 this.map.put(packet.getMessageNumber(), inc );
-                this.socketoutput.put(inc);
-
             }
-                
+
             this.map.
                 get(packet.getMessageNumber()).
                     producer.
@@ -127,8 +137,10 @@ public class Executor implements Runnable{
                                 0, packet.getData().length);
 
             if ( packet.getFlag().equals(DataPacket.Flag.LAST) || packet.getFlag().equals(DataPacket.Flag.SOLO) ){
-                this.map.get(packet.getMessageNumber()).close();
-                this.map.remove(packet.getMessageNumber());
+
+                ExecutorPipe ep = this.map.remove(packet.getMessageNumber());
+                this.socketoutput.put(ep);
+                ep.close();
             }
 
             
@@ -137,17 +149,18 @@ public class Executor implements Runnable{
         }
     }
 
-    private void syn(){
+    private void syn() {
         /*verificar condições maradas e mandar nack ou ack */
-        int difs = this.sgate.connection_time() - this.lastPacketTime.get();
+        this.window.syn();
 
-        if( difs >= this.sgate.getTimeout() ){
+        if( this.window.hasTimeout() ){
             try {
-                this.sgate.sendForgetit((short) 303);
+                this.sgate.sendForgetit((short) 0);/*especifica o stream a fechar 0 significa todos*/
                 /* do something about it*/
-                this.sgate.sendBye((short)303);
                 /* like close socket */
+                this.terminate((short)303);
                 System.out.println("TIMEOUT");
+
             }catch(IOException e){
                 e.printStackTrace();
             }
@@ -155,24 +168,32 @@ public class Executor implements Runnable{
         }else {
             try {
                 int curack = this.rgate.getLastSeq();
-                if (curack > this.lastsentack.get()) {
+
+                if (curack > this.window.getLastSentAck() ) {
                     /**/
-                    this.sgate.sendOk((short)0,curack);
-                    this.lastsentack.set(curack);
+                    this.window.ack( this.sgate.sendOk((short)0,curack,this.rgate.getWindowSize()) );
                     System.out.println("SENT ACK");
+
                 } else {
-                    this.sgate.sendNack((short)0,this.rgate.getLossList());
+
+                    if( this.window.nack() ) {
+                        this.sgate.sendNack(this.rgate.getLossList());
+                        System.out.println("SENT NACK FAKE");
+                    }
+
                 }
+
                 int curok = this.sgate.getLastOk();
 
-                if(curok > this.lastreceivedack.get()){
+                if(curok > this.window.getLastReceivedAck()){
+
                     this.sgate.sendSure(curok);
-                    this.lastreceivedack.set(curack);
-                    System.out.println("SENT SURE" + " curok : " + curok + " receivedack : " + this.lastreceivedack.get());
+                    this.window.setLastReceivedAck(curok);
+                    System.out.println("SENT SURE");
                 }
 
             } catch (IOException e) {
-                System.out.println("SENT NACK");
+
                 e.printStackTrace();
             }
         }
@@ -181,6 +202,7 @@ public class Executor implements Runnable{
     private void keepalive(){
         try {
             this.sgate.sendSup((short) 0);
+            System.out.println("SENT KEEPALIVE");
         }catch (IOException e){
             e.printStackTrace();
         }
@@ -192,6 +214,9 @@ public class Executor implements Runnable{
     private void ok(OK packet) throws InterruptedException{
         System.out.println(" ::::> received an " + packet.getAck() + " ok " + packet.getAck() + " packet <::::");
         try{
+            this.window.setRtt(packet.getRtt());
+            this.window.setRttVar(packet.getRttVar());
+            this.window.setReceiveBufferSize(packet.getWindow());
             this.sgate.gotok(packet.getAck());
         }catch(NotActiveException e){
             e.printStackTrace();
@@ -199,16 +224,32 @@ public class Executor implements Runnable{
     }
     private void sure(SURE packet){
         System.out.println(" ::::> received an " + packet.getOK() + " sure " + packet.getOK() + " packet <::::");
+        //this.sgate.gotsure(packet.getOK());
+        this.window.sure(packet);
     }
     private void bye(BYE packet){
         System.out.println(" ::::> received a bye packet <::::");
+        try{
+            this.terminate((short)0);
+        }catch (IOException e){
+            e.printStackTrace();
+        }
     }
     private void sup(SUP packet){
         System.out.println(" ::::> received a sup packet <::::");
-        this.lastPacketTime.set(this.sgate.connection_time());
+
     }
     private void forgetit(FORGETIT packet){
         System.out.println(" ::::> received a forgetit packet <::::");
+        short extcode = packet.getExtendedtype();
+
+        try {
+            if (extcode == 0)
+                this.terminate((short)0);
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+
     }
     private void nope(NOPE packet) {
         System.out.println(" ::::> received a nope packet <::::");

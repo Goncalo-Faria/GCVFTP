@@ -49,6 +49,10 @@ public class ReceiveGate {
         return this.receive_buffer.getDataPacket();
     }
 
+    public int getWindowSize(){
+        return this.receive_buffer.getWindowSize();
+    }
+
     public void close(){
         System.out.println("ReceiveGate closed");
         this.worker.stop();

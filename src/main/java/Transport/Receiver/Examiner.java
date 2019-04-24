@@ -18,6 +18,7 @@ public class Examiner {
     private SimpleSeqChain uncounted;
     private AtomicInteger last_acked_seq;
     private AtomicBoolean at = new AtomicBoolean(true);
+    private final int maxdata;
 
     public Examiner(int maxcontrol, int maxdata, int seq){
         System.out.println(">>>>> theirs " + seq + "<<<<<<<");
@@ -25,6 +26,11 @@ public class Examiner {
         this.control = new LinkedBlockingQueue<>(maxcontrol);
         this.uncounted =  new SimpleSeqChain(maxdata);
         this.last_acked_seq = new AtomicInteger(seq);
+        this.maxdata = maxdata;
+    }
+
+    public int getWindowSize(){
+        return this.maxdata - this.control.size();
     }
 
     public void supply(Packet packet) throws InterruptedException, NotActiveException{

@@ -4,7 +4,9 @@ import Transport.Socket;
 import Transport.Start.GCVConnector;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
+import java.util.Scanner;
 import java.util.concurrent.TimeoutException;
 
 public class Client {
@@ -13,15 +15,24 @@ public class Client {
 
 
     public static void main( String[] args )  {
-        String message = "very useful data, so they say";
 
         try {
             Socket cs = connect.bind(InetAddress.getLocalHost());
-            int i = 0;
-            while ( ++i < 2000 ) {
-                cs.send((message + " " + i + "\n").getBytes());
-                Thread.sleep(100);
-                //System.out.println("::::: i'm sending shit " + i );
+
+            InputStream io = cs.receive();
+
+            Scanner s = new Scanner(io).useDelimiter("\\A");
+
+            while (true)
+            {
+                if(!s.hasNext()){
+                    io = cs.receive();
+                    s = new Scanner(io).useDelimiter("\\A");
+                }
+
+                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>");
+                System.out.print(s.hasNext() ? s.next() : "");
+                Thread.sleep(1000);
             }
 
         } catch(IOException | TimeoutException| InterruptedException e){

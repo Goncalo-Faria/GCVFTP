@@ -60,8 +60,10 @@ public class TransmissionChannel implements Channel {
     }
 
     public void close(){
-        this.cs.disconnect();
-        this.cs.close();
+        if( !this.cs.isClosed() ) {
+            this.cs.disconnect();
+            this.cs.close();
+        }
     }
 
     public StationProperties getinStationProperties(){

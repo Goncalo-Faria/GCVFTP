@@ -3,76 +3,215 @@ package Transport;
 import Transport.ControlPacketTypes.HI;
 import Transport.Sender.SendGate;
 import Transport.Receiver.ReceiveGate;
-import Transport.Start.GCVListener;
 import Transport.Sender.SenderProperties;
 import Transport.Receiver.ReceiverProperties;
+import Transport.Unit.ControlPacket;
+import Transport.Unit.Packet;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.DatagramSocket;
+import java.net.*;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Socket {
 
-    private final long initial_sending_period = GCVConnection.rate_control_interval;
+    private static ConnectionScheduler common_daemon=null;
 
-    private SendGate sgate ;
-    private ReceiveGate rgate;
-    private Thread worker;
+    private static void activate(){
+        if( common_daemon == null){
+            try {
+                Socket.common_daemon = new ConnectionScheduler(
+                        GCVConnection.port,
+                        GCVConnection.connection_receive_ttl,
+                        ControlPacket.Type.HI,
+                        HI.size);
+
+            } catch (SocketException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static void announceSocketConnection(String key, Socket cs){
+        if( common_daemon != null)
+            Socket.common_daemon.announceConnection(key,cs);
+    }
+
+    private static void closeSocketConnection(String key){
+        if( common_daemon != null)
+            Socket.common_daemon.closeConnection(key);
+    }
+
+    private static ConnectionScheduler.StampedControlPacket getStampedPacket() throws InterruptedException{
+        return Socket.common_daemon.getStamped();
+    }
+
+    public static void closeConnection(){
+        Socket.common_daemon.close();
+        Socket.common_daemon = null;
+    }
+
     private Executor actuary;
-    private int ourseq;
+    private boolean persistent = true;
 
+    private AtomicBoolean active = new AtomicBoolean(false);
+
+    private int mtu = GCVConnection.stdmtu;
+    private int maxWindow = GCVConnection.send_buffer_size;
+    private InetAddress localhost;
 
     private TransmissionTransportChannel channel ;
 
-    public Socket(SenderProperties me, ReceiverProperties caller, int their_seq) throws IOException {
+    public Socket() throws IOException {
         System.out.println("Socket created");
-        this.channel = new TransmissionTransportChannel(
-                me,
-                caller);
-
-        HI hello_packet = new HI(
-                (short)0,
-                0 ,
-                this.channel.getSelfStationProperties().mtu(),
-                me.window().getMaxWindowSize()
-        );
-
-        this.ourseq = hello_packet.getSeq();
-
-        this.channel.sendPacket( hello_packet);
-
-        this.boot(me, caller, their_seq, this.ourseq);
+        this.localhost = InetAddress.getLocalHost();
     }
 
-    public Socket(DatagramSocket in, SenderProperties me, ReceiverProperties caller, int their_seq, int our_seq) throws IOException {
-        System.out.println("Socket created");
-        this.channel = new TransmissionTransportChannel(
-                in,
-                me,
-                caller);
-
-        this.ourseq = our_seq;
-
-        this.boot(me, caller, their_seq, our_seq);
+    public Socket(int maxWindow, boolean persistent) throws IOException {
+        this.localhost = InetAddress.getLocalHost();
+        this.persistent = persistent;
+        this.maxWindow = maxWindow;
     }
 
-    void boot(SenderProperties me, ReceiverProperties caller, int their_seq, int our_seq) throws IOException{
-        this.sgate = new SendGate(me,channel,our_seq,initial_sending_period);
-        this.rgate = new ReceiveGate(caller,channel,their_seq);
+    private void boot(SenderProperties me, ReceiverProperties caller, int their_seq, int our_seq) throws IOException{
+        this.active.set(true);
 
-        this.sgate.confirmHandshake();
+        SendGate sgate = new SendGate(me,channel,our_seq,GCVConnection.rate_control_interval);
+        ReceiveGate rgate = new ReceiveGate(caller,channel,their_seq);
+
+        sgate.confirmHandshake();
 
         me.window().boot(their_seq,our_seq);
 
         this.actuary = new Executor(sgate, rgate, me.window() );
 
-        this.worker = new Thread(this.actuary);
+        Thread worker = new Thread(this.actuary);
 
-        this.worker.start();
+        worker.start();
+    }
+
+    public void listen() throws InterruptedException, IOException{
+
+        Socket.activate();
+
+        ConnectionScheduler.StampedControlPacket receivedStampedPacket =
+                Socket.getStampedPacket();
+
+        HI hiPacket = (HI)receivedStampedPacket.get();/*waiting for datagram*/
+
+        InetSocketAddress sa = new InetSocketAddress(0);
+
+        SenderProperties senderProp = new SenderProperties(
+                this.localhost,
+                sa.getPort(),
+                this.mtu,
+                maxWindow,
+                persistent);
+
+        ReceiverProperties receiveProp = new ReceiverProperties(
+                receivedStampedPacket.ip(),
+                receivedStampedPacket.port(),
+                hiPacket.getMTU(),
+                hiPacket.getMaxWindow());
+
+        this.channel = new TransmissionTransportChannel(
+                senderProp ,
+                receiveProp);
+
+        HI reponseHiPacket = new HI(
+                (short)0,
+                0 ,
+                this.channel.getSelfStationProperties().mtu(),
+                senderProp .window().getMaxWindowSize()
+        );
+
+
+        this.channel.sendPacket( reponseHiPacket );
+
+        this.boot(senderProp, receiveProp, hiPacket.getSeq(), reponseHiPacket.getSeq());
+
+        Socket.announceSocketConnection(receivedStampedPacket.ip().toString() + receivedStampedPacket.port(), this);
+    }
+
+    public void connect(String ip, int intendedPort) throws IOException, TimeoutException {
+
+        this.connect(InetAddress.getByName(ip), intendedPort);
+
+    }
+
+    public void connect(InetAddress ip, int intendedPort) throws IOException, TimeoutException {
+
+        SenderProperties sendProp = new SenderProperties(
+                InetAddress.getLocalHost(),
+                intendedPort,
+                mtu,
+                maxWindow,
+                persistent);
+
+        HI hiPacket = new HI(
+                (short)0,
+                0,
+                sendProp.mtu(),
+                maxWindow
+        );
+
+        byte[] serializedHiPacket = hiPacket.serialize();
+
+        DatagramPacket responseDatagram = new DatagramPacket(
+                new byte[HI.size],
+                HI.size);
+
+        DatagramSocket cs = new DatagramSocket(sendProp.port());
+        cs.setSoTimeout(GCVConnection.request_retry_timeout);
+
+        for(int tries = 0; tries < GCVConnection.request_retry_number; tries++ ) {
+
+            System.out.println("sent " + serializedHiPacket.length + " bytes");
+            cs.send(new DatagramPacket(
+                        serializedHiPacket,
+                        0,
+                        serializedHiPacket.length,
+                        ip,
+                        GCVConnection.port)
+            );
+            try {
+                System.out.println(":localport " + cs.getLocalPort() );
+                cs.receive(responseDatagram);
+                Packet du = Packet.parse(responseDatagram.getData());
+
+                if(du instanceof ControlPacket){
+                    ControlPacket cdu = (ControlPacket)du;
+
+                    if( cdu instanceof HI ){
+                        HI response_hello_packet = (HI)cdu;
+                        ReceiverProperties receiveProp= new ReceiverProperties(
+                                ip,
+                                responseDatagram.getPort(),
+                                response_hello_packet.getMTU(),
+                                response_hello_packet.getMaxWindow()
+                        );
+
+                        this.channel = new TransmissionTransportChannel(cs,
+                                sendProp ,
+                                receiveProp);
+
+                        this.boot(sendProp,receiveProp, response_hello_packet.getSeq(), hiPacket.getSeq());
+                        return;
+                    }
+
+                }
+
+            }catch (SocketTimeoutException ste){
+                ;
+            }
+        }
+
+        throw new TimeoutException();
+
     }
 
     public void close() throws IOException{
@@ -80,26 +219,25 @@ public class Socket {
         if( !this.actuary.hasTerminated() )
             this.actuary.terminate((short)0);
 
-        GCVListener.closeConnection(
+        Socket.closeSocketConnection(
                     this.channel.getOtherStationProperties().ip().toString()
                             + this.channel.getOtherStationProperties().port());
 
         this.channel.close();
-
     }
 
     public void send( byte[] data) throws IOException, InterruptedException {
         if(this.actuary.hasTerminated())
             throw new IOException("Socket has disconnected");
 
-        this.sgate.send(data);
+        this.actuary.send(data);
     }
 
     public void send( InputStream io ) throws  IOException, InterruptedException{
         if(this.actuary.hasTerminated())
             throw new IOException("Socket has disconnected");
 
-        this.sgate.send(io);
+        this.actuary.send(io);
     }
 
     public OutputStream send() throws  IOException, InterruptedException{
@@ -108,7 +246,7 @@ public class Socket {
 
         PipedOutputStream producer = new PipedOutputStream();
         PipedInputStream consumer = new PipedInputStream(producer);
-        this.sgate.send(consumer);
+        this.actuary.send(consumer);
         return producer;
     }
 
@@ -116,13 +254,12 @@ public class Socket {
         return this.actuary.getStream();
     }
 
-
-    public void restart() throws IOException {
+    void restart() throws IOException {
         this.channel.sendPacket( new HI(
                 (short)0,
-                this.sgate.connection_time(),
+                this.actuary.connectionTime(),
                 this.channel.getSelfStationProperties().mtu(),
-                this.sgate.properties().window().getMaxWindowSize()
+                maxWindow
         ));
     }
 

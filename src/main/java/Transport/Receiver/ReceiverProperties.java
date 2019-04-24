@@ -1,6 +1,6 @@
 package Transport.Receiver;
 
-import Transport.Start.TransportStationProperties;
+import Transport.TransportStationProperties;
 
 import java.net.InetAddress;
 

@@ -104,6 +104,18 @@ public class Executor implements Runnable{
         }
     }
 
+    public void send( InputStream io ) throws InterruptedException,IOException{
+        this.sgate.send(io);
+    }
+
+    public void send( byte[] data ) throws InterruptedException,IOException{
+        this.sgate.send(data);
+    }
+
+    public int connectionTime(){
+        return this.window.connectionTime();
+    }
+
     InputStream getStream() throws InterruptedException{
         return this.socketOutput.take().consumer;
     }

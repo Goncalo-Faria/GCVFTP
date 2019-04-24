@@ -15,6 +15,8 @@ public final class GCVConnection {
     public static final float rrt_factor = 0.125F;
     public static final float var_rrt_factor = 0.25F;
 
+    public static final float controlBufferFactor = 0.4F;
+
     public static final int send_buffer_size = 8192 ;
     public static final int receive_buffer_size = 8192;
 

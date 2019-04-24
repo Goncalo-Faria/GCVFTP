@@ -2,6 +2,7 @@ package Transport.Receiver;
 
 import java.util.List;
 
+import Transport.GCVConnection;
 import Transport.TransmissionTransportChannel;
 import Transport.Unit.*;
 
@@ -20,8 +21,8 @@ public class ReceiveGate {
         this.properties = me;
         this.channel = ch;
         this.receiveBuffer = new Examiner(
-            (int)(0.3 * me.transmissionChannelBufferSize()),
-            (int)(0.7 * me.transmissionChannelBufferSize()),
+            (int)(GCVConnection.controlBufferFactor * me.transmissionChannelBufferSize()),
+            me.transmissionChannelBufferSize(),
             seq
         );
 

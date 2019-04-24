@@ -2,7 +2,6 @@ package Test;
 
 import Transport.ControlPacketTypes.*;
 import Transport.Receiver.IntervalPacket;
-import Transport.Receiver.LList;
 import Transport.Receiver.SimpleSeqChain;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.DataPacket;
@@ -17,7 +16,7 @@ public class GCVFTP {
 
         System.out.println( BitManipulator.msb( base.array(),0) );
         */
-        ControlPacket cp = new OK((short)422,42,445);
+        ControlPacket cp = new OK((short)422,42,445,42,42,42);
 
         System.out.println(cp.getType());
 
@@ -59,9 +58,9 @@ public class GCVFTP {
 
         }
 
-        System.out.println(" max seq " + l.maxseq());
+        System.out.println(" max seq " + l.maxSeq());
 
-        System.out.println(" min seq " + l.minseq());
+        System.out.println(" min seq " + l.minSeq());
 
 
         DataPacket packet = new DataPacket(new byte[20], 0, 2, 4, DataPacket.Flag.SOLO);

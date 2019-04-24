@@ -9,7 +9,7 @@ public abstract class ControlPacket extends Packet {
         HI, /*syn*/
         OK, /*ack*/
         SURE, /*ack2*/
-        NOPE, /*nack*/
+        NOPE, /*sentNope*/
         BYE, /*fin*/
         SUP, /*keepalive*/
         FORGETIT /*message drop*/
@@ -37,14 +37,11 @@ public abstract class ControlPacket extends Packet {
     private Type type; /* control message type*/
     private short extendedtype=0; /*para a aplicação*/
     private int timestamp=0; /*tempo desde que a ligação começou*/
-
-    private byte[] information; /* informação de controlo extra ao header*/
-
+    
     public ControlPacket( Type t, short extendedtype, int timestamp){
         this.type = t;
         this.timestamp = timestamp;
         this.extendedtype=extendedtype;
-        information = new byte[0];
     }
 
     public void setExtendedType(short extendedtype){ this.extendedtype = extendedtype; }
@@ -81,5 +78,15 @@ public abstract class ControlPacket extends Packet {
                 (cp.getExtendedtype() == this.extendedtype) &&
                 (cp.getTimestamp() == this.timestamp);
 
+    }
+
+    @Override
+    public String toString(){
+        StringBuilder sb = new StringBuilder();
+        sb.append("x-----------x-----------x--------x-------x----x--x--x-x-x-x--x \n");
+        sb.append("type " + this.getType());
+        sb.append("extcode " + this.getExtendedtype());
+        sb.append("timestamp " + this.getTimestamp());
+        return sb.toString();
     }
 }

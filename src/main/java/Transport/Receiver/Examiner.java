@@ -11,40 +11,30 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Examiner {
+class Examiner {
 
     private LinkedBlockingQueue<ControlPacket> control;
     private LinkedBlockingQueue<DataPacket> data = new LinkedBlockingQueue<DataPacket>();
     private SimpleSeqChain uncounted;
-    private AtomicInteger last_acked_seq;
-    private AtomicBoolean at = new AtomicBoolean(true);
+    private AtomicInteger lastOkedSeq;
+    private AtomicBoolean active = new AtomicBoolean(true);
+    private final int maxDataBufferSize;
 
-    public Examiner(int maxcontrol, int maxdata, int seq){
+    Examiner(int maxControlBufferSize, int maxDataBufferSize, int seq){
         System.out.println(">>>>> theirs " + seq + "<<<<<<<");
-        this.control = new LinkedBlockingQueue<>(maxcontrol);
-        this.uncounted =  new SimpleSeqChain(maxdata);
-        this.last_acked_seq = new AtomicInteger(seq);
+        this.control = new LinkedBlockingQueue<>(maxControlBufferSize);
+        this.uncounted =  new SimpleSeqChain(maxDataBufferSize);
+        this.lastOkedSeq = new AtomicInteger(seq);
+        this.maxDataBufferSize = maxDataBufferSize;
     }
 
-    public void supply(Packet packet) throws InterruptedException, NotActiveException{
-        if( !this.at.get() )
-            throw new NotActiveException();
-            
-        if(packet instanceof DataPacket) {
-            DataPacket dp = (DataPacket) packet;
-            System.out.println("x-----------x-----------x--------x-------x----x--x--x-x-x-x--x ");
-            System.out.println("flag " + dp.getFlag());
-            System.out.println("seq " + dp.getSeq());
-            System.out.println("timestamp " + dp.getTimestamp());
-            System.out.println("streamid " + dp.getMessageNumber());
+    int getWindowSize(){
+        return this.maxDataBufferSize - this.control.size();
+    }
 
-        }else{
-            ControlPacket cp = (ControlPacket)packet;
-            System.out.println("x-----------x-----------x--------x-------x----x--x--x-x-x-x--x ");
-            System.out.println("type " + cp.getType());
-            System.out.println("extcode " + cp.getExtendedtype());
-            System.out.println("timestamp " + cp.getTimestamp());
-        }
+    void supply(Packet packet) throws InterruptedException, NotActiveException{
+        if( !this.active.get() )
+            throw new NotActiveException();
 
         if( packet instanceof ControlPacket)
             this.control((ControlPacket)packet);
@@ -54,47 +44,43 @@ public class Examiner {
 
     }
 
-    public int getLastAck(){
-        return last_acked_seq.get();
-    }
-
-    public void incAck() throws NotActiveException{
-        if( !this.at.get() )
-            throw new NotActiveException();
-
-        last_acked_seq.incrementAndGet();
+    int getLastOk(){
+        return lastOkedSeq.get();
     }
 
     private void data(DataPacket packet) throws NotActiveException{
-        if( !this.at.get() )
+        if( !this.active.get() )
             throw new NotActiveException();
 
-        uncounted.add(packet);
-        /* verificar se posso tirar acks*/
-        if( last_acked_seq.get() + 1 == uncounted.minseq() ){
-            IntervalPacket p = uncounted.take();
+        if( packet.getSeq() > this.lastOkedSeq.get() ){
+            uncounted.add(packet);
+            /* verificar se posso tirar acks*/
 
-            last_acked_seq.set(p.max());
+            if (lastOkedSeq.get() + 1 == uncounted.minSeq()) {
+                IntervalPacket p = uncounted.take();
 
-            List<DataPacket> lisp = p.getpackets();
+                lastOkedSeq.set(p.max());
 
-            this.data.addAll(lisp);
+                List<DataPacket> lisp = p.getpackets();
 
-            lisp.forEach(
-                    lisppacket ->
-                {
-                    try{
-                        Executor.add(Executor.ActionType.DATA);
-                    }catch(Exception e){
-                        e.getStackTrace();
-                    }
-                }
-            );
+                this.data.addAll(lisp);
+
+                lisp.forEach(
+                        lisppacket ->
+                        {
+                            try {
+                                Executor.add(Executor.ActionType.DATA);
+                            } catch (Exception e) {
+                                e.getStackTrace();
+                            }
+                        }
+                );
+            }
         }
     }
 
     private void control(ControlPacket packet) throws InterruptedException, NotActiveException{
-        if( !this.at.get() )
+        if( !this.active.get() )
             throw new NotActiveException();
 
         Executor.add(Executor.ActionType.CONTROL);
@@ -102,16 +88,20 @@ public class Examiner {
         control.put(packet);
     }
 
-    public ControlPacket getControlPacket() throws InterruptedException{
+    ControlPacket getControlPacket() throws InterruptedException{
         return this.control.take();
     }
 
-    public DataPacket getDataPacket() throws InterruptedException{
+    DataPacket getDataPacket() throws InterruptedException{
         return this.data.take();
     }
 
-    public void terminate(){
-        this.at.set(false);
+    List<Integer> getLossList(){
+        return uncounted.dual();
+    }
+
+    void terminate(){
+        this.active.set(false);
 
         control.clear();
         uncounted.clear();

@@ -1,11 +1,7 @@
 package Transport.Sender;
 
 
-import Transport.ControlPacketTypes.BYE;
-import Transport.ControlPacketTypes.HI;
-import Transport.ControlPacketTypes.OK;
-import Transport.ControlPacketTypes.SURE;
-import Transport.GCVConnection;
+import Transport.ControlPacketTypes.*;
 import Transport.TransmissionTransportChannel;
 import Transport.Unit.DataPacket;
 
@@ -13,8 +9,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.NotActiveException;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class SendGate {
@@ -22,8 +17,6 @@ public class SendGate {
     //int msb = (m & 0xff) >> 7;
 
     private Accountant send_buffer;
-
-    private LocalDateTime connection_start_time = LocalDateTime.now();
 
     private TransmissionTransportChannel ch;
 
@@ -35,7 +28,7 @@ public class SendGate {
 
 
     /* receiver
-     * manda ack e avisa o port
+     * manda ok e avisa o port
      * fica à escuta de dados
      * espera ack2
      * */
@@ -49,49 +42,82 @@ public class SendGate {
         System.out.println("SendGate created");
         this.ch = ch;
         this.properties = me;
-        this.send_buffer = new Accountant(me.transmissionchannel_buffer_size(),our_seq ,me.window());
+        this.send_buffer = new Accountant(me.transmissionChannelBufferSize(),our_seq);
         this.worker = new SendWorker(ch, send_buffer, initialperiod, me);
     }
 
-    public SendGate(SenderProperties me, TransmissionTransportChannel ch, long initialperiod) throws IOException {
-        System.out.println("SendGate created");
-        this.ch = ch;
-        this.properties = me;
-        this.send_buffer = new Accountant(me.transmissionchannel_buffer_size(), this.handshake(), me.window());
-        this.worker = new SendWorker(ch, send_buffer, initialperiod, me);
-    }
-
-    public void confirm_handshake() throws  IOException{
+    public void confirmHandshake() throws  IOException{
+        this.properties.window().sentTransmission();
         this.ch.sendPacket( new SURE(SURE.ack_hi,this.connection_time()));
     }
 
-    public int handshake() throws IOException{
-        HI hello_packet = new HI(
-            (short)0,
-            this.connection_time() ,
-            this.ch.getSelfStationProperties().packetsize(),
-            this.properties.window().getMaxWindow() 
-        );
+    public void sendSure(int ack) throws  IOException{
+        this.properties.window().sentTransmission();
+        this.properties.window().setLastReceivedOk(ack);
+        this.ch.sendPacket( new SURE(SURE.ack_ok,this.connection_time(),ack));
 
-        this.ch.sendPacket(hello_packet);
-
-        return hello_packet.getSeq();
     }
 
-    public void bye( short code ) throws IOException{
-        this.ch.sendPacket(new BYE(code,
+    public SenderProperties properties(){
+        return this.properties;
+    }
+
+    public void sendBye( short extcode ) throws IOException{
+        this.properties.window().sentTransmission();
+        this.ch.sendPacket(new BYE(extcode,
+                this.connection_time()));
+        System.out.println("BYE");
+    }
+
+    public void sendSup(short extcode) throws IOException{
+        this.properties.window().sentTransmission();
+        this.ch.sendPacket(new SUP(extcode,
                 this.connection_time()));
     }
     
-    public void ok(int last_seq) throws IOException{
-        this.ch.sendPacket( 
-            new OK((short)0, 
-            this.connection_time(), 
-            last_seq) );
+    public OK sendOk(short extcode, int last_seq,int free_window) throws IOException{
+
+        this.properties.window().sentTransmission();
+
+        OK packet = new OK(extcode,
+                this.connection_time(),
+                last_seq,
+                free_window,
+                this.properties.window().rtt(),
+                this.properties.window().rttVar());
+
+        this.ch.sendPacket(packet);
+
+        return packet;
     }
 
-    private int connection_time(){
-        return (int)this.connection_start_time.until(LocalDateTime.now(), ChronoUnit.MILLIS);
+    public void sendForgetit(short extcode)throws IOException {
+        this.properties.window().sentTransmission();
+        this.ch.sendPacket( new FORGETIT(extcode, this.connection_time()) );
+    }
+
+    public void sendNack(List<Integer> losslist ) throws IOException{
+        this.properties.window().sentTransmission();
+        if( !losslist.isEmpty() ) {
+            this.ch.sendPacket(
+                    new NOPE((short) 0,
+                            this.connection_time(), losslist));
+            System.out.println("SENT NACK REAL");
+        }
+
+    }
+
+    public void gotok(int seq) throws InterruptedException, NotActiveException {
+        this.send_buffer.ok(seq);
+    }
+
+    public void gotnack( List<Integer> losslist ) throws NotActiveException, InterruptedException{
+        this.gotok(losslist.get(0)-1);
+        this.send_buffer.nope(losslist);
+    }
+
+    public int connection_time(){
+        return this.properties.window().connectionTime();
     }
 
     public void send( byte[] data) throws IOException, InterruptedException{
@@ -101,13 +127,10 @@ public class SendGate {
         DataPacket packet = new DataPacket(
                 data,
                 this.connection_time(),
-                0,
                 ticket,
                 DataPacket.Flag.SOLO);
 
         this.send_buffer.data(packet);
-
-        this.send_buffer.finish(ticket);/*espera que seja tudo enviado e confirmado*/
 
     }
 
@@ -134,7 +157,6 @@ public class SendGate {
                         data,
                         flag,
                         this.connection_time(),
-                        0,
                         ticket,
                         DataPacket.Flag.SOLO);
 
@@ -146,15 +168,15 @@ public class SendGate {
                 new byte[0],
                 0,
                 this.connection_time(),
-                0,
                 ticket,
                 DataPacket.Flag.LAST);
 
         this.send_buffer.data( dp);
-
-        this.send_buffer.finish(ticket);/*espera que seja tudo enviado e confirmado*/
-
         /* desencrava*/
+    }
+
+    public int getLastOk(){
+        return this.send_buffer.lastOk();
     }
 
     public void close() throws IOException{

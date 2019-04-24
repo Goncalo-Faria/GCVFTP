@@ -18,20 +18,21 @@ public class GCVConnector implements Connector {
 
     private AtomicBoolean active = new AtomicBoolean(true);
 
-    private SenderProperties in_properties;
+    private SenderProperties senderProperties;
 
-    public GCVConnector(int my_port, int max_window) {
-        this(my_port,GCVConnection.stdmtu, max_window);
+    public GCVConnector(int port, int maxWindow, boolean persistent) {
+        this(port,GCVConnection.stdmtu, maxWindow, persistent);
     }
 
-    public GCVConnector(int my_port, int mtu, int max_window){
+    public GCVConnector(int port, int mtu, int maxWindow, boolean persistent){
         try {
-            this.in_properties = new SenderProperties(
+            this.senderProperties = new SenderProperties(
                     InetAddress.getLocalHost(),
-                    my_port,
+                    port,
                     mtu,
-                    max_window,
-                    GCVConnection.send_buffer_size);
+                    maxWindow,
+                    GCVConnection.send_buffer_size,
+                    persistent);
             
         }catch(UnknownHostException e){
             e.getStackTrace();
@@ -52,8 +53,8 @@ public class GCVConnector implements Connector {
         HI hello_packet = new HI(
             (short)0,
             0,
-            this.in_properties.packetsize(),
-            this.in_properties.window().getMaxWindow()
+            this.senderProperties.mtu(),
+            this.senderProperties.window().getMaxWindowSize()
         );
 
         byte[] connection_message = hello_packet.serialize();
@@ -69,7 +70,7 @@ public class GCVConnector implements Connector {
                 new byte[HI.size],
                 HI.size);
 
-        DatagramSocket cs = new DatagramSocket(this.in_properties.port());
+        DatagramSocket cs = new DatagramSocket(this.senderProperties.port());
         cs.setSoTimeout(GCVConnection.request_retry_timeout);
 
         int tries = 0;
@@ -94,7 +95,7 @@ public class GCVConnector implements Connector {
                                 GCVConnection.receive_buffer_size
                                 );
 
-                        return new Socket(cs,this.in_properties, out_properties, response_hello_packet.getSeq(), hello_packet.getSeq());
+                        return new Socket(cs,this.senderProperties, out_properties, response_hello_packet.getSeq(), hello_packet.getSeq());
                     }
                 }
 

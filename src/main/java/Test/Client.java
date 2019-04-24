@@ -4,23 +4,35 @@ import Transport.Socket;
 import Transport.Start.GCVConnector;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
+import java.util.Scanner;
 import java.util.concurrent.TimeoutException;
 
 public class Client {
 
-    private static GCVConnector connect = new GCVConnector(7220,1000,20);
-    private static boolean isRunning = true;
+    private static GCVConnector connect = new GCVConnector(7220,200,true);
+
 
     public static void main( String[] args )  {
-        String message = "very useful data, so they say";
 
         try {
             Socket cs = connect.bind(InetAddress.getLocalHost());
-            int i = 0;
-            while (isRunning && ++i < 40 ) {
-                cs.send(message.getBytes());
-                Thread.sleep(500);
+
+            InputStream io = cs.receive();
+
+            Scanner s = new Scanner(io).useDelimiter("\\A");
+
+            while (true)
+            {
+                if(!s.hasNext()){
+                    io = cs.receive();
+                    s = new Scanner(io).useDelimiter("\\A");
+                }
+
+                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>");
+                System.out.print(s.hasNext() ? s.next() : "");
+                Thread.sleep(1000);
             }
 
         } catch(IOException | TimeoutException| InterruptedException e){
@@ -28,7 +40,4 @@ public class Client {
         }
     }
 
-    public static void stop() {
-        isRunning = false;
-    }
 }

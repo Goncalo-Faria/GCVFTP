@@ -34,11 +34,11 @@ public class TransmissionTransportChannel extends TransmissionChannel implements
     }
 
     public int inMTU(){
-        return this.getinStationProperties().packetsize();
+        return this.getinStationProperties().mtu();
     }
 
     public int outMTU(){
-        return this.getoutStationProperties().packetsize();
+        return this.getoutStationProperties().mtu();
     }
 
     public TransportStationProperties getSelfStationProperties(){

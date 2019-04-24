@@ -1,15 +1,13 @@
 package Transport.Receiver;
 
-import java.time.LocalDateTime;
+import java.util.List;
+
 import Transport.TransmissionTransportChannel;
-import Transport.Receiver.ReceiveWorker;
 import Transport.Unit.*;
 
 public class ReceiveGate {
 
-    private Examiner receive_buffer;
-
-    private LocalDateTime connection_start_time = LocalDateTime.now();
+    private Examiner receiveBuffer;
 
     private TransmissionTransportChannel channel;
 
@@ -21,32 +19,40 @@ public class ReceiveGate {
         System.out.println("ReceiveGate created");
         this.properties = me;
         this.channel = ch;
-        this.receive_buffer = new Examiner(
-            (int)(0.3 * me.transmissionchannel_buffer_size()),
-            (int)(0.7 * me.transmissionchannel_buffer_size()),
+        this.receiveBuffer = new Examiner(
+            (int)(0.3 * me.transmissionChannelBufferSize()),
+            (int)(0.7 * me.transmissionChannelBufferSize()),
             seq
         );
 
-        this.worker = new ReceiveWorker(channel, receive_buffer, me);
+        this.worker = new ReceiveWorker(channel, receiveBuffer, me);
         
     }
 
     public int getLastSeq(){
-        return receive_buffer.getLastAck();
+        return receiveBuffer.getLastOk();
+    }
+
+    public List<Integer> getLossList(){
+        return receiveBuffer.getLossList();
     }
 
     public ControlPacket control() throws InterruptedException{
-        return this.receive_buffer.getControlPacket();
+        return this.receiveBuffer.getControlPacket();
     }
 
     public DataPacket data() throws InterruptedException{
-        return this.receive_buffer.getDataPacket();
+        return this.receiveBuffer.getDataPacket();
+    }
+
+    public int getWindowSize(){
+        return this.receiveBuffer.getWindowSize();
     }
 
     public void close(){
         System.out.println("ReceiveGate closed");
         this.worker.stop();
-        this.receive_buffer.terminate();
+        this.receiveBuffer.terminate();
     }
     
 }

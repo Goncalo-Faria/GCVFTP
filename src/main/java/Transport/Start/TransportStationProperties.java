@@ -6,15 +6,15 @@ import java.net.InetAddress;
 
 public class TransportStationProperties extends StationProperties {
 
-    private final int buffer_size;
+    private final int bufferSize;
 
-    public TransportStationProperties(InetAddress ip,  int port,  int maxpacket, int buffer_size){
-        super(ip,port,maxpacket, buffer_size*maxpacket);
-        this.buffer_size = buffer_size;
+    public TransportStationProperties(InetAddress ip,  int port,  int maxPacket, int bufferSize){
+        super(ip,port,maxPacket, bufferSize * maxPacket);
+        this.bufferSize = bufferSize;
     }
 
-    public int transmissionchannel_buffer_size(){
-        return this.buffer_size;
+    public int transmissionChannelBufferSize(){
+        return this.bufferSize;
     }
 
 

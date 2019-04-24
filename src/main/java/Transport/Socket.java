@@ -1,13 +1,11 @@
 package Transport;
 
+import Transport.ControlPacketTypes.HI;
 import Transport.Sender.SendGate;
 import Transport.Receiver.ReceiveGate;
 import Transport.Start.GCVListener;
 import Transport.Sender.SenderProperties;
 import Transport.Receiver.ReceiverProperties;
-import Transport.Unit.ControlPacket;
-import Transport.Unit.DataPacket;
-import Transport.Unit.Packet;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,97 +13,99 @@ import java.io.OutputStream;
 import java.net.DatagramSocket;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Socket {
 
-    private long initial_sending_period = 100;
+    private final long initial_sending_period = GCVConnection.rate_control_interval;
 
     private SendGate sgate ;
     private ReceiveGate rgate;
-
-    private Thread[] workers;
-
+    private Thread worker;
     private Executor actuary;
+    private int ourseq;
+
 
     private TransmissionTransportChannel channel ;
 
-
     public Socket(SenderProperties me, ReceiverProperties caller, int their_seq) throws IOException {
-        this(me,caller,their_seq,1);
-    }
-
-    public Socket(SenderProperties me, ReceiverProperties caller, int their_seq, int num_executors) throws IOException {
         System.out.println("Socket created");
         this.channel = new TransmissionTransportChannel(
                 me,
                 caller);
 
-        this.sgate = new SendGate(me,channel,initial_sending_period);
-        this.rgate = new ReceiveGate(caller, channel, their_seq);
-        this.actuary = new Executor(sgate, rgate);
+        HI hello_packet = new HI(
+                (short)0,
+                0 ,
+                this.channel.getSelfStationProperties().mtu(),
+                me.window().getMaxWindowSize()
+        );
 
-        this.workers = new Thread[num_executors];
-        
-        for( int i = 0; i < num_executors; i++){
-            this.workers[i] = new Thread(this.actuary);
-            this.workers[i].start();
-        }
+        this.ourseq = hello_packet.getSeq();
+
+        this.channel.sendPacket( hello_packet);
+
+        this.boot(me, caller, their_seq, this.ourseq);
     }
 
     public Socket(DatagramSocket in, SenderProperties me, ReceiverProperties caller, int their_seq, int our_seq) throws IOException {
-        this(in,me,caller,their_seq,our_seq,1);
-    }
-
-    public Socket(DatagramSocket in, SenderProperties me, ReceiverProperties caller, int their_seq, int our_seq, int num_executors) throws IOException {
         System.out.println("Socket created");
         this.channel = new TransmissionTransportChannel(
                 in,
                 me,
                 caller);
 
+        this.ourseq = our_seq;
+
+        this.boot(me, caller, their_seq, our_seq);
+    }
+
+    void boot(SenderProperties me, ReceiverProperties caller, int their_seq, int our_seq) throws IOException{
         this.sgate = new SendGate(me,channel,our_seq,initial_sending_period);
         this.rgate = new ReceiveGate(caller,channel,their_seq);
 
-        this.sgate.confirm_handshake();
+        this.sgate.confirmHandshake();
 
-        this.actuary = new Executor(sgate, rgate);
+        me.window().boot(their_seq,our_seq);
 
-        this.workers = new Thread[num_executors];
+        this.actuary = new Executor(sgate, rgate, me.window() );
 
-        for( int i = 0; i < num_executors; i++){
-            this.workers[i] = new Thread(this.actuary);
-            this.workers[i].start();
-        }
+        this.worker = new Thread(this.actuary);
 
+        this.worker.start();
     }
 
-    public void close( short code ) throws IOException{
+    public void close() throws IOException{
         System.out.println("Socket closed");
-        
-        this.actuary.terminate();
+        if( !this.actuary.hasTerminated() )
+            this.actuary.terminate((short)0);
 
         GCVListener.closeConnection(
-                this.channel.getOtherStationProperties().ip().toString() + this.channel.getOtherStationProperties().port());
-
-        this.sgate.bye(code);
-
-        this.sgate.close();
-
-        this.rgate.close();
+                    this.channel.getOtherStationProperties().ip().toString()
+                            + this.channel.getOtherStationProperties().port());
 
         this.channel.close();
 
     }
 
     public void send( byte[] data) throws IOException, InterruptedException {
+        if(this.actuary.hasTerminated())
+            throw new IOException("Socket has disconnected");
+
         this.sgate.send(data);
     }
 
     public void send( InputStream io ) throws  IOException, InterruptedException{
+        if(this.actuary.hasTerminated())
+            throw new IOException("Socket has disconnected");
+
         this.sgate.send(io);
     }
 
     public OutputStream send() throws  IOException, InterruptedException{
+        if(this.actuary.hasTerminated())
+            throw new IOException("Socket has disconnected");
+
         PipedOutputStream producer = new PipedOutputStream();
         PipedInputStream consumer = new PipedInputStream(producer);
         this.sgate.send(consumer);
@@ -116,8 +116,14 @@ public class Socket {
         return this.actuary.getStream();
     }
 
-    public void restart() throws IOException{
-        this.sgate.handshake();
+
+    public void restart() throws IOException {
+        this.channel.sendPacket( new HI(
+                (short)0,
+                this.sgate.connection_time(),
+                this.channel.getSelfStationProperties().mtu(),
+                this.sgate.properties().window().getMaxWindowSize()
+        ));
     }
 
 }

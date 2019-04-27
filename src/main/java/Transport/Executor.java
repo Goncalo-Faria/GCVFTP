@@ -2,6 +2,7 @@ package Transport;
 
 import java.io.*;
 import java.lang.Runnable;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -158,7 +159,7 @@ public class Executor implements Runnable{
     }
 
     private void syn() {
-        /*verificar condições maradas e mandar sentNope ou ack */
+        /*verificar condições maradas e mandar shouldSendNope ou ack */
         this.window.syn();
         if( this.window.hasTimeout() ){
             try {
@@ -176,15 +177,15 @@ public class Executor implements Runnable{
             try {
                 int curack = this.rgate.getLastSeq();
 
-                if (curack > this.window.getLastSentOk() ) {
+                if (curack > this.window.getLastSentOk() ){
                     /**/
                     this.window.sentOk( this.sgate.sendOk((short)0,curack,this.rgate.getWindowSize()) );
-                    System.out.println(curack +" SENT ACK " + " :: " + this.window.getLastSentOk()  );
+                    System.out.println(curack +" SENT ACK " + " :: " + curack  );
 
                 } else {
 
-                    if( this.window.sentNope() )
-                        this.sgate.sendNack(this.rgate.getLossList());
+                    if( this.window.shouldSendNope() )
+                        this.sgate.sendNope(this.rgate.getLossList());
 
                     if( this.window.okMightHaveBeenLost() ){
                         this.window.sentOk( this.sgate.sendOk((short)0,curack,this.rgate.getWindowSize()) );
@@ -193,10 +194,11 @@ public class Executor implements Runnable{
                     }
                 }
 
-                int curreceivedok = this.sgate.getLastOk();
+                int lastReceivedOk = this.window.getLastReceivedOk();
 
-                if(curreceivedok > this.window.getLastReceivedOk()){
-                    this.sgate.sendSure(curreceivedok);
+                if( lastReceivedOk > this.window.getLastSentSure()){
+                    this.window.setLastSentSure(lastReceivedOk);
+                    this.sgate.sendSure(lastReceivedOk);
                     System.out.println("SENT SURE");
                 }
 
@@ -226,16 +228,16 @@ public class Executor implements Runnable{
             this.window.setRtt(packet.getRtt());
             this.window.setRttVar(packet.getRttVar());
             this.window.setReceiverBuffer(packet.getWindow());
-            this.sgate.gotok(packet.getSeq());
+            this.window.receivedOk(packet.getSeq());
+            this.sgate.release(packet.getSeq());
         }catch(NotActiveException e){
             e.printStackTrace();
         }
     }
 
     private void sure(SURE packet){
-        System.out.println(" ::::> received an " + packet.getOK() + " sentSure " + packet.getOK() + " packet <::::");
-        //this.sgate.gotsure(packet.getOK());
-        this.window.sentSure(packet);
+        System.out.println(" ::::> received an " + packet.getOK() + " receivedSure " + packet.getOK() + " packet <::::");
+        this.window.receivedSure(packet.getOK());
     }
     private void bye(BYE packet){
         System.out.println(" ::::> received a bye packet <::::");
@@ -262,9 +264,13 @@ public class Executor implements Runnable{
 
     }
     private void nope(NOPE packet) {
-        System.out.println(" ::::> received a sentNope packet <::::");
+        System.out.println(" ::::> received a shouldSendNope packet <::::");
         try{
-            this.sgate.gotnack(packet.getLossList());
+            List<Integer> lost = packet.getLossList();
+            this.window.activateCongestionControl();
+            this.window.receivedOk(lost.get(0)-1);
+            this.sgate.release(lost.get(0)-1);
+            this.sgate.retransmit(packet.getLossList());
         }catch (InterruptedException|NotActiveException e){
             e.printStackTrace();
         }

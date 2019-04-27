@@ -35,6 +35,7 @@ public class SendWorker extends TimerTask {
     public void run(){
         try {
             Executor.add(Executor.ActionType.SYN);
+            System.out.println("window " + this.properties.window().congestionWindowValue());
             if( active.get() ) {
                 for(int i = 0; i< this.properties.window().congestionWindowValue() ; i++){
                     DataPacket packet = sendBuffer.poll();

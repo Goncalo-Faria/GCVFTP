@@ -5,7 +5,9 @@ import Transport.ControlPacketTypes.SURE;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.PrimitiveIterator;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class FlowWindow {
@@ -21,24 +23,24 @@ public class FlowWindow {
     private AtomicInteger timeLastNackSent = new AtomicInteger(0);
 
     private AtomicInteger lastSureReceived = new AtomicInteger(-1);
+    private AtomicInteger lastSureSent = new AtomicInteger(-1);
     private AtomicInteger lastOkSent = new AtomicInteger(0);
     private AtomicInteger lastOkReceived = new AtomicInteger(0);
 
-
-    private AtomicInteger receiverBuffer = new AtomicInteger(GCVConnection.receive_buffer_size);
+    private AtomicInteger receiverBuffer;
 
     private ConcurrentHashMap<Integer,Integer> sentOkCache = new ConcurrentHashMap<>();
 
     private AtomicInteger congestionWindowSize = new AtomicInteger(GCVConnection.initial_window_size);
 
-    private final int maxWindowSize;
+    private AtomicBoolean congestionControl = new AtomicBoolean(false);
 
     private volatile long packetArrivalRate;
     private volatile long estimatedLinkCapacity;
     private volatile double sendPeriod;
 
     public FlowWindow( int maxWindow ){
-        this.maxWindowSize = maxWindow;
+        receiverBuffer = new AtomicInteger(maxWindow);
     }
 
     public int congestionWindowValue(){
@@ -46,7 +48,7 @@ public class FlowWindow {
     }
 
     public int getMaxWindowSize(){
-        return maxWindowSize;
+        return this.receiverBuffer.get();
     }
 
     private int getTimeout(){
@@ -59,15 +61,19 @@ public class FlowWindow {
         setLastSentOk( packet.getSeq() );
     }
 
-    public boolean sentNope(){
-        int curtime = connectionTime();
+    boolean shouldSendNope(){
+        int curTime = connectionTime();
 
-        if( curtime - timeLastNackSent.get() > getTimeout() ){
-            timeLastNackSent.set(curtime);
+        if( curTime - timeLastNackSent.get() > getTimeout() ){
+            timeLastNackSent.set(curTime);
             return true;
         }else{
             return false;
         }
+    }
+
+    void activateCongestionControl(){
+        this.congestionControl.set(true);
     }
 
     void boot(int lastOkSent, int lastOkReceived){
@@ -96,9 +102,8 @@ public class FlowWindow {
         return rttVar.get();
     }
 
-    void sentSure(SURE packet ){
+    void receivedSure(int seq){
 
-        int seq = packet.getOK();
         int curtime = connectionTime();
 
         if( seq != -1){
@@ -122,6 +127,19 @@ public class FlowWindow {
         System.out.println("rtt: " + this.rtt.get() + " var: " + this.rttVar.get() +  " ");
     }
 
+    void receivedOk(int seq) {
+
+        int lastseq = this.lastOkReceived.get();
+        if( (seq == this.lastOkReceived.updateAndGet(x -> (x > seq) ? x : seq ))
+                && !this.congestionControl.get() ){
+            System.out.println("#################################################[]");
+            this.congestionWindowSize.getAndAdd(seq - lastseq);
+            int buffsize = this.receiverBuffer.get();
+            int win = this.congestionWindowSize.getAndUpdate(x -> (x < buffsize) ? x : buffsize);
+            /* trys to not pass the window*/
+        }
+    }
+
     public int connectionTime(){
         return (int)this.connectionStartTime.until(LocalDateTime.now(), ChronoUnit.MILLIS);
     }
@@ -140,6 +158,11 @@ public class FlowWindow {
 
     int getLastReceivedOk( ){ return this.lastOkReceived.get(); }
 
+    int getLastSentSure() { return this.lastSureSent.get(); }
+
+    void setLastSentSure( int seq ) {
+        this.lastSureSent.getAndUpdate(x -> (x > seq) ? x : seq );
+    }
     void syn(){
 
     }

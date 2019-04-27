@@ -9,7 +9,7 @@ public abstract class ControlPacket extends Packet {
         HI, /*syn*/
         OK, /*ack*/
         SURE, /*ack2*/
-        NOPE, /*sentNope*/
+        NOPE, /*shouldSendNope*/
         BYE, /*fin*/
         SUP, /*keepalive*/
         FORGETIT /*message drop*/

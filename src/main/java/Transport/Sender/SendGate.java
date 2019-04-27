@@ -48,13 +48,20 @@ public class SendGate {
 
     public void confirmHandshake() throws  IOException{
         this.properties.window().sentTransmission();
-        this.ch.sendPacket( new SURE(SURE.ack_hi,this.connection_time()));
+        this.ch.sendPacket( new SURE(SURE.ack_hi,
+                this.properties.window().connectionTime()));
     }
 
     public void sendSure(int ack) throws  IOException{
         this.properties.window().sentTransmission();
-        this.properties.window().setLastReceivedOk(ack);
-        this.ch.sendPacket( new SURE(SURE.ack_ok,this.connection_time(),ack));
+        //this.properties.window().setLastReceivedOk(ack);
+        this.ch.sendPacket(
+                new SURE(
+                        SURE.ack_ok,
+                        this.properties.window().connectionTime(),
+                        ack
+                )
+        );
 
     }
 
@@ -64,27 +71,37 @@ public class SendGate {
 
     public void sendBye( short extcode ) throws IOException{
         this.properties.window().sentTransmission();
-        this.ch.sendPacket(new BYE(extcode,
-                this.connection_time()));
+        this.ch.sendPacket(
+                new BYE(
+                        extcode,
+                        this.properties.window().connectionTime()
+                )
+        );
         System.out.println("BYE");
     }
 
     public void sendSup(short extcode) throws IOException{
         this.properties.window().sentTransmission();
-        this.ch.sendPacket(new SUP(extcode,
-                this.connection_time()));
+        this.ch.sendPacket(
+                new SUP(
+                        extcode,
+                        this.properties.window().connectionTime()
+                )
+        );
     }
     
     public OK sendOk(short extcode, int last_seq,int free_window) throws IOException{
 
         this.properties.window().sentTransmission();
 
-        OK packet = new OK(extcode,
-                this.connection_time(),
+        OK packet = new OK(
+                extcode,
+                this.properties.window().connectionTime(),
                 last_seq,
                 free_window,
                 this.properties.window().rtt(),
-                this.properties.window().rttVar());
+                this.properties.window().rttVar()
+        );
 
         this.ch.sendPacket(packet);
 
@@ -93,31 +110,35 @@ public class SendGate {
 
     public void sendForgetit(short extcode)throws IOException {
         this.properties.window().sentTransmission();
-        this.ch.sendPacket( new FORGETIT(extcode, this.connection_time()) );
+        this.ch.sendPacket(
+                new FORGETIT(
+                        extcode,
+                        this.properties.window().connectionTime()
+                )
+        );
     }
 
-    public void sendNack(List<Integer> losslist ) throws IOException{
+    public void sendNope(List<Integer> lossList ) throws IOException{
         this.properties.window().sentTransmission();
-        if( !losslist.isEmpty() ) {
+        if( !lossList.isEmpty() ) {
             this.ch.sendPacket(
-                    new NOPE((short) 0,
-                            this.connection_time(), losslist));
+                    new NOPE(
+                            (short) 0,
+                            this.properties.window().connectionTime(),
+                            lossList
+                    )
+            );
             System.out.println("SENT NACK REAL");
         }
 
     }
 
-    public void gotok(int seq) throws InterruptedException, NotActiveException {
+    public void release(int seq) throws InterruptedException, NotActiveException {
         this.send_buffer.ok(seq);
     }
 
-    public void gotnack( List<Integer> losslist ) throws NotActiveException, InterruptedException{
-        this.gotok(losslist.get(0)-1);
-        this.send_buffer.nope(losslist);
-    }
-
-    public int connection_time(){
-        return this.properties.window().connectionTime();
+    public void retransmit(List<Integer> lossList ) throws NotActiveException, InterruptedException{
+        this.send_buffer.nope(lossList);
     }
 
     public void send( byte[] data) throws IOException, InterruptedException{
@@ -126,9 +147,10 @@ public class SendGate {
 
         DataPacket packet = new DataPacket(
                 data,
-                this.connection_time(),
+                this.properties.window().connectionTime(),
                 ticket,
-                DataPacket.Flag.SOLO);
+                DataPacket.Flag.SOLO
+        );
 
         this.send_buffer.data(packet);
 
@@ -156,9 +178,10 @@ public class SendGate {
                 DataPacket dp = new DataPacket(
                         data,
                         flag,
-                        this.connection_time(),
+                        this.properties.window().connectionTime(),
                         ticket,
-                        DataPacket.Flag.SOLO);
+                        DataPacket.Flag.SOLO
+                );
 
                 this.send_buffer.data( dp);
             }
@@ -167,16 +190,13 @@ public class SendGate {
         DataPacket dp = new DataPacket(
                 new byte[0],
                 0,
-                this.connection_time(),
+                this.properties.window().connectionTime(),
                 ticket,
-                DataPacket.Flag.LAST);
+                DataPacket.Flag.LAST
+        );
 
         this.send_buffer.data( dp);
         /* desencrava*/
-    }
-
-    public int getLastOk(){
-        return this.send_buffer.lastOk();
     }
 
     public void close() throws IOException{

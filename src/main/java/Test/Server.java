@@ -19,7 +19,7 @@ public class Server {
             cs.listen();
 
             int i = 0;
-            while ( ++i < 40 ) {
+            while ( ++i < 80 ) {
                 cs.send((message + " " + i + "\n").getBytes());
                 //System.out.println("::::: i'm sending shit " + i );
             }

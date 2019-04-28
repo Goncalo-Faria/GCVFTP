@@ -20,7 +20,7 @@ class Accountant {
      *
      * TODO : Make it a circular List.
      * */
-    private LinkedBlockingQueue<DataPacket> sending = new LinkedBlockingQueue<DataPacket>();
+    private LinkedBlockingDeque<DataPacket> sending = new LinkedBlockingDeque<DataPacket>();
     /*
      * Packet Sending queue.
      *      the elements of the queue are either :
@@ -78,29 +78,33 @@ class Accountant {
 
     }
 
-    int lastOk() throws NullPointerException{
-        DataPacket oldestpacket = this.uncounted.peek();
-        int ok;
-        if( oldestpacket == null ){
-            ok = this.seq.get();
-        }else{
-            ok = this.uncounted.peek().getSeq() - 1;
-        }
-        return ok;
-    }
-
     void nope(List<Integer> missing) throws InterruptedException, NotActiveException {
 
         if( !this.ative.get() )
             throw new NotActiveException();
 
         Iterator<DataPacket> it = this.uncounted.iterator();
-
-        for( Integer mss : missing)
+        LinkedList<DataPacket> temporaryCache = new LinkedList<>();
+        try{
+            System.out.println("loss: " + missing.get(0) + " seq: " + uncounted.peek().getSeq());
+        }catch (NullPointerException e){
+            System.out.println("nullps");
+        }
+        for( Integer mss : missing ) {
             while (it.hasNext()) {
                 DataPacket packet = it.next();
-                if(packet.getSeq() == mss) { this.sending.put(packet); }
+                if (packet.getSeq() == mss) {
+                    System.out.println(" :: " + mss);
+                    temporaryCache.addFirst(packet);
+                    break;
+                }
             }
+        }
+
+        for( DataPacket e : temporaryCache)
+            this.sending.putFirst(e);
+
+        temporaryCache.clear();
     }
 
     void terminate(){

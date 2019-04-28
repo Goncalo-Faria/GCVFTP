@@ -9,6 +9,11 @@ public class LList<V> {
     public LList(){
     }
 
+    private LList( No<V> head, No<V> tail){
+        this.head = head;
+        this.tail = tail;
+    }
+
     public LList<V> add( V element ){
         
         if( head == null){
@@ -49,6 +54,10 @@ public class LList<V> {
             current = current.next;
 
         return this;
+    }
+
+    public LList<V> view(){
+        return new LList<>(this.head, this.tail);
     }
 
     public LList<V> previous(){

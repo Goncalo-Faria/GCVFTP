@@ -30,18 +30,7 @@ public class Executor implements Runnable{
     public static void add(ActionType action) throws InterruptedException{
         switch( action ){
             case CONTROL : executorQueue.putFirst(action); break;
-            case SYN :
-
-                //try {
-                    //if (!executorQueue.peek().equals(ActionType.SYN)) {
-                        executorQueue.putFirst(action);
-                        //System.out. println(" PUT SYN ");
-                    //}
-                //}catch (NullPointerException e){
-                 //   System.out. println(" PUT SYN ");
-                  //  executorQueue.putFirst(action);
-                //}
-                break;
+            case SYN : executorQueue.putFirst(action);break;
             case DATA : executorQueue.put(action); break;
             case KEEPALIVE: executorQueue.put(action); break;
         }
@@ -132,7 +121,7 @@ public class Executor implements Runnable{
         try{
             DataPacket packet = this.rgate.data();
 
-            System.out.println(" ::::> DATA <:::: " + packet.getSeq() +  " ops ::" );
+            //System.out.println(" ::::> DATA <:::: " + packet.getSeq() +  " ops ::" );
 
             if ( packet.getFlag().equals(DataPacket.Flag.FIRST) || packet.getFlag().equals(DataPacket.Flag.SOLO) ){
                 ExecutorPipe inc = new Executor.ExecutorPipe();
@@ -162,16 +151,16 @@ public class Executor implements Runnable{
         /*verificar condições maradas e mandar shouldSendNope ou ack */
         this.window.syn();
         if( this.window.hasTimeout() ){
-            try {
-                this.sgate.sendForgetit((short) 0);/*especifica o stream a fechar 0 significa todos*/
+            //try {
+                //this.sgate.sendForgetit((short) 0);/*especifica o stream a fechar 0 significa todos*/
                 /* do something about it*/
                 /* like close socket */
-                this.terminate((short)303);
+                //this.terminate((short)303);
                 System.out.println("TIMEOUT");
 
-            }catch(IOException e){
-                e.printStackTrace();
-            }
+            //}catch(IOException e){
+                //e.printStackTrace();
+            //}
 
         }else {
             try {
@@ -180,7 +169,7 @@ public class Executor implements Runnable{
                 if (curack > this.window.getLastSentOk() ){
                     /**/
                     this.window.sentOk( this.sgate.sendOk((short)0,curack,this.rgate.getWindowSize()) );
-                    System.out.println(curack +" SENT ACK " + " :: " + curack  );
+                    System.out.println(curack +" SENT ACK " + " :: " + curack + " win" + this.rgate.getWindowSize()  );
 
                 } else {
 
@@ -200,6 +189,8 @@ public class Executor implements Runnable{
                     this.window.setLastSentSure(lastReceivedOk);
                     this.sgate.sendSure(lastReceivedOk);
                     System.out.println("SENT SURE");
+                }else{
+                    this.window.deactivateCongestionControl();
                 }
 
             } catch (IOException e) {
@@ -268,9 +259,10 @@ public class Executor implements Runnable{
         try{
             List<Integer> lost = packet.getLossList();
             this.window.activateCongestionControl();
-            this.window.receivedOk(lost.get(0)-1);
-            this.sgate.release(lost.get(0)-1);
-            this.sgate.retransmit(packet.getLossList());
+            //this.window.receivedOk(lost.get(0)-1);
+            //this.sgate.release(lost.get(0)-1);
+            //this.sgate.release(lost.get(0)-1);
+            this.sgate.retransmit(lost);
         }catch (InterruptedException|NotActiveException e){
             e.printStackTrace();
         }

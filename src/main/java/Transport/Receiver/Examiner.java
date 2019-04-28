@@ -1,6 +1,7 @@
 package Transport.Receiver;
 
 import Transport.Executor;
+import Transport.GCVConnection;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.DataPacket;
 import Transport.Unit.Packet;
@@ -29,7 +30,7 @@ class Examiner {
     }
 
     int getWindowSize(){
-        return this.maxDataBufferSize - this.control.size();
+        return this.maxDataBufferSize - data.size() - uncounted.size();
     }
 
     void supply(Packet packet) throws InterruptedException, NotActiveException{
@@ -54,7 +55,7 @@ class Examiner {
 
         if( packet.getSeq() > this.lastOkedSeq.get() ){
             uncounted.add(packet);
-            /* verificar se posso tirar acks*/
+            /* verificar se posso tirar acks */
 
             if (lastOkedSeq.get() + 1 == uncounted.minSeq()) {
                 IntervalPacket p = uncounted.take();
@@ -97,7 +98,7 @@ class Examiner {
     }
 
     List<Integer> getLossList(){
-        return uncounted.dual();
+        return uncounted.dual(this.lastOkedSeq.get() + 1, GCVConnection.max_loss_list_size);
     }
 
     void terminate(){

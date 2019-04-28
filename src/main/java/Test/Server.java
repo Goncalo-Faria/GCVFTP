@@ -14,12 +14,12 @@ public class Server {
 
         try {
 
-            GCVSocket cs = new GCVSocket();
+            GCVSocket cs = new GCVSocket(10000,true);
 
             cs.listen();
 
             int i = 0;
-            while ( ++i < 80 ) {
+            while ( ++i < 400000 ) {
                 cs.send((message + " " + i + "\n").getBytes());
                 //System.out.println("::::: i'm sending shit " + i );
             }

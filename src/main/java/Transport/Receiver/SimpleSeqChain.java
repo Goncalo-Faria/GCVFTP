@@ -19,13 +19,35 @@ public class SimpleSeqChain {
         this.maxAmplitude = maxAmplitude;
     }
 
+    public int size(){
+        int s = 0;
+        wrl.readLock().lock();
+        try {
+
+            LList<IntervalPacket> v = list.view();
+            v.start();
+
+            while( list.hasNext() ) {
+                IntervalPacket cur = list.next().value();
+                s += cur.max() - cur.min();
+            }
+
+            }finally {
+            wrl.readLock().unlock();
+        }
+        return s;
+    }
+
     public void add(DataPacket packet){
         wrl.writeLock().lock();
         try{
             int seq = packet.getSeq();
 
-            if( seq > maxAmplitude + min && !list.empty() )
+            if( seq > maxAmplitude + min && !list.empty() ){
+                System.out.println(" DROP ::: < " + seq);
+
                 return;
+            }
 
             this.min = ( this.min > seq ) ? seq : this.min;
             this.max = ( this.max < seq ) ? seq : this.max;
@@ -77,23 +99,30 @@ public class SimpleSeqChain {
         }
     }
 
-    public List<Integer> dual(){
+    public List<Integer> dual( int startElem, int maxSize){
         wrl.readLock().lock();
         try{
             List<Integer> dualRep = new LinkedList<Integer>();
 
-            list.start();
+            LList<IntervalPacket> v = list.view();
+
+            v.start();
 
             IntervalPacket pst = null,cur;
-
-            while(list.hasNext()){
-                cur = list.next().value();
-
+            int i = 0;
+            while(v.hasNext() && (i < maxSize) ){
+                i++;
+                cur = v.next().value();
                 if( cur != null && pst != null ){
                     dualRep.add(pst.max() + 1);
                     dualRep.add(cur.min() - 1);
                 }
                 pst = cur;
+            }
+
+            if( !dualRep.isEmpty() ){
+                dualRep.add(0,this.min-1);
+                dualRep.add(0, startElem);
             }
 
             return dualRep;

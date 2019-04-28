@@ -1,6 +1,7 @@
 package Transport.ControlPacketTypes;
 
 import Common.BitManipulator;
+import Transport.GCVConnection;
 import Transport.Unit.ControlPacket;
 
 import java.nio.BufferOverflowException;
@@ -12,7 +13,7 @@ import java.util.List;
 
 public class NOPE extends ControlPacket {
 
-    public static int size = ControlPacket.header_size + 4*100;
+    public static int size = ControlPacket.header_size + 4 * 2 * (GCVConnection.max_loss_list_size + 1);
 
     private List<Integer> losslist;
 
@@ -36,7 +37,7 @@ public class NOPE extends ControlPacket {
 
     public NOPE(short extendedtype, int timestamp, List<Integer> losslist){
         super(ControlPacket.Type.NOPE,extendedtype,timestamp);
-        this.losslist = new ArrayList<>(losslist.subList(0,(100 > losslist.size()) ? losslist.size() : 100));
+        this.losslist = losslist;
     }
 
     public byte[] extendedSerialize( BitManipulator extractor ){

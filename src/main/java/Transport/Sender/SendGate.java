@@ -54,7 +54,6 @@ public class SendGate {
 
     public void sendSure(int ack) throws  IOException{
         this.properties.window().sentTransmission();
-        //this.properties.window().setLastReceivedOk(ack);
         this.ch.sendPacket(
                 new SURE(
                         SURE.ack_ok,
@@ -118,7 +117,7 @@ public class SendGate {
         );
     }
 
-    public void sendNope(List<Integer> lossList ) throws IOException{
+    public void sendNope( List<Integer> lossList ) throws IOException{
         this.properties.window().sentTransmission();
         if( !lossList.isEmpty() ) {
             this.ch.sendPacket(
@@ -128,7 +127,8 @@ public class SendGate {
                             lossList
                     )
             );
-            System.out.println("SENT NACK REAL");
+
+            System.out.println("SENT NACK " + lossList.get(0) );
         }
 
     }
@@ -138,6 +138,7 @@ public class SendGate {
     }
 
     public void retransmit(List<Integer> lossList ) throws NotActiveException, InterruptedException{
+        System.out.println("Retransmitting : " + lossList.size());
         this.send_buffer.nope(lossList);
     }
 

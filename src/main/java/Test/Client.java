@@ -16,7 +16,7 @@ public class Client {
 
         try {
 
-            GCVSocket cs = new GCVSocket(200,true);
+            GCVSocket cs = new GCVSocket(10000,true);
 
             cs.connect(InetAddress.getLocalHost(),7220);
 
@@ -31,8 +31,8 @@ public class Client {
                     s = new Scanner(io).useDelimiter("\\A");
                 }
 
-                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>");
-                System.out.print(s.hasNext() ? s.next() : "");
+                //System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>");
+                String tmp = s.hasNext() ? s.next() : " ";
             }
 
         } catch(IOException | TimeoutException| InterruptedException e){

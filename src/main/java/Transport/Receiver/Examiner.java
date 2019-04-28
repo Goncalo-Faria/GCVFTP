@@ -1,16 +1,20 @@
 package Transport.Receiver;
 
 import Transport.Executor;
+import Transport.FlowWindow;
 import Transport.GCVConnection;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.DataPacket;
 import Transport.Unit.Packet;
 
 import java.io.NotActiveException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 class Examiner {
 
@@ -20,6 +24,8 @@ class Examiner {
     private AtomicInteger lastOkedSeq;
     private AtomicBoolean active = new AtomicBoolean(true);
     private final int maxDataBufferSize;
+    private ReadWriteLock wrl = new ReentrantReadWriteLock();
+
 
     Examiner(int maxControlBufferSize, int maxDataBufferSize, int seq){
         System.out.println(">>>>> theirs " + seq + "<<<<<<<");
@@ -30,7 +36,12 @@ class Examiner {
     }
 
     int getWindowSize(){
-        return this.maxDataBufferSize - data.size() - uncounted.size();
+        this.wrl.readLock().lock();
+        try {
+            return this.maxDataBufferSize - data.size() - uncounted.size();
+        }finally {
+            this.wrl.readLock().unlock();
+        }
     }
 
     void supply(Packet packet) throws InterruptedException, NotActiveException{
@@ -50,33 +61,40 @@ class Examiner {
     }
 
     private void data(DataPacket packet) throws NotActiveException{
-        if( !this.active.get() )
-            throw new NotActiveException();
+        this.wrl.writeLock().lock();
+        try {
+            if (!this.active.get())
+                throw new NotActiveException();
+            System.out.print("raw data : " + packet.getSeq());
+            if (packet.getSeq() > this.lastOkedSeq.get()) {
+                System.out.println(" lastoked " + this.lastOkedSeq.get());
+                uncounted.add(packet);
 
-        if( packet.getSeq() > this.lastOkedSeq.get() ){
-            uncounted.add(packet);
-            /* verificar se posso tirar acks */
+                /* verificar se posso tirar acks */
 
-            if (lastOkedSeq.get() + 1 == uncounted.minSeq()) {
-                IntervalPacket p = uncounted.take();
+                if (lastOkedSeq.get() + 1 == uncounted.minSeq()) {
+                    IntervalPacket p = uncounted.take();
 
-                lastOkedSeq.set(p.max());
+                    lastOkedSeq.set(p.max());
 
-                List<DataPacket> lisp = p.getpackets();
+                    List<DataPacket> lisp = p.getpackets();
 
-                this.data.addAll(lisp);
-
-                lisp.forEach(
-                        lisppacket ->
-                        {
-                            try {
-                                Executor.add(Executor.ActionType.DATA);
-                            } catch (Exception e) {
-                                e.getStackTrace();
+                    lisp.forEach(
+                            lisppacket ->
+                            {
+                                try {
+                                    this.data.put(lisppacket);
+                                    Executor.add(Executor.ActionType.DATA);
+                                } catch (Exception e) {
+                                    e.getStackTrace();
+                                }
                             }
-                        }
-                );
+                    );
+                }
+
             }
+        }finally {
+            this.wrl.writeLock().unlock();
         }
     }
 
@@ -89,6 +107,10 @@ class Examiner {
         control.put(packet);
     }
 
+    public void clear(){
+        this.uncounted.clear();
+    }
+
     ControlPacket getControlPacket() throws InterruptedException{
         return this.control.take();
     }
@@ -98,13 +120,27 @@ class Examiner {
     }
 
     List<Integer> getLossList(){
-        return uncounted.dual(this.lastOkedSeq.get() + 1, GCVConnection.max_loss_list_size);
+        this.wrl.readLock().lock();
+        try {
+
+            return uncounted.dual(this.lastOkedSeq.get() + 1, GCVConnection.max_loss_list_size);
+
+        }finally {
+            this.wrl.readLock().unlock();
+
+        }
     }
 
     void terminate(){
-        this.active.set(false);
+        this.wrl.writeLock().lock();
+        try {
+            this.active.set(false);
 
-        control.clear();
-        uncounted.clear();
+            control.clear();
+            uncounted.clear();
+
+        }finally {
+            this.wrl.writeLock().unlock();
+        }
     }
 }

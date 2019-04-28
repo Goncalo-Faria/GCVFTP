@@ -138,9 +138,15 @@ public class SendGate {
     }
 
     public void retransmit(List<Integer> lossList ) throws NotActiveException, InterruptedException{
-        System.out.println("Retransmitting : " + lossList.size());
+        System.out.println(">>>>>>>>>>><Retransmitting : " + lossList.size()+ " <<<<<<<<<<<<<<<<<<");
         this.send_buffer.nope(lossList);
     }
+
+    public void retransmit() throws NotActiveException, InterruptedException{
+        System.out.println("Retransmitting : full ");
+        this.send_buffer.retransmit();
+    }
+
 
     public void send( byte[] data) throws IOException, InterruptedException{
 
@@ -205,6 +211,10 @@ public class SendGate {
         this.worker.stop();
         this.send_buffer.terminate();
 
+    }
+
+    public int seqLastSent(){
+        return this.send_buffer.lastSeq();
     }
 
 }

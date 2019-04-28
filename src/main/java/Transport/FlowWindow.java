@@ -130,23 +130,28 @@ public class FlowWindow {
         this.congestionControl.set(false);
     }
 
-    void receivedOk(int seq) {
+    void receivedNotCoolOk(int seq) {
 
+        this.timeLastOkReceived.set(this.connectionTime());
+        int lastseq = this.lastOkReceived.get();
+
+        this.lastOkReceived.updateAndGet(x -> (x > seq) ? x : seq );
+
+    }
+
+    void receivedOk(int seq) {
 
         this.timeLastOkReceived.set(this.connectionTime());
         int lastseq = this.lastOkReceived.get();
 
         if( (seq == this.lastOkReceived.updateAndGet(x -> (x > seq) ? x : seq )) ){
 
-            if( this.congestionControl.get() ) {
-
-                this.congestionWindowSize.getAndAdd( (int)((seq - lastseq) * GCVConnection.additive_fraction) );
-
+            if( !this.congestionControl.get() ) {
+                System.out.println("#################################################[]");
+                this.congestionWindowSize.getAndAdd(  (seq - lastseq) > 2 ? (seq - lastseq) : 2 );
 
             }else{
-                System.out.println("#################################################[]");
-                this.congestionWindowSize.getAndAdd(seq - lastseq);
-
+                this.congestionWindowSize.getAndAdd(  (seq - lastseq)*GCVConnection.additive_fraction > 2 ? (int)((seq - lastseq)*GCVConnection.additive_fraction)  : 2 );
             }
 
             int buffsize = this.receiverBuffer.get();
@@ -172,10 +177,6 @@ public class FlowWindow {
 
     int getLastReceivedOk( ){ return this.lastOkReceived.get(); }
 
-    public boolean isInCongestionControl(){
-        return this.congestionControl.get();
-    }
-
     int getLastSentSure() { return this.lastSureSent.get(); }
 
     void setLastSentSure( int seq ) {
@@ -184,12 +185,18 @@ public class FlowWindow {
 
     void syn(){
         if( congestionControl.get() ) {
-            if ((this.connectionTime() - this.timeLastOkReceived.get()) > 100) {
+            if ((this.connectionTime() - this.timeLastOkReceived.get()) > this.rtt.get() + 4 * this.rttVar.get() ) {
                 /* mul decrease */
                 this.multiplicativeDecrease();
+            }else{
 
             }
+
         }
+    }
+
+    public float uploadSpeed(){
+        return GCVConnection.stdmtu * (float)this.congestionWindowValue() * 10/1000000;
     }
 
     private void multiplicativeDecrease(){
@@ -198,17 +205,17 @@ public class FlowWindow {
 
     boolean hasTimeout(){
         int difs = this.connectionTime() - this.timeLastReceived.get();
-        return(difs > 2*(rtt.get() + 4 * rttVar.get()) );
+        return(difs > 4*(rtt.get() + 4 * rttVar.get()) );
     }
 
-    void gotTransmission(){
+    public void gotTransmission(){
         this.timeLastReceived.set(this.connectionTime());
     }
 
     public void sentTransmission(){ this.timeLastSent.set(this.connectionTime()); }
 
-    public boolean synHasPassed(){
-        return (this.connectionTime() - this.timeLastSent.get() > 100);
+    public boolean rttHasPassed(){
+        return (this.connectionTime() - this.timeLastSent.get() > this.rtt.get());
     }
 
     boolean okMightHaveBeenLost(){

@@ -88,6 +88,7 @@ public class LList<V> {
             if(current.previous != null && current.next != null ){
                 /* elemento do meio */
                 current.previous.next = current.next;
+                current.next.previous = current.previous;
                 current = current.previous;
                 
             }else if( current.previous != null ){
@@ -95,11 +96,13 @@ public class LList<V> {
                 tail = current.previous;
                 tail.next = null;
                 current = tail;
+
             }else if( current.next != null ){
                 /* head */
                 head = current.next;
                 head.previous = null;
                 current = null;
+
             }else {
                 tail = current = head = null;
             }

@@ -120,13 +120,15 @@ public class GCVSocket {
 
         this.channel = new TransmissionTransportChannel(
                 senderProp ,
-                receiveProp);
+                receiveProp,
+                senderProp.window()
+        );
 
         HI reponseHiPacket = new HI(
                 (short)0,
                 0 ,
                 this.channel.getSelfStationProperties().mtu(),
-                senderProp .window().getMaxWindowSize()
+                senderProp.window().getMaxWindowSize()
         );
 
 
@@ -197,7 +199,9 @@ public class GCVSocket {
 
                         this.channel = new TransmissionTransportChannel(cs,
                                 sendProp ,
-                                receiveProp);
+                                receiveProp,
+                                sendProp.window()
+                        );
 
                         this.boot(sendProp,receiveProp, response_hello_packet.getSeq(), hiPacket.getSeq());
                         return;

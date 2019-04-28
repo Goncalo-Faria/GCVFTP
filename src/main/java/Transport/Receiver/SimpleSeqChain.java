@@ -13,34 +13,28 @@ public class SimpleSeqChain {
     private int min = Integer.MAX_VALUE;
     private int max = Integer.MIN_VALUE;
     private int maxAmplitude;
-    private ReadWriteLock wrl = new ReentrantReadWriteLock();
+    //private ReadWriteLock wrl = new ReentrantReadWriteLock();
 
-    public SimpleSeqChain( int maxAmplitude){
+    public SimpleSeqChain( int maxAmplitude ){
         this.maxAmplitude = maxAmplitude;
     }
 
     public int size(){
         int s = 0;
-        wrl.readLock().lock();
-        try {
 
             LList<IntervalPacket> v = list.view();
             v.start();
 
-            while( list.hasNext() ) {
-                IntervalPacket cur = list.next().value();
+            while( v.hasNext() ) {
+                IntervalPacket cur = v.next().value();
                 s += cur.max() - cur.min();
             }
 
-            }finally {
-            wrl.readLock().unlock();
-        }
         return s;
     }
 
     public void add(DataPacket packet){
-        wrl.writeLock().lock();
-        try{
+
             int seq = packet.getSeq();
 
             if( seq > maxAmplitude + min && !list.empty() ){
@@ -48,6 +42,7 @@ public class SimpleSeqChain {
 
                 return;
             }
+
 
             this.min = ( this.min > seq ) ? seq : this.min;
             this.max = ( this.max < seq ) ? seq : this.max;
@@ -61,13 +56,18 @@ public class SimpleSeqChain {
 
                 int merged = cur.merge(ip);
 
-                if( merged > 0 ){
+                if( merged == 1 ){
                     /*check for recursive agregation */
                     ip = cur;
                     list.remove();
 
-                }else if( merged < 0){
-                    return ;
+                }else if( merged == -1 ) {
+                    //System.out.println("-1 bug found ");
+                    return;
+
+                }else if( merged == 0 ){
+                    //System.out.println("contains bug found ");
+                    return;
                 }else if( ip.less(cur) ){
                     list.add(ip); /* add before the iterator mark */
                     return      ;
@@ -75,33 +75,22 @@ public class SimpleSeqChain {
             }
             list.next().add(ip);/* coloca na cauda.*/
 
-            list.start();
-        }finally{
-            wrl.writeLock().unlock();
-        }
     }
 
     public int minSeq(){
-        wrl.readLock().lock();
-        try{ 
+
             return this.min;
-        }finally{ 
-            wrl.readLock().unlock(); 
-        }
+
     }
 
     public int maxSeq(){
-        wrl.readLock().lock();
-        try{ 
+
             return this.max;
-        }finally{ 
-            wrl.readLock().unlock(); 
-        }
+
     }
 
     public List<Integer> dual( int startElem, int maxSize){
-        wrl.readLock().lock();
-        try{
+
             List<Integer> dualRep = new LinkedList<Integer>();
 
             LList<IntervalPacket> v = list.view();
@@ -127,14 +116,9 @@ public class SimpleSeqChain {
 
             return dualRep;
 
-        }finally {
-            wrl.readLock().unlock();
-        }
     }
 
     public IntervalPacket take(){
-        wrl.writeLock().lock();
-        try{
 
             if( list.empty() )
                 return null;
@@ -153,28 +137,18 @@ public class SimpleSeqChain {
             this.min = list.peek().min();
 
             return t;
-        }finally{
-            wrl.writeLock().unlock();
-        }
     }
 
     public IntervalPacket peek(){
-        wrl.readLock().lock();
-        try {
-            return list.peek();
-        }finally {
-            wrl.readLock().unlock();
-        }
+
+        return list.peek();
+
     }
 
     public void clear(){
-        wrl.writeLock().lock();
-        try{
+
             this.min = Integer.MAX_VALUE;
             this.max = Integer.MIN_VALUE;
             list = new LList<>();
-        }finally{
-            wrl.writeLock().unlock();
-        }
     }
 }

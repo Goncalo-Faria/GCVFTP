@@ -17,10 +17,12 @@ public class ReceiveWorker implements Runnable{
     private ReceiverProperties properties;
     private Examiner buffer;
 
-    public ReceiveWorker(TransportChannel channel, Examiner buffer, ReceiverProperties properties){
+    public ReceiveWorker(TransportChannel channel, Examiner buffer, ReceiverProperties properties, int numThreads ){
         this.channel = channel;
         this.properties = properties;
         this.buffer = buffer;
+
+        for( int i = 0; i< numThreads ; i++)
         (new Thread(this)).start();
     }
 

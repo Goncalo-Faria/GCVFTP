@@ -2,6 +2,7 @@ package Transport.Receiver;
 
 import java.util.List;
 
+import Transport.FlowWindow;
 import Transport.GCVConnection;
 import Transport.TransmissionTransportChannel;
 import Transport.Unit.*;
@@ -26,7 +27,7 @@ public class ReceiveGate {
             seq
         );
 
-        this.worker = new ReceiveWorker(channel, receiveBuffer, me);
+        this.worker = new ReceiveWorker(channel, receiveBuffer, me, GCVConnection.number_of_receive_workers);
         
     }
 
@@ -54,6 +55,10 @@ public class ReceiveGate {
         System.out.println("ReceiveGate closed");
         this.worker.stop();
         this.receiveBuffer.terminate();
+    }
+
+    public void prepareRetransmition(){
+        this.receiveBuffer.clear();
     }
     
 }

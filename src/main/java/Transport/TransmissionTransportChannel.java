@@ -9,26 +9,32 @@ import java.net.SocketException;
 
 public class TransmissionTransportChannel extends TransmissionChannel implements TransportChannel {
 
+    private FlowWindow window;
+
     public TransmissionTransportChannel(
             TransportStationProperties send,
-            TransportStationProperties receive) throws SocketException {
+            TransportStationProperties receive,
+            FlowWindow window) throws SocketException {
         super(send,receive);
+        this.window = window;
     }
 
     public TransmissionTransportChannel(DatagramSocket cs,
                                         TransportStationProperties send,
-                                        TransportStationProperties receive
+                                        TransportStationProperties receive,
+                                        FlowWindow window
                                         ) throws SocketException {
         super(cs,send,receive);
+        this.window = window;
     }
 
     public void sendPacket(Packet p) throws IOException {
-
+        this.window.sentTransmission();
         this.send(p.serialize());
     }
 
     public Packet receivePacket() throws IOException{
-
+        this.window.gotTransmission();
         return Packet.parse(super.receive());
     }
 

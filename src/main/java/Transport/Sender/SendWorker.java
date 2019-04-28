@@ -36,21 +36,21 @@ public class SendWorker extends TimerTask {
     public void run(){
         try {
             Executor.add(Executor.ActionType.SYN);
-            System.out.println("rate " + GCVConnection.stdmtu * (float)this.properties.window().congestionWindowValue() * 10/1000000 + " Mb/s" );
+            System.out.println("rate " + this.properties.window().uploadSpeed() + " Mb/s" );
             if( active.get() ) {
                 for(int i = 0; i< this.properties.window().congestionWindowValue() ; i++){
                     DataPacket packet = sendBuffer.poll();
                     if( packet != null) {
 
                         //if( this.properties.window().isInCongestionControl() )
-                            //System.out.println( " seq " + packet.getSeq());
+                        //System.out.println( " seq " + packet.getSeq());
                         channel.sendPacket(packet);
                         //System.out.println("SENT DATA");
                         this.properties.window().sentTransmission();
                     }
                 }
 
-                if( this.properties.isPersistent() && this.properties.window().synHasPassed() )
+                if( this.properties.isPersistent() && this.properties.window().rttHasPassed() )
                     Executor.add(Executor.ActionType.KEEPALIVE);
 
             }

@@ -64,15 +64,16 @@ class Accountant {
     void ok(int x) throws NotActiveException, InterruptedException{
         if( !this.ative.get() )
             throw new NotActiveException();
-
+        System.out.println("accountat release " + x);
         DataPacket packet;
-        if( !this.uncounted.isEmpty() ) {
-            do {
-                packet = this.uncounted.take();
-
-                /* decrementa o número de pacotes em falta do stream*/
-
-            } while (packet.getSeq() < x);/* todos os pacotes com número de sequência inferior */
+        if( !this.uncounted.isEmpty() ){
+            try {
+                while (this.uncounted.peek().getSeq() <= x)
+                    this.uncounted.take();
+            }catch (NullPointerException e){
+                ;
+            }
+            /* decrementa o número de pacotes em falta do stream*/
             /* TODO: Assegurar que é suportada ordem circular */
         }
 
@@ -85,16 +86,12 @@ class Accountant {
 
         Iterator<DataPacket> it = this.uncounted.iterator();
         LinkedList<DataPacket> temporaryCache = new LinkedList<>();
-        try{
-            System.out.println("loss: " + missing.get(0) + " seq: " + uncounted.peek().getSeq());
-        }catch (NullPointerException e){
-            System.out.println("nullps");
-        }
+
         for( Integer mss : missing ) {
             while (it.hasNext()) {
                 DataPacket packet = it.next();
                 if (packet.getSeq() == mss) {
-                    System.out.println(" :: " + mss);
+                    //System.out.println(" :: " + mss);
                     temporaryCache.addFirst(packet);
                     break;
                 }
@@ -130,6 +127,17 @@ class Accountant {
 
         // procura o index
         return index;
+    }
+
+    public int lastSeq(){
+        return this.seq.get();
+    }
+
+    void retransmit(){
+
+        sending.clear();
+        sending.addAll(this.uncounted);
+
     }
 
 }

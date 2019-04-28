@@ -11,7 +11,7 @@ public class Server {
 
     public static void main( String[] args ) {
         String message = "very useful data, so they say";
-
+        System.out.println(message.getBytes().length*200000/1000000);
         try {
 
             GCVSocket cs = new GCVSocket(10000,true);
@@ -19,7 +19,7 @@ public class Server {
             cs.listen();
 
             int i = 0;
-            while ( ++i < 400000 ) {
+            while ( ++i < 200000 ) {
                 cs.send((message + " " + i + "\n").getBytes());
                 //System.out.println("::::: i'm sending shit " + i );
             }

@@ -159,7 +159,12 @@ public class IntervalPacket {
                 return -1;
             }
 
-            return 0;
+            if( (x.min() >= this.min) && (x.max() <= this.max) ){
+                /* está contido */
+                return 0;
+            }
+
+            return 4;
             /*indica se o merge foi feito*/
         }finally{
             a.wrl.writeLock().unlock();
@@ -167,7 +172,14 @@ public class IntervalPacket {
         
         }
     }
-        
-    
 
+    @Override
+    public boolean equals(Object obj) {
+        if( ! (obj instanceof IntervalPacket ) )
+            return false;
+
+        IntervalPacket other = (IntervalPacket)obj;
+
+        return (other.min == this.min) && (other.max == this.max);
+    }
 }

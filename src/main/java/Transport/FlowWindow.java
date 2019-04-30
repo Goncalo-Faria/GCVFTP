@@ -126,7 +126,7 @@ public class FlowWindow {
             this.timeLastSureReceived.set( curTime );
 
         }else{
-            rtt.set(initiate - packet.getTimestamp() );
+            rtt.set( this.connectionTime() - initiate );
             rttVar.set(0);
 
             System.out.println( "Start rtt " + this.rtt);
@@ -233,7 +233,9 @@ public class FlowWindow {
     void syn(){
         int synCounter = this.synOkCounter.getAndSet(0);
         System.out.println("counter " + synCounter);
-        System.out.println("rtt : " + this.rtt.get() + 4 * this.rttVar.get());
+        System.out.println("rtt : " + this.rtt.get() );
+        System.out.println("rttVar : " + this.rttVar.get() );
+
         if( congestionControl.get() ) {
             int exptime = this.rtt.get() + 4 * this.rttVar.get();
             System.out.println(exptime);

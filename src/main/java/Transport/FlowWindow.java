@@ -204,7 +204,7 @@ public class FlowWindow {
 
     boolean okMightHaveBeenLost(){
         try{
-            int exptime = this.rtt.get() + 4 * this.rttVar.get();
+            int exptime = this.rtt.get() + 8 * this.rttVar.get();
             exptime =  exptime > 101 ? exptime : 101;
             return (this.connectionTime()-this.sentOkCache.get(this.lastOkSent.get())) > exptime;
         }catch(NullPointerException e){

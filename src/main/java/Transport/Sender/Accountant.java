@@ -84,24 +84,30 @@ class Accountant {
         if( !this.ative.get() )
             throw new NotActiveException();
 
+        this.sending.clear();
+
         Iterator<DataPacket> it = this.uncounted.iterator();
-        LinkedList<DataPacket> temporaryCache = new LinkedList<>();
+        //LinkedList<DataPacket> temporaryCache = new LinkedList<>();
 
         for( Integer mss : missing ) {
             while (it.hasNext()) {
                 DataPacket packet = it.next();
                 if (packet.getSeq() == mss) {
                     //System.out.println(" :: " + mss);
-                    temporaryCache.addFirst(packet);
+                    //temporaryCache.addFirst(packet);
+                    this.sending.put(packet);
                     break;
                 }
             }
         }
 
-        for( DataPacket e : temporaryCache)
-            this.sending.putFirst(e);
+        while( it.hasNext() )
+            this.sending.put( it.next() );
 
-        temporaryCache.clear();
+        //for( DataPacket e : temporaryCache)
+          //  this.sending.putFirst(e);
+
+        //temporaryCache.clear();
     }
 
     void terminate(){

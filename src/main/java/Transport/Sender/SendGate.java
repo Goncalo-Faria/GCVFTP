@@ -47,13 +47,13 @@ public class SendGate {
     }
 
     public void confirmHandshake() throws  IOException{
-        this.properties.window().sentTransmission();
+
         this.ch.sendPacket( new SURE(SURE.ack_hi,
                 this.properties.window().connectionTime()));
     }
 
     public void sendSure(int ack) throws  IOException{
-        this.properties.window().sentTransmission();
+
         this.ch.sendPacket(
                 new SURE(
                         SURE.ack_ok,
@@ -69,7 +69,7 @@ public class SendGate {
     }
 
     public void sendBye( short extcode ) throws IOException{
-        this.properties.window().sentTransmission();
+
         this.ch.sendPacket(
                 new BYE(
                         extcode,
@@ -80,7 +80,7 @@ public class SendGate {
     }
 
     public void sendSup(short extcode) throws IOException{
-        this.properties.window().sentTransmission();
+
         this.ch.sendPacket(
                 new SUP(
                         extcode,
@@ -89,9 +89,7 @@ public class SendGate {
         );
     }
     
-    public OK sendOk(short extcode, int last_seq,int free_window) throws IOException{
-
-        this.properties.window().sentTransmission();
+    public OK sendOk(short extcode, int last_seq, int free_window) throws IOException{
 
         OK packet = new OK(
                 extcode,
@@ -108,7 +106,7 @@ public class SendGate {
     }
 
     public void sendForgetit(short extcode)throws IOException {
-        this.properties.window().sentTransmission();
+
         this.ch.sendPacket(
                 new FORGETIT(
                         extcode,
@@ -118,7 +116,7 @@ public class SendGate {
     }
 
     public void sendNope( List<Integer> lossList ) throws IOException{
-        this.properties.window().sentTransmission();
+
         if( !lossList.isEmpty() ) {
             this.ch.sendPacket(
                     new NOPE(
@@ -142,11 +140,9 @@ public class SendGate {
         this.send_buffer.nope(lossList);
     }
 
-    public void retransmit() throws NotActiveException, InterruptedException{
-        System.out.println("Retransmitting : full ");
+    public void retransmit(){
         this.send_buffer.retransmit();
     }
-
 
     public void send( byte[] data) throws IOException, InterruptedException{
 
@@ -211,10 +207,6 @@ public class SendGate {
         this.worker.stop();
         this.send_buffer.terminate();
 
-    }
-
-    public int seqLastSent(){
-        return this.send_buffer.lastSeq();
     }
 
 }

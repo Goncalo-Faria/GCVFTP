@@ -8,7 +8,7 @@ public final class GCVConnection {
 
     public static final int tau = 9;
     public static final float additive_fraction = 0.1F;
-    public static final float decrease_factor = 0.98F;
+    public static final float decrease_factor = 0.8F;
     public static final long connection_receive_ttl= 2000;
     public static final int request_retry_number = 8;
     public static final int request_retry_timeout = 2000;

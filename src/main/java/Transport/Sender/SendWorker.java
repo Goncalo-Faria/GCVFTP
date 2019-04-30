@@ -38,7 +38,8 @@ public class SendWorker extends TimerTask {
             Executor.add(Executor.ActionType.SYN);
             System.out.println("rate " + this.properties.window().uploadSpeed() + " Mb/s" );
             if( active.get() ) {
-                for(int i = 0; i< this.properties.window().congestionWindowValue() ; i++){
+                int it =this.properties.window().congestionWindowValue();
+                for(int i = 0; i< it ; i++){
                     DataPacket packet = sendBuffer.poll();
                     if( packet != null) {
 
@@ -46,7 +47,6 @@ public class SendWorker extends TimerTask {
                         //System.out.println( " seq " + packet.getSeq());
                         channel.sendPacket(packet);
                         //System.out.println("SENT DATA");
-                        this.properties.window().sentTransmission();
                     }
                 }
 

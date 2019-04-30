@@ -114,11 +114,9 @@ public class Executor implements Runnable{
         /* distribuir os dados em streams */
         /* encaminhar para streams */
         /*-------------------------*/
-
-
-
         try{
             DataPacket packet = this.rgate.data();
+            this.window.receivedData(packet);
 
             //System.out.println(" ::::> DATA <:::: " + packet.getSeq() +  " ops ::" );
 
@@ -149,57 +147,67 @@ public class Executor implements Runnable{
     private void syn() {
         /*verificar condições maradas e mandar shouldSendNope ou ack */
         this.window.syn();
-        if( this.window.hasTimeout() ){
-            try {
-                this.sgate.sendForgetit((short) 0);/*especifica o stream a fechar 0 significa todos*/
+        //if( this.window.hasTimeout() ){
+            //try {
+                //this.sgate.sendForgetit((short) 0);/*especifica o stream a fechar 0 significa todos*/
                 /* do something about it*/
                 /* like close socket */
-                this.terminate((short)303);
-                System.out.println("TIMEOUT");
+                //this.terminate((short)303);
+                if( this.window.hasTimeout() )
+                    System.out.println("TIMEOUT");
 
-            }catch(IOException e){
-                e.printStackTrace();
-            }
+            //}catch(IOException e){
+        //        e.printStackTrace();
+            //}
 
-        }else {
+        //}else {
             try {
-                int curack = this.rgate.getLastSeq();
+                /* Receiver actions */
 
-                if (curack > this.window.getLastSentOk() ){
-                    /**/
-                    this.window.sentOk( this.sgate.sendOk((short)0,curack,this.rgate.getWindowSize()) );
-                    //System.out.println(curack +" SENT ACK " + " :: " + curack + " win" + this.rgate.getWindowSize()  );
+                /* Received new data */
+                if( this.window.getLastSentOk() < this.window.getLastReceivedData() ){
+                    this.sgate.sendOk(
+                            (short)0,
+                            this.window.getLastReceivedData(),
+                            this.rgate.getWindowSize()
+                    );
+                }else{
 
-                } else{
+                    /* If is likely a packet was lost */
+                   // if( this.window.shouldSendNope() ) {
+                    //    this.sgate.sendNope(
+                    //            this.rgate.getLossList()
+                     //   );
+                    //}
 
-                    if( this.window.shouldSendNope() ) {
-                        //this.sgate.sendNope(this.rgate.getLossList());
-                        this.window.sentOk( this.sgate.sendOk((short)0,curack,this.rgate.getWindowSize()) );
+                    /* If is likely a sent ack was lost */
+                    if( this.window.okMightHaveBeenLost() ){
+                        this.sgate.sendOk(
+                                (short)0,
+                                this.window.getLastSentOk(),
+                                this.rgate.getWindowSize()
+                        );
                         this.rgate.prepareRetransmition();
                     }
-
-                    if( this.window.okMightHaveBeenLost() ){
-                        this.window.sentOk( this.sgate.sendOk((short)0,curack,this.rgate.getWindowSize()) );
-                        //System.out.println(curack +" ReSENT ACK " + " :: " + this.window.getLastSentOk()  );
-
-                    }
                 }
+                /* Sender actions */
 
-                int lastReceivedOk = this.window.getLastReceivedOk();
+                //if( this.window.dataMightHaveBeenLost() ){
+                //    this.sgate.retransmit();
+                //}
 
-                if( lastReceivedOk > this.window.getLastSentSure()){
-                    this.window.setLastSentSure(lastReceivedOk);
-                    this.sgate.sendSure(lastReceivedOk);
-                    //System.out.println("SENT SURE");
-                }else{
-                    //this.window.deactivateCongestionControl();
+                /*  Received new ok */
+                if( this.window.getLastReceivedOk() > this.window.getLastSentSure() ){
+                    this.sgate.sendSure(
+                            this.window.getLastReceivedOk()
+                    );
                 }
 
             } catch (IOException e) {
 
                 e.printStackTrace();
             }
-        }
+        //}
     }
 
     private void keepalive(){
@@ -218,25 +226,21 @@ public class Executor implements Runnable{
     private void ok(OK packet) throws InterruptedException{
         //System.out.println(" ::::> received an " + packet.getSeq() + " ok " + packet.getSeq() + " packet <::::");
         try{
-            this.window.setRtt(packet.getRtt());
-            this.window.setRttVar(packet.getRttVar());
-            this.window.setReceiverBuffer(packet.getWindow());
             this.sgate.release(packet.getSeq());
 
+            /* ok duplicado */
             if( this.window.getLastReceivedOk() == packet.getSeq() ){
+                this.sgate.sendSure(packet.getSeq());
                 this.sgate.retransmit();
-                this.window.activateCongestionControl();
             }
 
-            this.window.receivedOk(packet.getSeq());
-        }catch(NotActiveException e){
+        }catch(IOException e){
             e.printStackTrace();
         }
     }
 
     private void sure(SURE packet){
         //System.out.println(" ::::> received an " + packet.getOK() + " receivedSure " + packet.getOK() + " packet <::::");
-        this.window.receivedSure(packet.getOK());
     }
     private void bye(BYE packet){
         System.out.println(" ::::> received a bye packet <::::");
@@ -248,8 +252,8 @@ public class Executor implements Runnable{
     }
     private void sup(SUP packet){
         //System.out.println(" ::::> received a sup packet <::::");
-
     }
+
     private void forgetit(FORGETIT packet){
         //System.out.println(" ::::> received a forgetit packet <::::");
         short extcode = packet.getExtendedtype();
@@ -266,10 +270,6 @@ public class Executor implements Runnable{
         //System.out.println(" ::::> received a Nope packet <::::");
         try{
             List<Integer> lost = packet.getLossList();
-            this.window.receivedNotCoolOk(lost.get(0)-1);
-            this.sgate.release(lost.get(0)-1);
-            this.window.activateCongestionControl();
-
             this.sgate.retransmit(lost);
         }catch (InterruptedException|NotActiveException e){
             e.printStackTrace();

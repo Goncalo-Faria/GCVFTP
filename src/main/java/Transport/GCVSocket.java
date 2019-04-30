@@ -77,7 +77,7 @@ public class GCVSocket {
         this.maxWindow = maxWindow;
     }
 
-    private void boot(SenderProperties me, ReceiverProperties caller, int their_seq, int our_seq) throws IOException{
+    private void boot(SenderProperties me, ReceiverProperties caller, int their_seq, int our_seq, int time) throws IOException{
         this.active.set(true);
 
         SendGate sgate = new SendGate(me,channel,our_seq,GCVConnection.rate_control_interval);
@@ -85,7 +85,7 @@ public class GCVSocket {
 
         sgate.confirmHandshake();
 
-        me.window().boot(their_seq,our_seq);
+        me.window().boot(their_seq,our_seq, time);
 
         this.actuary = new Executor(sgate, rgate, me.window() );
 
@@ -124,17 +124,17 @@ public class GCVSocket {
                 senderProp.window()
         );
 
-        HI reponseHiPacket = new HI(
+        HI responseHiPacket = new HI(
                 (short)0,
-                0 ,
+                senderProp.window().connectionTime() ,
                 this.channel.getSelfStationProperties().mtu(),
                 senderProp.window().getMaxWindowSize()
         );
 
 
-        this.channel.sendPacket( reponseHiPacket );
+        this.channel.sendPacket( responseHiPacket );
 
-        this.boot(senderProp, receiveProp, hiPacket.getSeq(), reponseHiPacket.getSeq());
+        this.boot(senderProp, receiveProp, hiPacket.getSeq(), responseHiPacket.getSeq(), responseHiPacket.getTimestamp());
 
         GCVSocket.announceSocketConnection(receivedStampedPacket.ip().toString() + receivedStampedPacket.port(), this);
     }
@@ -156,7 +156,7 @@ public class GCVSocket {
 
         HI hiPacket = new HI(
                 (short)0,
-                0,
+                sendProp.window().connectionTime(),
                 sendProp.mtu(),
                 maxWindow
         );
@@ -203,7 +203,7 @@ public class GCVSocket {
                                 sendProp.window()
                         );
 
-                        this.boot(sendProp,receiveProp, response_hello_packet.getSeq(), hiPacket.getSeq());
+                        this.boot(sendProp,receiveProp, response_hello_packet.getSeq(), hiPacket.getSeq(), response_hello_packet.getTimestamp());
                         return;
                     }
 

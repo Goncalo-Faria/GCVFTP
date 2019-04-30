@@ -1,12 +1,16 @@
 package Transport;
 
+import Transport.ControlPacketTypes.NOPE;
 import Transport.ControlPacketTypes.OK;
 import Transport.ControlPacketTypes.SURE;
+import Transport.Unit.DataPacket;
 
+import javax.xml.crypto.Data;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.PrimitiveIterator;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -14,31 +18,37 @@ public class FlowWindow {
 
     private final LocalDateTime connectionStartTime = LocalDateTime.now();
 
-    private AtomicInteger rtt = new AtomicInteger(1000);
-    private AtomicInteger rttVar =  new AtomicInteger(3600 * 1000);
+    private AtomicInteger rtt = new AtomicInteger(100);
+    private AtomicInteger rttVar =  new AtomicInteger(100);
 
 
     private AtomicInteger timeLastReceived = new AtomicInteger(0);
-    private AtomicInteger timeLastSent = new AtomicInteger(-1);
-    private AtomicInteger timeLastNackSent = new AtomicInteger(0);
-    private AtomicInteger timeLastOkReceived = new AtomicInteger(-1);
+    private AtomicInteger timeLastSent = new AtomicInteger(0);
 
-    private AtomicInteger lastSureReceived = new AtomicInteger(-1);
-    private AtomicInteger lastSureSent = new AtomicInteger(-1);
+    private AtomicInteger timeLastNackSent = new AtomicInteger(0);
+    private AtomicInteger timeLastSureSent = new AtomicInteger(0);
+
+    private AtomicInteger timeLastNackReceived = new AtomicInteger(0);
+    private AtomicInteger timeLastSureReceived = new AtomicInteger(0);
+    private AtomicInteger timeLastOkReceived = new AtomicInteger(0);
+
+    private AtomicInteger lastSureReceived = new AtomicInteger(0);
+    private AtomicInteger lastSureSent = new AtomicInteger(0);
     private AtomicInteger lastOkSent = new AtomicInteger(0);
     private AtomicInteger lastOkReceived = new AtomicInteger(this.connectionTime());
+    private AtomicInteger lastDataReceived = new AtomicInteger(0);
+
+    private AtomicInteger synOkCounter = new AtomicInteger(0);
 
     private AtomicInteger receiverBuffer;
 
-    private ConcurrentHashMap<Integer,Integer> sentOkCache = new ConcurrentHashMap<>();
+    private ConcurrentSkipListMap<Integer,Integer> sentOkCache = new ConcurrentSkipListMap<>();
 
     private AtomicInteger congestionWindowSize = new AtomicInteger(GCVConnection.initial_window_size);
 
     private AtomicBoolean congestionControl = new AtomicBoolean(false);
 
-    private volatile long packetArrivalRate;
-    private volatile long estimatedLinkCapacity;
-    private volatile double sendPeriod;
+    private int initiate = 0;
 
     private final int maxWindow;
 
@@ -48,41 +58,33 @@ public class FlowWindow {
     }
 
     public int congestionWindowValue(){
-        return congestionWindowSize.get();
+        int win = congestionWindowSize.get();
+        int buffsize = this.receiverBuffer.get();
+
+        return (win < buffsize? win : buffsize);
     }
 
     public int getMaxWindowSize(){
         return maxWindow;
     }
 
-    void sentOk(OK packet){
-        sentOkCache.put( packet.getSeq(), packet.getTimestamp() );
-        setLastSentOk( packet.getSeq() );
-    }
-
-    boolean shouldSendNope(){
-        int curTime = connectionTime();
-
-        if( curTime - timeLastNackSent.get() > (rtt.get() + 4 * rttVar.get()) ){
-            timeLastNackSent.set(curTime);
-            return true;
-        }else{
-            return false;
-        }
-    }
-
     void activateCongestionControl(){
         this.congestionControl.set(true);
     }
 
-    void boot(int lastOkSent, int lastOkReceived){
+    void boot(int lastOkSent, int lastOkReceived, int time){
         this.lastOkSent.set(lastOkSent);
         this.lastOkReceived.set(lastOkReceived);
         this.lastSureReceived.set(lastOkSent);
+        this.initiate = time;
     }
 
     public int rtt(){
         return rtt.get();
+    }
+
+    public boolean rttHasPassed(){
+        return (this.connectionTime() - this.timeLastSent.get() > this.rtt.get());
     }
 
     void setRtt( int rtt){
@@ -101,75 +103,122 @@ public class FlowWindow {
         return rttVar.get();
     }
 
-    void receivedSure(int seq){
+    void receivedSure(SURE packet){
 
-        int curtime = connectionTime();
+        int seq = packet.getOK();
+        int curTime = connectionTime();
 
         if( seq != -1){
-            Integer timestamp = sentOkCache.remove(seq);
+            Integer timestamp = sentOkCache.get(seq);
+
+            sentOkCache.headMap(seq , false).clear();
 
             if (timestamp != null){
-                int srtt = curtime - timestamp;
+                int sRtt = curTime - timestamp;
 
-                rtt.set((int)((1 - GCVConnection.rrt_factor) * rtt.get() + GCVConnection.rrt_factor * srtt));
+                rtt.set((int)((1 - GCVConnection.rrt_factor) * rtt.get() + GCVConnection.rrt_factor * sRtt));
 
                 rttVar.set((int)((1 - GCVConnection.var_rrt_factor) * rttVar.get()
-                        + GCVConnection.var_rrt_factor * Math.abs(srtt - rtt.get())));
+                        + GCVConnection.var_rrt_factor * Math.abs(sRtt - rtt.get())));
             }
 
-            lastSureReceived.getAndUpdate(x -> (x > seq) ? x : seq );
+            this.lastSureReceived.getAndUpdate(x -> (x > seq) ? x : seq );
+            this.timeLastSureReceived.set( curTime );
 
         }else{
-            rttVar.set(rtt.get());
+            rtt.set(initiate - packet.getTimestamp() );
+            rttVar.set(0);
+
+            System.out.println( "Start rtt " + this.rtt);
+            this.deactivateCongestionControl();
         }
 
         //System.out.println("rtt: " + this.rtt.get() + " var: " + this.rttVar.get() +  " ");
     }
 
-    void deactivateCongestionControl(){
-        this.congestionControl.set(false);
+    void sentSure( SURE packet ){
+
+        int ok = packet.getOK();
+
+        this.lastSureSent.getAndUpdate(x -> (x > ok) ? x : ok );
+        this.timeLastSureSent.set(this.connectionTime());
     }
 
-    void receivedNotCoolOk(int seq) {
+    void receivedOk(OK packet) {
 
+        int seq = packet.getSeq();
         this.timeLastOkReceived.set(this.connectionTime());
         int lastseq = this.lastOkReceived.get();
 
-        this.lastOkReceived.updateAndGet(x -> (x > seq) ? x : seq );
+        this.setRtt(packet.getRtt());
+        this.setRttVar(packet.getRttVar());
+        this.setReceiverBuffer(packet.getWindow());
 
-    }
-
-    void receivedOk(int seq) {
-
-        this.timeLastOkReceived.set(this.connectionTime());
-        int lastseq = this.lastOkReceived.get();
+        if( lastseq == seq ){
+            this.activateCongestionControl();
+        }
 
         if( (seq == this.lastOkReceived.updateAndGet(x -> (x > seq) ? x : seq )) ){
 
-            if( !this.congestionControl.get() ) {
-                System.out.println("#################################################[]");
-                this.congestionWindowSize.getAndAdd(  (seq - lastseq) > 2 ? (seq - lastseq) : 2 );
+            this.synOkCounter.getAndAdd( seq - lastseq );
 
-            }else{
-                this.congestionWindowSize.getAndAdd(  (seq - lastseq)*GCVConnection.additive_fraction > 2 ? (int)((seq - lastseq)*GCVConnection.additive_fraction)  : 2 );
-            }
-
-            int buffsize = this.receiverBuffer.get();
-            int win = this.congestionWindowSize.getAndUpdate(x -> (x < buffsize) ? x : buffsize);
+            //int buffsize = this.receiverBuffer.get();
+            //int win = this.congestionWindowSize.getAndUpdate(x -> (x < buffsize) ? x : buffsize);
             /* trys to not pass the window*/
-            if (win == maxWindow)
+            if (this.congestionWindowSize.get() == maxWindow)
                 this.activateCongestionControl();
+        }
 
+    }
+
+    void sentOk(OK packet){
+        sentOkCache.put( packet.getSeq(), packet.getTimestamp() );
+        this.lastOkSent.getAndUpdate(x -> (x > packet.getSeq() ) ? x : packet.getSeq() );
+    }
+
+    void receivedNope( NOPE packet ){
+        timeLastNackReceived.set(this.connectionTime());
+        this.activateCongestionControl();
+    }
+
+    void sentNope( NOPE packet ){
+        timeLastNackSent.set(this.connectionTime());
+    }
+
+    void receivedData(DataPacket packet){
+        this.lastDataReceived.updateAndGet( x -> ( x > packet.getSeq() ) ? x : packet.getSeq() );
+    }
+
+    void receivedTransmission(){ this.timeLastReceived.set(this.connectionTime()); }
+
+    void sentTransmission(){ this.timeLastSent.set(this.connectionTime()); }
+
+    boolean sureMightHaveBeenLost(){
+        return ((this.connectionTime() - this.timeLastSureSent.get()) > this.rtt.get() + 4 * this.rttVar.get())
+                && (this.timeLastOkReceived.get() < this.timeLastSureReceived.get());
+    }
+
+    boolean dataMightHaveBeenLost(){
+        return (this.connectionTime()-this.timeLastOkReceived.get()) > this.rtt.get() && (this.connectionTime()-this.timeLastNackReceived.get()) > this.rtt.get();
+    }
+
+    boolean okMightHaveBeenLost(){
+        try{
+            int exptime = this.rtt.get() + 4 * this.rttVar.get();
+            exptime =  exptime > 101 ? exptime : 101;
+            return (this.connectionTime()-this.sentOkCache.get(this.lastOkSent.get())) > exptime;
+        }catch(NullPointerException e){
+            return false;
         }
     }
 
-    public int connectionTime(){
-        return (int)this.connectionStartTime.until(LocalDateTime.now(), ChronoUnit.MILLIS);
+    boolean shouldSendNope(){
+        int curTime = connectionTime();
+        return true;
+        //return /*curTime - timeLastNackSent.get()) > rtt.get() && */ (curTime - timeLastOkReceived.get()) > rtt.get()/2;
     }
 
-    void setLastSentOk(int lastSentAck ){
-        this.lastOkSent.getAndUpdate(x -> (x > lastSentAck) ? x : lastSentAck );
-    }
+    public int connectionTime(){ return (int)this.connectionStartTime.until(LocalDateTime.now(), ChronoUnit.MILLIS); }
 
     int getLastSentOk(){
         return this.lastOkSent.get();
@@ -179,20 +228,38 @@ public class FlowWindow {
 
     int getLastSentSure() { return this.lastSureSent.get(); }
 
-    void setLastSentSure( int seq ) {
-        this.lastSureSent.getAndUpdate(x -> (x > seq) ? x : seq );
-    }
+    int getLastReceivedData(){ return this.lastDataReceived.get(); }
 
     void syn(){
+        int synCounter = this.synOkCounter.getAndSet(0);
+        System.out.println("counter " + synCounter);
+        System.out.println("rtt : " + this.rtt.get() + 4 * this.rttVar.get());
         if( congestionControl.get() ) {
-            if ((this.connectionTime() - this.timeLastOkReceived.get()) > this.rtt.get() + 4 * this.rttVar.get() ) {
+            int exptime = this.rtt.get() + 4 * this.rttVar.get();
+            System.out.println(exptime);
+            exptime =  exptime > 101 ? exptime : 101;
+            if ((this.connectionTime() - this.timeLastOkReceived.get()) > exptime ) {
                 /* mul decrease */
                 this.multiplicativeDecrease();
+                //this.congestionWindowSize.addAndGet( synCounter > 0 ? 1 : 0);
+
             }else{
 
+                this.congestionWindowSize.addAndGet( synCounter > 0 ? 1 : 0);
             }
 
+        }else{
+            System.out.println("###########################");
+            //int synCounter = this.synOkCounter.get();
+            //this.congestionWindowSize.set( synCounter < 2 ? 2 : synCounter );
+            //this.synOkCounter.set(0);
+
+            this.congestionWindowSize.getAndAdd( synCounter );
+
         }
+
+        System.out.println("window : " + this.congestionWindowSize.get() );
+
     }
 
     public float uploadSpeed(){
@@ -200,29 +267,20 @@ public class FlowWindow {
     }
 
     private void multiplicativeDecrease(){
-        this.congestionWindowSize.updateAndGet( x -> ( x > 1 ) ? (int)(GCVConnection.decrease_factor * x) : 1 );
+        this.congestionWindowSize.updateAndGet( x -> ( x > 2 ) ? (int)(GCVConnection.decrease_factor * x) : 2 );
     }
 
     boolean hasTimeout(){
         int difs = this.connectionTime() - this.timeLastReceived.get();
-        return(difs > 4*(rtt.get() + 4 * rttVar.get()) );
+
+        int exptime = rtt.get() + 4 * rttVar.get();
+
+        exptime = exptime < 101 ? 101:exptime;
+
+        return (difs > 2*(exptime) );
     }
 
-    public void gotTransmission(){
-        this.timeLastReceived.set(this.connectionTime());
-    }
-
-    public void sentTransmission(){ this.timeLastSent.set(this.connectionTime()); }
-
-    public boolean rttHasPassed(){
-        return (this.connectionTime() - this.timeLastSent.get() > this.rtt.get());
-    }
-
-    boolean okMightHaveBeenLost(){
-        if( this.lastSureReceived.get() < this.lastOkSent.get() )
-            return (this.connectionTime() - this.sentOkCache.get( this.lastOkSent.get())) > this.rtt.get();
-
-
-        return false;
+    void deactivateCongestionControl(){
+        this.congestionControl.set(false);
     }
 }

@@ -154,8 +154,10 @@ public class FlowWindow {
         this.setRttVar(packet.getRttVar());
         this.setReceiverBuffer(packet.getWindow());
 
+        System.out.println("receivedOK " + packet.getSeq());
+
         if( lastseq == seq ){
-            this.activateCongestionControl();
+            this.multiplicativeDecrease();
         }
 
         if( (seq == this.lastOkReceived.updateAndGet(x -> (x > seq) ? x : seq )) ){
@@ -182,6 +184,7 @@ public class FlowWindow {
     }
 
     void sentNope( NOPE packet ){
+        System.out.println(" Sent Nope ");
         timeLastNackSent.set(this.connectionTime());
     }
 
@@ -215,8 +218,13 @@ public class FlowWindow {
     boolean shouldSendNope(){
         int curTime = connectionTime();
 
-        return (curTime - timeLastNackSent.get()) > rtt.get()/2
-                && (curTime - timeLastOkReceived.get()) > rtt.get()/4;
+        try {
+            return (curTime - timeLastNackSent.get()) > rtt.get() / 2
+                    && (curTime - this.sentOkCache.get(this.lastOkSent.get())) > rtt.get() / 4 + rttVar.get();
+        }catch(NullPointerException e){
+            return false;
+        }
+
     }
 
     public int connectionTime(){ return (int)this.connectionStartTime.until(LocalDateTime.now(), ChronoUnit.MILLIS); }
@@ -238,7 +246,7 @@ public class FlowWindow {
         System.out.println("rttVar : " + this.rttVar.get() );
 
         if( congestionControl.get() ) {
-            int exptime = this.rtt.get() + 4 * this.rttVar.get();
+            int exptime = this.rtt.get() +  this.rttVar.get();
             System.out.println(exptime);
             exptime =  exptime > 101 ? exptime : 101;
             if ((this.connectionTime() - this.timeLastOkReceived.get()) > exptime ) {

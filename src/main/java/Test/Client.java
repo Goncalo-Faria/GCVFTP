@@ -18,7 +18,7 @@ public class Client {
 
             GCVSocket cs = new GCVSocket(10000,true);
 
-            cs.connect(InetAddress.getLocalHost(),7220);
+            cs.connect(args[0],7220);
 
             InputStream io = cs.receive();
 

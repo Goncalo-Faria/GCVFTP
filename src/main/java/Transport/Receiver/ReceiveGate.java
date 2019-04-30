@@ -2,7 +2,6 @@ package Transport.Receiver;
 
 import java.util.List;
 
-import Transport.FlowWindow;
 import Transport.GCVConnection;
 import Transport.TransmissionTransportChannel;
 import Transport.Unit.*;

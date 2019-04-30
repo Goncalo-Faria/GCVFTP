@@ -208,7 +208,7 @@ public class FlowWindow {
     boolean okMightHaveBeenLost(){
         try{
             int exptime = this.rtt.get() + 8 * this.rttVar.get();
-            exptime =  exptime > 101 ? exptime : 101;
+            exptime =  exptime > GCVConnection.rate_control_interval+1 ? exptime : GCVConnection.rate_control_interval+1;
             return (this.connectionTime()-this.sentOkCache.get(this.lastOkSent.get())) > exptime;
         }catch(NullPointerException e){
             return false;
@@ -227,7 +227,7 @@ public class FlowWindow {
 
     }
 
-    public int connectionTime(){ return (int)this.connectionStartTime.until(LocalDateTime.now(), ChronoUnit.MILLIS); }
+    public int connectionTime(){ return (int)this.connectionStartTime.until(LocalDateTime.now(), ChronoUnit.MICROS); }
 
     int getLastSentOk(){
         return this.lastOkSent.get();
@@ -246,9 +246,9 @@ public class FlowWindow {
         System.out.println("rttVar : " + this.rttVar.get() );
 
         if( congestionControl.get() ) {
-            int exptime = this.rtt.get() +  this.rttVar.get();
+            int exptime = this.rtt.get() +  2 * this.rttVar.get();
             System.out.println(exptime);
-            exptime =  exptime > 101 ? exptime : 101;
+            exptime =  exptime > GCVConnection.rate_control_interval+1 ? exptime : GCVConnection.rate_control_interval+1;
             if ((this.connectionTime() - this.timeLastOkReceived.get()) > exptime ) {
                 /* mul decrease */
                 System.out.println("Multiplicative Decrease");
@@ -288,7 +288,7 @@ public class FlowWindow {
 
         int exptime = rtt.get() + 4 * rttVar.get();
 
-        exptime = exptime < 101 ? 101:exptime;
+        exptime = exptime < GCVConnection.rate_control_interval+1 ? GCVConnection.rate_control_interval+1:exptime;
 
         return (difs > 2*(exptime) );
     }

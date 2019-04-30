@@ -80,7 +80,7 @@ public class GCVSocket {
     private void boot(SenderProperties me, ReceiverProperties caller, int their_seq, int our_seq, int time) throws IOException{
         this.active.set(true);
 
-        SendGate sgate = new SendGate(me,channel,our_seq,GCVConnection.rate_control_interval);
+        SendGate sgate = new SendGate(me,channel,our_seq,GCVConnection.rate_control_interval/1000);
         ReceiveGate rgate = new ReceiveGate(caller,channel,their_seq);
 
         sgate.confirmHandshake();

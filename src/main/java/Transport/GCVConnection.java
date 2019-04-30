@@ -4,7 +4,7 @@ public final class GCVConnection {
     public static final int port = 6969;
     public static final int stdmtu= 1460; /* 496 bytes*/
 
-    public static final long rate_control_interval = 100;
+    public static final int rate_control_interval = 100000;
 
     public static final float decrease_factor = 0.8F;
     public static final long connection_receive_ttl= 2000;

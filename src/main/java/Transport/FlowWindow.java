@@ -214,8 +214,9 @@ public class FlowWindow {
 
     boolean shouldSendNope(){
         int curTime = connectionTime();
-        return true;
-        //return /*curTime - timeLastNackSent.get()) > rtt.get() && */ (curTime - timeLastOkReceived.get()) > rtt.get()/2;
+
+        return (curTime - timeLastNackSent.get()) > rtt.get()/2
+                && (curTime - timeLastOkReceived.get()) > rtt.get()/4;
     }
 
     public int connectionTime(){ return (int)this.connectionStartTime.until(LocalDateTime.now(), ChronoUnit.MILLIS); }
@@ -242,11 +243,13 @@ public class FlowWindow {
             exptime =  exptime > 101 ? exptime : 101;
             if ((this.connectionTime() - this.timeLastOkReceived.get()) > exptime ) {
                 /* mul decrease */
+                System.out.println("Multiplicative Decrease");
                 this.multiplicativeDecrease();
-                //this.congestionWindowSize.addAndGet( synCounter > 0 ? 1 : 0);
+
 
             }else{
-                //System.out.println("Additive Increase ");
+                /* add increase */
+                System.out.println("Additive Increase");
                 this.congestionWindowSize.addAndGet( synCounter > 0 ? 1 : 0);
             }
 

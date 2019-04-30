@@ -174,11 +174,11 @@ public class Executor implements Runnable{
                 }else{
 
                     /* If is likely a packet was lost */
-                   // if( this.window.shouldSendNope() ) {
-                    //    this.sgate.sendNope(
-                    //            this.rgate.getLossList()
-                     //   );
-                    //}
+                    if( this.window.shouldSendNope() ) {
+                        this.sgate.sendNope(
+                                    this.rgate.getLossList()
+                        );
+                    }
 
                     /* If is likely a sent ack was lost */
                     if( this.window.okMightHaveBeenLost() ){

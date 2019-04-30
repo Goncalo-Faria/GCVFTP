@@ -6,15 +6,12 @@ public final class GCVConnection {
 
     public static final long rate_control_interval = 100;
 
-    public static final int tau = 9;
-    public static final float additive_fraction = 0.1F;
     public static final float decrease_factor = 0.8F;
     public static final long connection_receive_ttl= 2000;
     public static final int request_retry_number = 8;
     public static final int request_retry_timeout = 2000;
 
     public static final int number_of_receive_workers = 2;
-    public static final int number_of_send_workers = 2;
 
     public static final int max_loss_list_size = 164;
 
@@ -24,10 +21,6 @@ public final class GCVConnection {
     public static final float controlBufferFactor = 0.4F;
 
     public static final int send_buffer_size = 8192 ;
-    public static final int receive_buffer_size = 8192;
-
-    public static final int send_timeout = -1; // não dá timeout
-    public static final int receive_timeout = -1; // não dá timeout
 
     public static final int initial_window_size = 2;
 

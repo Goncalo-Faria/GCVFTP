@@ -246,12 +246,12 @@ public class FlowWindow {
                 //this.congestionWindowSize.addAndGet( synCounter > 0 ? 1 : 0);
 
             }else{
-
+                //System.out.println("Additive Increase ");
                 this.congestionWindowSize.addAndGet( synCounter > 0 ? 1 : 0);
             }
 
         }else{
-            System.out.println("###########################");
+            //System.out.println("###########################");
             //int synCounter = this.synOkCounter.get();
             //this.congestionWindowSize.set( synCounter < 2 ? 2 : synCounter );
             //this.synOkCounter.set(0);

@@ -256,6 +256,9 @@ public class FlowWindow {
                 /* add increase */
                 System.out.println("Additive Increase");
                 this.congestionWindowSize.addAndGet( synCounter > 0 ? 1 : 0);
+
+                if( synCounter > this.congestionWindowSize.get() )
+                    this.deactivateCongestionControl();
             }
 
         }else{

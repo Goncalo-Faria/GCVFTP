@@ -11,7 +11,6 @@ public class Server {
 
     public static void main( String[] args ) {
         String message = "very useful data, so they say";
-        System.out.println(message.getBytes().length*200000/1000000);
         try {
             if( args.length > 1 ) {
                 if (args[1].equals("debug"))

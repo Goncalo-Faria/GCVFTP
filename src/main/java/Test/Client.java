@@ -29,7 +29,6 @@ public class Client {
 
             cs.connect(args[0],7220);
 
-
             InputStream io = cs.receive();
 
             Scanner s = new Scanner(io).useDelimiter("\\A");
@@ -41,7 +40,6 @@ public class Client {
                     s = new Scanner(io).useDelimiter("\\A");
                 }
 
-                //System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>");
                 String tmp = s.hasNext() ? s.next() : " ";
             }
 

@@ -39,6 +39,7 @@ public class FlowWindow {
     private AtomicInteger lastDataReceived = new AtomicInteger(0);
 
     private AtomicInteger synOkCounter = new AtomicInteger(0);
+    private AtomicInteger increaseCounter = new AtomicInteger(0);
 
     private AtomicInteger receiverBuffer;
 
@@ -250,6 +251,7 @@ public class FlowWindow {
                 /* mul decrease */
                 System.out.println("Multiplicative Decrease");
                 this.multiplicativeDecrease();
+                this.increaseCounter.set(0);
 
 
             }else{
@@ -257,7 +259,9 @@ public class FlowWindow {
                 System.out.println("Additive Increase");
                 this.congestionWindowSize.addAndGet( synCounter > 0 ? 1 : 0);
 
-                if( synCounter > this.congestionWindowSize.get() )
+                int inc = this.increaseCounter.incrementAndGet();
+
+                if(  inc * GCVConnection.rate_control_interval  > 2 * this.rtt.get() )
                     this.deactivateCongestionControl();
             }
 

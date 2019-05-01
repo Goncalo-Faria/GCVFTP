@@ -261,7 +261,7 @@ public class FlowWindow {
 
                 int inc = this.increaseCounter.incrementAndGet();
 
-                if(  inc * GCVConnection.rate_control_interval  > 2 * this.rtt.get() )
+                if(  inc  > 20 )
                     this.deactivateCongestionControl();
             }
 

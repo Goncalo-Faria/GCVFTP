@@ -6,7 +6,7 @@ public final class GCVConnection {
 
     public static final int rate_control_interval = 100000;
 
-    public static final float decrease_factor = 0.8F;
+    public static final float decrease_factor = 0.6F;
     public static final long connection_receive_ttl= 2000;
     public static final int request_retry_number = 8;
     public static final int request_retry_timeout = 2000;

@@ -12,8 +12,8 @@ public class Server {
     public static void main( String[] args ) {
         String message = "very useful data, so they say";
         try {
-            if( args.length > 1 ) {
-                if (args[1].equals("debug"))
+            if( args.length > 0) {
+                if (args[0].equals("debug"))
                     Debugger.setEnabled(true);
                 else
                     Debugger.setEnabled(false);

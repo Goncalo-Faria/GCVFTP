@@ -1,16 +1,16 @@
-package Transport.ControlPacketTypes;
+package Transport.Unit.ControlPacketTypes;
 
-import Common.BitManipulator;
+import Transport.Common.BitManipulator;
 import Transport.Unit.ControlPacket;
 
 public class OK extends ControlPacket {
 
     public static int size = ControlPacket.header_size + 4 * 4 ;
 
-    private int seq;
-    private int window=2;
-    private int rtt;
-    private int rttvar;
+    private final int seq;
+    private final int window;
+    private final int rtt;
+    private final int rttvar;
 
     public OK( BitManipulator extrator ) {
         super(ControlPacket.Type.OK, extrator.getShort()/*extended*/, extrator.getInt());

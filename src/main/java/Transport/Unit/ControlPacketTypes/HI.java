@@ -1,15 +1,15 @@
-package Transport.ControlPacketTypes;
+package Transport.Unit.ControlPacketTypes;
 
-import Common.BitManipulator;
+import Transport.Common.BitManipulator;
 import Transport.Unit.ControlPacket;
 
 public class HI extends ControlPacket {
 
     public static int size = ControlPacket.header_size + 4*3;
 
-    private int maxpacket;
-    private int maxwindow;
-    private int seq;
+    private final int maxpacket;
+    private final int maxwindow;
+    private final int seq;
 
     public HI(short extendedtype, int timestamp, int maxpacket, int maxwindow){
         super(ControlPacket.Type.HI,extendedtype,timestamp);

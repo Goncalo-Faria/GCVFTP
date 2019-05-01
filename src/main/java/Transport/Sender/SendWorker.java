@@ -1,5 +1,6 @@
 package Transport.Sender;
 
+import Test.Debugger;
 import Transport.Executor;
 import Transport.TransportChannel;
 import Transport.Unit.DataPacket;
@@ -13,13 +14,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SendWorker extends TimerTask {
 
-    private Accountant sendBuffer;
-    private TransportChannel channel;
-    private Timer sendTimer;
-    private AtomicBoolean active = new AtomicBoolean(true);
-    private SenderProperties properties;
+    private final Accountant sendBuffer;
+    private final TransportChannel channel;
+    private final Timer sendTimer;
+    private final AtomicBoolean active = new AtomicBoolean(true);
+    private final SenderProperties properties;
 
-    public SendWorker(TransportChannel ch, Accountant send, long period, SenderProperties properties) throws NotActiveException {
+    public SendWorker(TransportChannel ch, Accountant send, long period, SenderProperties properties){
         this.sendBuffer = send;
         this.channel = ch;
         this.sendTimer = new Timer();
@@ -35,17 +36,17 @@ public class SendWorker extends TimerTask {
     public void run(){
         try {
             Executor.add(Executor.ActionType.SYN);
+            Debugger.log("rate " + this.channel.window().uploadSpeed() + " Mb/s" );
             if( active.get() ) {
-                for(int i = 0; i< this.properties.window().congestionWindowValue() ; i++){
+                int it =this.channel.window().congestionWindowValue();
+                for(int i = 0; i< it ; i++){
                     DataPacket packet = sendBuffer.poll();
                     if( packet != null) {
                         channel.sendPacket(packet);
-                        System.out.println("SENT DATA");
-                        this.properties.window().sentTransmission();
                     }
                 }
 
-                if( this.properties.isPersistent() && this.properties.window().synHasPassed() )
+                if( this.properties.isPersistent() && this.channel.window().rttHasPassed() )
                     Executor.add(Executor.ActionType.KEEPALIVE);
 
             }

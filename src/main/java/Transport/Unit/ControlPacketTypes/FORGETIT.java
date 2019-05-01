@@ -1,6 +1,6 @@
-package Transport.ControlPacketTypes;
+package Transport.Unit.ControlPacketTypes;
 
-import Common.BitManipulator;
+import Transport.Common.BitManipulator;
 import Transport.Unit.ControlPacket;
 
 public class FORGETIT extends ControlPacket {

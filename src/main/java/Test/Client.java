@@ -15,10 +15,19 @@ public class Client {
     public static void main( String[] args )  {
 
         try {
+            if( args.length > 1 ) {
+                if (args[1].equals("debug"))
+                    Debugger.setEnabled(true);
+                else
+                    Debugger.setEnabled(false);
+            }else{
+                Debugger.setEnabled(false);
+            }
 
-            GCVSocket cs = new GCVSocket(200,true);
 
-            cs.connect(InetAddress.getLocalHost(),7220);
+            GCVSocket cs = new GCVSocket(10000,true);
+
+            cs.connect(args[0],7220);
 
             InputStream io = cs.receive();
 
@@ -31,8 +40,7 @@ public class Client {
                     s = new Scanner(io).useDelimiter("\\A");
                 }
 
-                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>");
-                System.out.print(s.hasNext() ? s.next() : "");
+                String tmp = s.hasNext() ? s.next() : " ";
             }
 
         } catch(IOException | TimeoutException| InterruptedException e){

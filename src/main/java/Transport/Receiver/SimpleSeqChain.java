@@ -1,31 +1,48 @@
 package Transport.Receiver;
 
+import Test.Debugger;
+import Transport.Common.LList;
 import Transport.Unit.DataPacket;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class SimpleSeqChain {
 
     LList<IntervalPacket> list = new LList<>();
     private int min = Integer.MAX_VALUE;
     private int max = Integer.MIN_VALUE;
-    private int maxAmplitude;
-    private ReadWriteLock wrl = new ReentrantReadWriteLock();
+    private final int maxAmplitude;
+    //private ReadWriteLock wrl = new ReentrantReadWriteLock();
 
-    public SimpleSeqChain( int maxAmplitude){
+    public SimpleSeqChain( int maxAmplitude ){
         this.maxAmplitude = maxAmplitude;
     }
 
+    public int size(){
+        int s = 0;
+
+            LList<IntervalPacket> v = list.view();
+            v.start();
+
+            while( v.hasNext() ) {
+                IntervalPacket cur = v.next().value();
+                s += cur.max() - cur.min();
+            }
+
+        return s;
+    }
+
     public void add(DataPacket packet){
-        wrl.writeLock().lock();
-        try{
+
             int seq = packet.getSeq();
 
-            if( seq > maxAmplitude + min && !list.empty() )
+            if( seq > maxAmplitude + min && !list.empty() ){
+                Debugger.log(" DROP ::: < " + seq);
+
                 return;
+            }
+
 
             this.min = ( this.min > seq ) ? seq : this.min;
             this.max = ( this.max < seq ) ? seq : this.max;
@@ -39,13 +56,16 @@ public class SimpleSeqChain {
 
                 int merged = cur.merge(ip);
 
-                if( merged > 0 ){
+                if( merged == 1 ){
                     /*check for recursive agregation */
                     ip = cur;
                     list.remove();
 
-                }else if( merged < 0){
-                    return ;
+                }else if( merged == -1 ) {
+                    return;
+
+                }else if( merged == 0 ){
+                    return;
                 }else if( ip.less(cur) ){
                     list.add(ip); /* add before the iterator mark */
                     return      ;
@@ -53,42 +73,33 @@ public class SimpleSeqChain {
             }
             list.next().add(ip);/* coloca na cauda.*/
 
-            list.start();
-        }finally{
-            wrl.writeLock().unlock();
-        }
     }
 
     public int minSeq(){
-        wrl.readLock().lock();
-        try{ 
+
             return this.min;
-        }finally{ 
-            wrl.readLock().unlock(); 
-        }
+
     }
 
     public int maxSeq(){
-        wrl.readLock().lock();
-        try{ 
+
             return this.max;
-        }finally{ 
-            wrl.readLock().unlock(); 
-        }
+
     }
 
-    public List<Integer> dual(){
-        wrl.readLock().lock();
-        try{
-            List<Integer> dualRep = new LinkedList<Integer>();
+    public List<Integer> dual( int startElem, int maxSize){
 
-            list.start();
+            List<Integer> dualRep = new LinkedList<>();
+
+            LList<IntervalPacket> v = list.view();
+
+            v.start();
 
             IntervalPacket pst = null,cur;
-
-            while(list.hasNext()){
-                cur = list.next().value();
-
+            int i = 0;
+            while(v.hasNext() && (i < maxSize) ){
+                i++;
+                cur = v.next().value();
                 if( cur != null && pst != null ){
                     dualRep.add(pst.max() + 1);
                     dualRep.add(cur.min() - 1);
@@ -96,16 +107,16 @@ public class SimpleSeqChain {
                 pst = cur;
             }
 
+            if( !dualRep.isEmpty() ){
+                dualRep.add(0,this.min-1);
+                dualRep.add(0, startElem);
+            }
+
             return dualRep;
 
-        }finally {
-            wrl.readLock().unlock();
-        }
     }
 
     public IntervalPacket take(){
-        wrl.writeLock().lock();
-        try{
 
             if( list.empty() )
                 return null;
@@ -124,28 +135,18 @@ public class SimpleSeqChain {
             this.min = list.peek().min();
 
             return t;
-        }finally{
-            wrl.writeLock().unlock();
-        }
     }
 
     public IntervalPacket peek(){
-        wrl.readLock().lock();
-        try {
-            return list.peek();
-        }finally {
-            wrl.readLock().unlock();
-        }
+
+        return list.peek();
+
     }
 
     public void clear(){
-        wrl.writeLock().lock();
-        try{
+
             this.min = Integer.MAX_VALUE;
             this.max = Integer.MIN_VALUE;
             list = new LList<>();
-        }finally{
-            wrl.writeLock().unlock();
-        }
     }
 }

@@ -1,6 +1,6 @@
 package Transport.Unit;
 
-import Common.BitManipulator;
+import Transport.Common.BitManipulator;
 
 import java.nio.ByteBuffer;
 
@@ -52,11 +52,11 @@ public class DataPacket extends Packet {
 
     public static int header_size = 12;
 
-    private int timestamp;
+    private final int timestamp;
     private int seq=0;
-    private int streamNumber;
-    private byte[] information;
-    private Flag flag;
+    private final int streamNumber;
+    private final byte[] information;
+    private final Flag flag;
 
 
     DataPacket( byte[] data ){
@@ -148,13 +148,11 @@ public class DataPacket extends Packet {
 
     @Override
     public String toString(){
-        StringBuilder sb = new StringBuilder();
-        sb.append("x-----------x-----------x--------x-------x----x--x--x-x-x-x--x \n");
-        sb.append("flag " + this.getFlag() + "\n");
-        sb.append("seq " + this.getSeq() + "\n");
-        sb.append("timestamp " + this.getTimestamp()+ "\n");
-        sb.append("streamid " + this.getMessageNumber()+ "\n");
-        sb.append(new String(this.getData()) + "\n");
-        return sb.toString();
+        return "x-----------x-----------x--------x-------x----x--x--x-x-x-x--x \n" +
+                "flag " + this.getFlag() + "\n" +
+                "seq " + this.getSeq() + "\n" +
+                "timestamp " + this.getTimestamp() + "\n" +
+                "streamid " + this.getMessageNumber() + "\n" +
+                new String(this.getData()) + "\n";
     }
 }

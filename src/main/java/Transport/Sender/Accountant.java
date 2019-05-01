@@ -1,6 +1,6 @@
 package Transport.Sender;
 
-import Transport.FlowWindow;
+import Test.Debugger;
 import Transport.Unit.DataPacket;
 
 import java.io.NotActiveException;
@@ -9,18 +9,17 @@ import java.util.concurrent.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
 
 /* structure for 'accounting' traveling packets*/
 class Accountant {
 
-    private LinkedBlockingQueue<DataPacket> uncounted;
+    private final LinkedBlockingQueue<DataPacket> uncounted;
     /*
      * List containing the packets in order that haven't been acked or are waiting to be sent.
      *
      * TODO : Make it a circular List.
      * */
-    private LinkedBlockingQueue<DataPacket> sending = new LinkedBlockingQueue<DataPacket>();
+    private final LinkedBlockingDeque<DataPacket> sending = new LinkedBlockingDeque<>();
     /*
      * Packet Sending queue.
      *      the elements of the queue are either :
@@ -32,19 +31,19 @@ class Accountant {
     /*
      * List of control packets waiting to be sent.
      * */
-    private AtomicBoolean ative = new AtomicBoolean(true);
+    private final AtomicBoolean ative = new AtomicBoolean(true);
     /*
      * true : if the accountant is active.
      * false : otherwise.
      * */
 
-    private AtomicInteger seq;/* TODO : make sentSure 0 > the max numbers */
+    private final AtomicInteger seq;/* TODO : make sentSure 0 > the max numbers */
     /*
      * Current sequence number.
      *  */
 
     Accountant(int stock, int seq){
-        this.uncounted = new LinkedBlockingQueue<DataPacket>(stock);
+        this.uncounted = new LinkedBlockingQueue<>(stock);
         this.seq = new AtomicInteger(seq);
     }
 
@@ -64,29 +63,18 @@ class Accountant {
     void ok(int x) throws NotActiveException, InterruptedException{
         if( !this.ative.get() )
             throw new NotActiveException();
-
-        DataPacket packet;
-        if( !this.uncounted.isEmpty() ) {
-            do {
-                packet = this.uncounted.take();
-
-                /* decrementa o número de pacotes em falta do stream*/
-
-            } while (packet.getSeq() < x);/* todos os pacotes com número de sequência inferior */
+        Debugger.log("accountat release " + x);
+        if( !this.uncounted.isEmpty() ){
+            try {
+                while (this.uncounted.peek().getSeq() <= x)
+                    this.uncounted.take();
+            }catch (NullPointerException e){
+                ;
+            }
+            /* decrementa o número de pacotes em falta do stream*/
             /* TODO: Assegurar que é suportada ordem circular */
         }
 
-    }
-
-    int lastOk() throws NullPointerException{
-        DataPacket oldestpacket = this.uncounted.peek();
-        int ok;
-        if( oldestpacket == null ){
-            ok = this.seq.get();
-        }else{
-            ok = this.uncounted.peek().getSeq() - 1;
-        }
-        return ok;
     }
 
     void nope(List<Integer> missing) throws InterruptedException, NotActiveException {
@@ -94,13 +82,23 @@ class Accountant {
         if( !this.ative.get() )
             throw new NotActiveException();
 
+        this.sending.clear();
+
         Iterator<DataPacket> it = this.uncounted.iterator();
 
-        for( Integer mss : missing)
+        for( Integer mss : missing ) {
             while (it.hasNext()) {
                 DataPacket packet = it.next();
-                if(packet.getSeq() == mss) { this.sending.put(packet); }
+                if (packet.getSeq() == mss) {
+                    this.sending.put(packet);
+                    break;
+                }
             }
+        }
+
+        while( it.hasNext() )
+            this.sending.put( it.next() );
+
     }
 
     void terminate(){
@@ -122,10 +120,15 @@ class Accountant {
         if( !this.ative.get() )
             throw new NotActiveException();
 
-        DataPacket index = sending.poll();
-
         // procura o index
-        return index;
+        return sending.poll();
+    }
+
+    void retransmit(){
+
+        sending.clear();
+        sending.addAll(this.uncounted);
+
     }
 
 }

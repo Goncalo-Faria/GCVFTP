@@ -7,8 +7,8 @@ public class Debugger {
         Debugger.enabled = enabled;
     }
 
-    public static void log(Object o) {
+    public static void log(String str) {
         if(enabled)
-            System.out.println("::Debugger:: ---> " + o.toString());
+            System.out.println(str);
     }
 }

@@ -3,21 +3,17 @@ package Transport.Receiver;
 import Transport.Unit.DataPacket;
 import Transport.Unit.Packet;
 
-import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class IntervalPacket {
 
     private int min;
     private int max;
-    ReadWriteLock wrl = new ReentrantReadWriteLock();
+    private final ReadWriteLock wrl = new ReentrantReadWriteLock();
 
-    private LinkedList<DataPacket> l = new LinkedList<>();
+    private final LinkedList<DataPacket> l = new LinkedList<>();
 
     public IntervalPacket( DataPacket p){
         this.min = this.max = p.getSeq();
@@ -131,7 +127,7 @@ public class IntervalPacket {
     public LinkedList<DataPacket> getpackets(){
         wrl.readLock().lock();
         try {
-            return new LinkedList<DataPacket>(this.l);
+            return new LinkedList<>(this.l);
         }finally{
             wrl.readLock().unlock();
         }
@@ -159,7 +155,12 @@ public class IntervalPacket {
                 return -1;
             }
 
-            return 0;
+            if( (x.min() >= this.min) && (x.max() <= this.max) ){
+                /* está contido */
+                return 0;
+            }
+
+            return 4;
             /*indica se o merge foi feito*/
         }finally{
             a.wrl.writeLock().unlock();
@@ -167,7 +168,14 @@ public class IntervalPacket {
         
         }
     }
-        
-    
 
+    @Override
+    public boolean equals(Object obj) {
+        if( ! (obj instanceof IntervalPacket ) )
+            return false;
+
+        IntervalPacket other = (IntervalPacket)obj;
+
+        return (other.min == this.min) && (other.max == this.max);
+    }
 }

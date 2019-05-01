@@ -1,4 +1,4 @@
-package Transport.Receiver;
+package Transport.Common;
 
 public class LList<V> {
 
@@ -9,23 +9,28 @@ public class LList<V> {
     public LList(){
     }
 
-    public LList<V> add( V element ){
+    private LList( No<V> head, No<V> tail){
+        this.head = head;
+        this.tail = tail;
+    }
+
+    public void add(V element ){
         
         if( head == null){
-            head = tail = current = new No<V>(null, element, null);
-            return this;
+            head = tail = current = new No<>(null, element, null);
+            return;
         }
 
         if( current == null ){
-            No<V> me = new No<V>(tail, element, null);
+            No<V> me = new No<>(tail, element, null);
 
             tail.next = me;
 
             tail = me;
-            return this;
+            return;
         }
 
-        No<V> me = new No<V>(current.previous, element, current );
+        No<V> me = new No<>(current.previous, element, current);
         
         current.previous = me;
 
@@ -37,18 +42,20 @@ public class LList<V> {
             current.previous.next = me;
         }
 
-        return this;
-
     }
 
     public LList<V> next(){
 
         if( current == null )
             current = head;
-        else if(current != null)
+        else
             current = current.next;
 
         return this;
+    }
+
+    public LList<V> view(){
+        return new LList<>(this.head, this.tail);
     }
 
     public LList<V> previous(){
@@ -73,12 +80,13 @@ public class LList<V> {
         return this;
     }
 
-    public LList<V> remove(){
+    public void remove(){
         if(current != null){
             
             if(current.previous != null && current.next != null ){
                 /* elemento do meio */
                 current.previous.next = current.next;
+                current.next.previous = current.previous;
                 current = current.previous;
                 
             }else if( current.previous != null ){
@@ -86,17 +94,18 @@ public class LList<V> {
                 tail = current.previous;
                 tail.next = null;
                 current = tail;
+
             }else if( current.next != null ){
                 /* head */
                 head = current.next;
                 head.previous = null;
                 current = null;
+
             }else {
                 tail = current = head = null;
             }
         }
 
-        return this;
     }
 
     public boolean hasNext(){

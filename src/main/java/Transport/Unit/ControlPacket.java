@@ -1,7 +1,7 @@
 package Transport.Unit;
 
-import Common.BitManipulator;
-import Transport.ControlPacketTypes.*;
+import Transport.Common.BitManipulator;
+import Transport.Unit.ControlPacketTypes.*;
 
 public abstract class ControlPacket extends Packet {
 
@@ -9,7 +9,7 @@ public abstract class ControlPacket extends Packet {
         HI, /*syn*/
         OK, /*ack*/
         SURE, /*ack2*/
-        NOPE, /*sentNope*/
+        NOPE, /*shouldSendNope*/
         BYE, /*fin*/
         SUP, /*keepalive*/
         FORGETIT /*message drop*/
@@ -34,11 +34,11 @@ public abstract class ControlPacket extends Packet {
         return null;
     }
 
-    private Type type; /* control message type*/
-    private short extendedtype=0; /*para a aplicação*/
-    private int timestamp=0; /*tempo desde que a ligação começou*/
+    private final Type type; /* control message type*/
+    private short extendedtype; /*para a aplicação*/
+    private final int timestamp; /*tempo desde que a ligação começou*/
     
-    public ControlPacket( Type t, short extendedtype, int timestamp){
+    protected ControlPacket(Type t, short extendedtype, int timestamp){
         this.type = t;
         this.timestamp = timestamp;
         this.extendedtype=extendedtype;
@@ -61,9 +61,9 @@ public abstract class ControlPacket extends Packet {
 
     }
 
-    public abstract byte[] extendedSerialize(BitManipulator extractor);
+    protected abstract byte[] extendedSerialize(BitManipulator extractor);
 
-    public abstract int size();
+    protected abstract int size();
 
     @Override
     public boolean equals(Object obj) {
@@ -82,11 +82,9 @@ public abstract class ControlPacket extends Packet {
 
     @Override
     public String toString(){
-        StringBuilder sb = new StringBuilder();
-        sb.append("x-----------x-----------x--------x-------x----x--x--x-x-x-x--x \n");
-        sb.append("type " + this.getType());
-        sb.append("extcode " + this.getExtendedtype());
-        sb.append("timestamp " + this.getTimestamp());
-        return sb.toString();
+        return "x-----------x-----------x--------x-------x----x--x--x-x-x-x--x \n" +
+                "type " + this.getType() +
+                "extcode " + this.getExtendedtype() +
+                "timestamp " + this.getTimestamp();
     }
 }

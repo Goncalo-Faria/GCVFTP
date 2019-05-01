@@ -1,6 +1,6 @@
 package Test;
 
-import Transport.ControlPacketTypes.*;
+import Transport.Unit.ControlPacketTypes.*;
 import Transport.Receiver.IntervalPacket;
 import Transport.Receiver.SimpleSeqChain;
 import Transport.Unit.ControlPacket;

@@ -1,6 +1,9 @@
 package Transport;
 
-import Transport.ControlPacketTypes.HI;
+import Test.Debugger;
+import Transport.Impl.FlowWindow;
+import Transport.Impl.TransmissionTransportChannel;
+import Transport.Unit.ControlPacketTypes.HI;
 import Transport.Sender.SendGate;
 import Transport.Receiver.ReceiveGate;
 import Transport.Sender.SenderProperties;
@@ -58,16 +61,16 @@ public class GCVSocket {
     private Executor actuary;
     private boolean persistent = true;
 
-    private AtomicBoolean active = new AtomicBoolean(false);
+    private final AtomicBoolean active = new AtomicBoolean(false);
 
-    private int mtu = GCVConnection.stdmtu;
+    private final int mtu = GCVConnection.stdmtu;
     private int maxWindow = GCVConnection.send_buffer_size;
     private InetAddress localhost;
 
     private TransmissionTransportChannel channel ;
 
     public GCVSocket() throws IOException {
-        System.out.println("GCVSocket created");
+        Debugger.log("GCVSocket created");
         this.localhost = InetAddress.getLocalHost();
     }
 
@@ -77,17 +80,17 @@ public class GCVSocket {
         this.maxWindow = maxWindow;
     }
 
-    private void boot(SenderProperties me, ReceiverProperties caller, int their_seq, int our_seq) throws IOException{
+    private void boot(SenderProperties me, ReceiverProperties caller, int their_seq, int our_seq, int time) throws IOException{
         this.active.set(true);
 
-        SendGate sgate = new SendGate(me,channel,our_seq,GCVConnection.rate_control_interval);
+        SendGate sgate = new SendGate(me,channel,our_seq,GCVConnection.rate_control_interval/1000);
         ReceiveGate rgate = new ReceiveGate(caller,channel,their_seq);
 
         sgate.confirmHandshake();
 
-        me.window().boot(their_seq,our_seq);
+        channel.window().boot(their_seq,our_seq, time);
 
-        this.actuary = new Executor(sgate, rgate, me.window() );
+        this.actuary = new Executor(sgate, rgate, channel.window());
 
         Thread worker = new Thread(this.actuary);
 
@@ -105,11 +108,13 @@ public class GCVSocket {
 
         InetSocketAddress sa = new InetSocketAddress(0);
 
+        FlowWindow channelWindow = new FlowWindow(maxWindow);
+
         SenderProperties senderProp = new SenderProperties(
                 this.localhost,
                 sa.getPort(),
                 this.mtu,
-                maxWindow,
+                this.maxWindow,
                 persistent);
 
         ReceiverProperties receiveProp = new ReceiverProperties(
@@ -120,19 +125,21 @@ public class GCVSocket {
 
         this.channel = new TransmissionTransportChannel(
                 senderProp ,
-                receiveProp);
+                receiveProp,
+                channelWindow
+        );
 
-        HI reponseHiPacket = new HI(
+        HI responseHiPacket = new HI(
                 (short)0,
-                0 ,
+                channelWindow.connectionTime() ,
                 this.channel.getSelfStationProperties().mtu(),
-                senderProp .window().getMaxWindowSize()
+                channelWindow.getMaxWindowSize()
         );
 
 
-        this.channel.sendPacket( reponseHiPacket );
+        this.channel.sendPacket( responseHiPacket );
 
-        this.boot(senderProp, receiveProp, hiPacket.getSeq(), reponseHiPacket.getSeq());
+        this.boot(senderProp, receiveProp, hiPacket.getSeq(), responseHiPacket.getSeq(), responseHiPacket.getTimestamp());
 
         GCVSocket.announceSocketConnection(receivedStampedPacket.ip().toString() + receivedStampedPacket.port(), this);
     }
@@ -145,6 +152,8 @@ public class GCVSocket {
 
     public void connect(InetAddress ip, int intendedPort) throws IOException, TimeoutException {
 
+        FlowWindow channelWindow = new FlowWindow(maxWindow);
+
         SenderProperties sendProp = new SenderProperties(
                 InetAddress.getLocalHost(),
                 intendedPort,
@@ -154,7 +163,7 @@ public class GCVSocket {
 
         HI hiPacket = new HI(
                 (short)0,
-                0,
+                channelWindow.connectionTime(),
                 sendProp.mtu(),
                 maxWindow
         );
@@ -170,7 +179,7 @@ public class GCVSocket {
 
         for(int tries = 0; tries < GCVConnection.request_retry_number; tries++ ) {
 
-            System.out.println("sent " + serializedHiPacket.length + " bytes");
+            Debugger.log("sent " + serializedHiPacket.length + " bytes");
             cs.send(new DatagramPacket(
                         serializedHiPacket,
                         0,
@@ -179,7 +188,7 @@ public class GCVSocket {
                         GCVConnection.port)
             );
             try {
-                System.out.println(":localport " + cs.getLocalPort() );
+                Debugger.log(":localport " + cs.getLocalPort() );
                 cs.receive(responseDatagram);
                 Packet du = Packet.parse(responseDatagram.getData());
 
@@ -197,16 +206,17 @@ public class GCVSocket {
 
                         this.channel = new TransmissionTransportChannel(cs,
                                 sendProp ,
-                                receiveProp);
+                                receiveProp,
+                                channelWindow
+                        );
 
-                        this.boot(sendProp,receiveProp, response_hello_packet.getSeq(), hiPacket.getSeq());
+                        this.boot(sendProp,receiveProp, response_hello_packet.getSeq(), hiPacket.getSeq(), response_hello_packet.getTimestamp());
                         return;
                     }
 
                 }
 
             }catch (SocketTimeoutException ste){
-                ;
             }
         }
 
@@ -215,9 +225,9 @@ public class GCVSocket {
     }
 
     public void close() throws IOException{
-        System.out.println("GCVSocket closed");
+        Debugger.log("GCVSocket closed");
         if( !this.actuary.hasTerminated() )
-            this.actuary.terminate((short)0);
+            this.actuary.terminate();
 
         GCVSocket.closeSocketConnection(
                     this.channel.getOtherStationProperties().ip().toString()

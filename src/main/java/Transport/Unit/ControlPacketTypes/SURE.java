@@ -1,6 +1,6 @@
-package Transport.ControlPacketTypes;
+package Transport.Unit.ControlPacketTypes;
 
-import Common.BitManipulator;
+import Transport.Common.BitManipulator;
 import Transport.Unit.ControlPacket;
 
 import java.nio.BufferOverflowException;
@@ -10,16 +10,15 @@ public class SURE extends ControlPacket {
 
     public static int size = ControlPacket.header_size + 4;
 
-    public static short ack_hi = 239;
-    public static short ack_ok = 400;
+    public static final short ack_hi = 239;
+    public static final short ack_ok = 400;
 
     private int ok = -1;
 
     public SURE( BitManipulator extrator ) {
         super(ControlPacket.Type.SURE, extrator.getShort()/*extended*/, extrator.getInt());
         try {
-            Integer val = extrator.getInt();
-            this.ok = val;
+            this.ok = extrator.getInt();
         }catch(BufferOverflowException| BufferUnderflowException e){
             this.ok =-1;
         }

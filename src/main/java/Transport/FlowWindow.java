@@ -196,20 +196,12 @@ public class FlowWindow {
 
     void sentTransmission(){ this.timeLastSent.set(this.connectionTime()); }
 
-    boolean sureMightHaveBeenLost(){
-        return ((this.connectionTime() - this.timeLastSureSent.get()) > this.rtt.get() + 4 * this.rttVar.get())
-                && (this.timeLastOkReceived.get() < this.timeLastSureReceived.get());
-    }
-
-    boolean dataMightHaveBeenLost(){
-        return (this.connectionTime()-this.timeLastOkReceived.get()) > this.rtt.get() && (this.connectionTime()-this.timeLastNackReceived.get()) > this.rtt.get();
-    }
-
     boolean okMightHaveBeenLost(){
         try{
-            int exptime = this.rtt.get() + 8 * this.rttVar.get();
-            exptime =  exptime > GCVConnection.rate_control_interval+1 ? exptime : GCVConnection.rate_control_interval+1;
-            return (this.connectionTime()-this.sentOkCache.get(this.lastOkSent.get())) > exptime;
+            int expRttTime = this.rtt.get() + 4 * this.rttVar.get();
+            int waitAndSendTime =  expRttTime > GCVConnection.rate_control_interval + expRttTime/2 ? expRttTime : GCVConnection.rate_control_interval + expRttTime/2;
+
+            return (this.connectionTime()-this.timeLastSureReceived.get()) > waitAndSendTime;
         }catch(NullPointerException e){
             return false;
         }
@@ -218,9 +210,14 @@ public class FlowWindow {
     boolean shouldSendNope(){
         int curTime = connectionTime();
 
+        int expRttTime = this.rtt.get() + 4 * this.rttVar.get();
+        System.out.println(expRttTime);
+        int compound =  expRttTime > GCVConnection.rate_control_interval ? expRttTime: GCVConnection.rate_control_interval;
+        int waitAndSendTime =  expRttTime> GCVConnection.rate_control_interval + expRttTime/2 ? expRttTime : GCVConnection.rate_control_interval + expRttTime/2;
+
         try {
-            return (curTime - timeLastNackSent.get()) > rtt.get() / 2
-                    && (curTime - this.sentOkCache.get(this.lastOkSent.get())) > rtt.get() / 4 + rttVar.get();
+            return (curTime - timeLastNackSent.get()) > waitAndSendTime
+                    && (curTime - this.sentOkCache.get(this.lastOkSent.get())) > compound;
         }catch(NullPointerException e){
             return false;
         }
@@ -246,10 +243,10 @@ public class FlowWindow {
         System.out.println("rttVar : " + this.rttVar.get() );
 
         if( congestionControl.get() ) {
-            int exptime = this.rtt.get() +  2 * this.rttVar.get();
-            System.out.println(exptime);
-            exptime =  exptime > GCVConnection.rate_control_interval+1 ? exptime : GCVConnection.rate_control_interval+1;
-            if ((this.connectionTime() - this.timeLastOkReceived.get()) > exptime ) {
+            int expRttTime = this.rtt.get() + 4 * this.rttVar.get();
+            System.out.println(expRttTime);
+            expRttTime =  expRttTime > GCVConnection.rate_control_interval + expRttTime/2 ? expRttTime : GCVConnection.rate_control_interval + expRttTime/2;
+            if ((this.connectionTime() - this.timeLastOkReceived.get()) > expRttTime ) {
                 /* mul decrease */
                 System.out.println("Multiplicative Decrease");
                 this.multiplicativeDecrease();
@@ -262,21 +259,18 @@ public class FlowWindow {
             }
 
         }else{
-            //System.out.println("###########################");
-            //int synCounter = this.synOkCounter.get();
-            //this.congestionWindowSize.set( synCounter < 2 ? 2 : synCounter );
-            //this.synOkCounter.set(0);
+            System.out.println("###########################");
 
             this.congestionWindowSize.getAndAdd( synCounter );
 
         }
 
-        System.out.println("window : " + this.congestionWindowSize.get() );
+        System.out.println("window : " + this.congestionWindowSize.get() + " \n ..........-------........." );
 
     }
 
-    public float uploadSpeed(){
-        return GCVConnection.stdmtu * (float)this.congestionWindowValue() * 10/1000000;
+    public float uploadSpeed(){ // Mb/s
+        return GCVConnection.stdmtu * (float)this.congestionWindowValue() * 10/ 1000000;
     }
 
     private void multiplicativeDecrease(){
@@ -288,9 +282,9 @@ public class FlowWindow {
 
         int exptime = rtt.get() + 4 * rttVar.get();
 
-        exptime = exptime < GCVConnection.rate_control_interval+1 ? GCVConnection.rate_control_interval+1:exptime;
+        exptime =  exptime > GCVConnection.rate_control_interval ? exptime : GCVConnection.rate_control_interval + exptime/2;
 
-        return (difs > 2*(exptime) );
+        return (difs > exptime );
     }
 
     void deactivateCongestionControl(){

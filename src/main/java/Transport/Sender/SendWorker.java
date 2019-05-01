@@ -2,7 +2,6 @@ package Transport.Sender;
 
 import Test.Debugger;
 import Transport.Executor;
-import Transport.GCVConnection;
 import Transport.TransportChannel;
 import Transport.Unit.DataPacket;
 
@@ -21,7 +20,7 @@ public class SendWorker extends TimerTask {
     private AtomicBoolean active = new AtomicBoolean(true);
     private SenderProperties properties;
 
-    public SendWorker(TransportChannel ch, Accountant send, long period, SenderProperties properties) throws NotActiveException {
+    public SendWorker(TransportChannel ch, Accountant send, long period, SenderProperties properties){
         this.sendBuffer = send;
         this.channel = ch;
         this.sendTimer = new Timer();
@@ -37,9 +36,9 @@ public class SendWorker extends TimerTask {
     public void run(){
         try {
             Executor.add(Executor.ActionType.SYN);
-            Debugger.log("rate " + this.properties.window().uploadSpeed() + " Mb/s" );
+            Debugger.log("rate " + this.channel.window().uploadSpeed() + " Mb/s" );
             if( active.get() ) {
-                int it =this.properties.window().congestionWindowValue();
+                int it =this.channel.window().congestionWindowValue();
                 for(int i = 0; i< it ; i++){
                     DataPacket packet = sendBuffer.poll();
                     if( packet != null) {
@@ -47,7 +46,7 @@ public class SendWorker extends TimerTask {
                     }
                 }
 
-                if( this.properties.isPersistent() && this.properties.window().rttHasPassed() )
+                if( this.properties.isPersistent() && this.channel.window().rttHasPassed() )
                     Executor.add(Executor.ActionType.KEEPALIVE);
 
             }

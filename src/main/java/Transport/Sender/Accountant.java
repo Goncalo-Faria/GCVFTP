@@ -1,7 +1,6 @@
 package Transport.Sender;
 
 import Test.Debugger;
-import Transport.FlowWindow;
 import Transport.Unit.DataPacket;
 
 import java.io.NotActiveException;
@@ -10,7 +9,6 @@ import java.util.concurrent.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
 
 /* structure for 'accounting' traveling packets*/
 class Accountant {
@@ -72,7 +70,6 @@ class Accountant {
                 while (this.uncounted.peek().getSeq() <= x)
                     this.uncounted.take();
             }catch (NullPointerException e){
-                ;
             }
             /* decrementa o número de pacotes em falta do stream*/
             /* TODO: Assegurar que é suportada ordem circular */
@@ -127,10 +124,8 @@ class Accountant {
         if( !this.ative.get() )
             throw new NotActiveException();
 
-        DataPacket index = sending.poll();
-
         // procura o index
-        return index;
+        return sending.poll();
     }
 
     public int lastSeq(){

@@ -1,4 +1,4 @@
-package Common;
+package Transport.Common;
 
 import java.nio.ByteBuffer;
 
@@ -52,7 +52,7 @@ public class BitManipulator {
         this.view = wrap(raw);
     }
 
-    BitManipulator( int n ){
+    private BitManipulator(int n){
 
         this.cache = new byte[n];
         this.view = wrap(cache);

@@ -3,19 +3,15 @@ package Transport.Receiver;
 import Transport.Unit.DataPacket;
 import Transport.Unit.Packet;
 
-import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class IntervalPacket {
 
     private int min;
     private int max;
-    ReadWriteLock wrl = new ReentrantReadWriteLock();
+    private ReadWriteLock wrl = new ReentrantReadWriteLock();
 
     private LinkedList<DataPacket> l = new LinkedList<>();
 

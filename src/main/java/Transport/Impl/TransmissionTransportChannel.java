@@ -1,10 +1,13 @@
-package Transport;
+package Transport.Impl;
 
-import AgenteUDP.TransmissionChannel;
-import Transport.ControlPacketTypes.NOPE;
-import Transport.ControlPacketTypes.OK;
-import Transport.ControlPacketTypes.SURE;
+import Transport.UDPTransport.TransmissionChannel;
+import Transport.TransportChannel;
+import Transport.TransportStationProperties;
+import Transport.Unit.ControlPacketTypes.NOPE;
+import Transport.Unit.ControlPacketTypes.OK;
+import Transport.Unit.ControlPacketTypes.SURE;
 import Transport.Unit.Packet;
+import Transport.Window;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -12,7 +15,7 @@ import java.net.SocketException;
 
 public class TransmissionTransportChannel extends TransmissionChannel implements TransportChannel {
 
-    private FlowWindow window;
+    private Window window;
 
     public TransmissionTransportChannel(
             TransportStationProperties send,
@@ -58,6 +61,10 @@ public class TransmissionTransportChannel extends TransmissionChannel implements
         }
 
         return p;
+    }
+
+    public Window window() {
+        return this.window;
     }
 
     public int inMTU(){

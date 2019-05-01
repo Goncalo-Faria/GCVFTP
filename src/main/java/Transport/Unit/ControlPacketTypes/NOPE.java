@@ -1,12 +1,11 @@
-package Transport.ControlPacketTypes;
+package Transport.Unit.ControlPacketTypes;
 
-import Common.BitManipulator;
+import Transport.Common.BitManipulator;
 import Transport.GCVConnection;
 import Transport.Unit.ControlPacket;
 
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;

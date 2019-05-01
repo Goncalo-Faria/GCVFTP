@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ConnectionScheduler implements Runnable{
+class ConnectionScheduler implements Runnable{
 
 
     private final DatagramSocket connection;

@@ -4,30 +4,27 @@ import java.util.List;
 
 import Test.Debugger;
 import Transport.GCVConnection;
-import Transport.TransmissionTransportChannel;
+import Transport.TransportChannel;
 import Transport.Unit.*;
 
 public class ReceiveGate {
 
     private Examiner receiveBuffer;
 
-    private TransmissionTransportChannel channel;
-
     private ReceiveWorker worker;
 
     private ReceiverProperties properties;
 
-    public ReceiveGate(ReceiverProperties me, TransmissionTransportChannel ch, int seq){
+    public ReceiveGate(ReceiverProperties me, TransportChannel ch, int seq){
         Debugger.log("ReceiveGate created");
         this.properties = me;
-        this.channel = ch;
         this.receiveBuffer = new Examiner(
             (int)(GCVConnection.controlBufferFactor * me.transmissionChannelBufferSize()),
             me.transmissionChannelBufferSize(),
             seq
         );
 
-        this.worker = new ReceiveWorker(channel, receiveBuffer, me, GCVConnection.number_of_receive_workers);
+        this.worker = new ReceiveWorker(ch, receiveBuffer, me, GCVConnection.number_of_receive_workers);
         
     }
 

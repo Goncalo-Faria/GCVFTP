@@ -1,21 +1,20 @@
-package Transport;
+package Transport.Impl;
 
 import Test.Debugger;
-import Transport.ControlPacketTypes.NOPE;
-import Transport.ControlPacketTypes.OK;
-import Transport.ControlPacketTypes.SURE;
+import Transport.GCVConnection;
+import Transport.Unit.ControlPacketTypes.NOPE;
+import Transport.Unit.ControlPacketTypes.OK;
+import Transport.Unit.ControlPacketTypes.SURE;
 import Transport.Unit.DataPacket;
+import Transport.Window;
 
-import javax.xml.crypto.Data;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.PrimitiveIterator;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class FlowWindow {
+public class FlowWindow implements Window {
 
     private final LocalDateTime connectionStartTime = LocalDateTime.now();
 
@@ -70,11 +69,11 @@ public class FlowWindow {
         return maxWindow;
     }
 
-    void activateCongestionControl(){
+    private void activateCongestionControl(){
         this.congestionControl.set(true);
     }
 
-    void boot(int lastOkSent, int lastOkReceived, int time){
+    public void boot(int lastOkSent, int lastOkReceived, int time){
         this.lastOkSent.set(lastOkSent);
         this.lastOkReceived.set(lastOkReceived);
         this.lastSureReceived.set(lastOkSent);
@@ -89,15 +88,15 @@ public class FlowWindow {
         return (this.connectionTime() - this.timeLastSent.get() > this.rtt.get());
     }
 
-    void setRtt( int rtt){
+    private void setRtt(int rtt){
         this.rtt.set(rtt);
     }
 
-    void setRttVar( int rttVar){
+    private void setRttVar(int rttVar){
         this.rttVar.set(rttVar);
     }
 
-    void setReceiverBuffer(int window){
+    private void setReceiverBuffer(int window){
         this.receiverBuffer.set(window);
     }
 
@@ -105,7 +104,7 @@ public class FlowWindow {
         return rttVar.get();
     }
 
-    void receivedSure(SURE packet){
+    public void receivedSure(SURE packet){
 
         int seq = packet.getOK();
         int curTime = connectionTime();
@@ -136,7 +135,7 @@ public class FlowWindow {
         }
     }
 
-    void sentSure( SURE packet ){
+    public void sentSure( SURE packet ){
 
         int ok = packet.getOK();
 
@@ -144,7 +143,7 @@ public class FlowWindow {
         this.timeLastSureSent.set(this.connectionTime());
     }
 
-    void receivedOk(OK packet) {
+    public void receivedOk(OK packet) {
 
         int seq = packet.getSeq();
         this.timeLastOkReceived.set(this.connectionTime());
@@ -173,30 +172,30 @@ public class FlowWindow {
 
     }
 
-    void sentOk(OK packet){
+    public void sentOk(OK packet){
         sentOkCache.put( packet.getSeq(), packet.getTimestamp() );
         this.lastOkSent.getAndUpdate(x -> (x > packet.getSeq() ) ? x : packet.getSeq() );
     }
 
-    void receivedNope( NOPE packet ){
+    public void receivedNope( NOPE packet ){
         timeLastNackReceived.set(this.connectionTime());
         this.activateCongestionControl();
     }
 
-    void sentNope( NOPE packet ){
+    public void sentNope( NOPE packet ){
         Debugger.log(" Sent Nope ");
         timeLastNackSent.set(this.connectionTime());
     }
 
-    void receivedData(DataPacket packet){
+    public void receivedData(DataPacket packet){
         this.lastDataReceived.updateAndGet( x -> ( x > packet.getSeq() ) ? x : packet.getSeq() );
     }
 
-    void receivedTransmission(){ this.timeLastReceived.set(this.connectionTime()); }
+    public void receivedTransmission(){ this.timeLastReceived.set(this.connectionTime()); }
 
-    void sentTransmission(){ this.timeLastSent.set(this.connectionTime()); }
+    public void sentTransmission(){ this.timeLastSent.set(this.connectionTime()); }
 
-    boolean okMightHaveBeenLost(){
+    public boolean okMightHaveBeenLost(){
         try{
             int expRttTime = this.rtt.get() + 4 * this.rttVar.get();
             int waitAndSendTime =  expRttTime > GCVConnection.rate_control_interval + expRttTime/2 ? expRttTime : GCVConnection.rate_control_interval + expRttTime/2;
@@ -207,7 +206,15 @@ public class FlowWindow {
         }
     }
 
-    boolean shouldSendNope(){
+    public boolean shouldSendOk(){
+        return this.lastOkSent.get() < this.lastDataReceived.get();
+    }
+
+    public boolean shouldSendSure(){
+        return this.lastOkReceived.get() > this.lastSureSent.get();
+    }
+
+    public boolean shouldSendNope(){
         int curTime = connectionTime();
 
         int expRttTime = this.rtt.get() + 4 * this.rttVar.get();
@@ -225,17 +232,17 @@ public class FlowWindow {
 
     public int connectionTime(){ return (int)this.connectionStartTime.until(LocalDateTime.now(), ChronoUnit.MICROS); }
 
-    int getLastSentOk(){
+    public int lastOkSent(){
         return this.lastOkSent.get();
     }
 
-    int getLastReceivedOk( ){ return this.lastOkReceived.get(); }
+    public int lastOkReceived( ){ return this.lastOkReceived.get(); }
 
-    int getLastSentSure() { return this.lastSureSent.get(); }
+    public int lastSureSent() { return this.lastSureSent.get(); }
 
-    int getLastReceivedData(){ return this.lastDataReceived.get(); }
+    public int lastDataReceived(){ return this.lastDataReceived.get(); }
 
-    void syn(){
+    public void syn(){
         int synCounter = this.synOkCounter.getAndSet(0);
         Debugger.log("counter " + synCounter);
         Debugger.log("rtt : " + this.rtt.get() );
@@ -281,7 +288,7 @@ public class FlowWindow {
         this.congestionWindowSize.updateAndGet( x -> ( x > 2 ) ? (int)(GCVConnection.decrease_factor * x) : 2 );
     }
 
-    boolean hasTimeout(){
+    public boolean hasTimeout(){
         int difs = this.connectionTime() - this.timeLastReceived.get();
 
         int exptime = rtt.get() + 4 * rttVar.get();
@@ -291,7 +298,7 @@ public class FlowWindow {
         return (difs > exptime );
     }
 
-    void deactivateCongestionControl(){
+    private void deactivateCongestionControl(){
         this.congestionControl.set(false);
     }
 }

@@ -1,4 +1,4 @@
-package Transport.Receiver;
+package Transport.Common;
 
 public class LList<V> {
 
@@ -14,11 +14,11 @@ public class LList<V> {
         this.tail = tail;
     }
 
-    public LList<V> add( V element ){
+    public void add(V element ){
         
         if( head == null){
             head = tail = current = new No<V>(null, element, null);
-            return this;
+            return;
         }
 
         if( current == null ){
@@ -27,7 +27,7 @@ public class LList<V> {
             tail.next = me;
 
             tail = me;
-            return this;
+            return;
         }
 
         No<V> me = new No<V>(current.previous, element, current );
@@ -41,8 +41,6 @@ public class LList<V> {
         }else{
             current.previous.next = me;
         }
-
-        return this;
 
     }
 
@@ -82,7 +80,7 @@ public class LList<V> {
         return this;
     }
 
-    public LList<V> remove(){
+    public void remove(){
         if(current != null){
             
             if(current.previous != null && current.next != null ){
@@ -108,7 +106,6 @@ public class LList<V> {
             }
         }
 
-        return this;
     }
 
     public boolean hasNext(){

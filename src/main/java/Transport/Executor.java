@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import Transport.Sender.SendGate;
 import Transport.Unit.*;
-import Transport.ControlPacketTypes.*;
+import Transport.Unit.ControlPacketTypes.*;
 
 public class Executor implements Runnable{
     /*
@@ -52,19 +52,19 @@ public class Executor implements Runnable{
     private ConcurrentHashMap< Integer, ExecutorPipe > map = new ConcurrentHashMap<>();
     private LinkedBlockingQueue<ExecutorPipe> socketOutput = new LinkedBlockingQueue<>();
     private AtomicBoolean active = new AtomicBoolean(true);
-    private FlowWindow window;
+    private Window window;
 
-    Executor(SendGate sgate, ReceiveGate rgate, FlowWindow window){
+    Executor(SendGate sgate, ReceiveGate rgate, Window window){
         this.sgate = sgate;
         this.rgate = rgate;
         this.window = window;
 
     }
 
-    void terminate(short code) throws IOException{
+    void terminate() throws IOException{
         if(this.active.get()) {
             Debugger.log("CHANNEL CLOSED");
-            this.sgate.sendBye(code);
+            this.sgate.sendBye((short) 0);
             this.active.set(false);
             this.sgate.close();
             this.rgate.close();
@@ -166,10 +166,10 @@ public class Executor implements Runnable{
                 /* Receiver actions */
 
                 /* Received new data */
-                if( this.window.getLastSentOk() < this.window.getLastReceivedData() ){
+                if( this.window.shouldSendOk() ){
                     this.sgate.sendOk(
                             (short)0,
-                            this.window.getLastReceivedData(),
+                            this.window.lastDataReceived(),
                             this.rgate.getWindowSize()
                     );
                 }else{
@@ -185,10 +185,10 @@ public class Executor implements Runnable{
                     if( this.window.okMightHaveBeenLost() ){
                         this.sgate.sendOk(
                                 (short)0,
-                                this.window.getLastSentOk(),
+                                this.window.lastOkSent(),
                                 this.rgate.getWindowSize()
                         );
-                        this.rgate.prepareRetransmition();
+                        //this.rgate.prepareRetransmition();
                     }
                 }
                 /* Sender actions */
@@ -198,9 +198,9 @@ public class Executor implements Runnable{
                 //}
 
                 /*  Received new ok */
-                if( this.window.getLastReceivedOk() > this.window.getLastSentSure() ){
+                if( this.window.shouldSendSure() ){
                     this.sgate.sendSure(
-                            this.window.getLastReceivedOk()
+                            this.window.lastOkReceived()
                     );
                 }
 
@@ -230,7 +230,7 @@ public class Executor implements Runnable{
             this.sgate.release(packet.getSeq());
 
             /* ok duplicado */
-            if( this.window.getLastReceivedOk() == packet.getSeq() ){
+            if( this.window.lastOkReceived() == packet.getSeq() ){
                 this.sgate.sendSure(packet.getSeq());
                 this.sgate.retransmit();
             }
@@ -246,7 +246,7 @@ public class Executor implements Runnable{
     private void bye(BYE packet){
         Debugger.log(" ::::> received a bye packet <::::");
         try{
-            this.terminate((short)0);
+            this.terminate();
         }catch (IOException e){
             e.printStackTrace();
         }
@@ -261,7 +261,7 @@ public class Executor implements Runnable{
 
         try {
             if (extcode == 0)
-                this.terminate((short)0);
+                this.terminate();
         }catch (IOException e){
             e.printStackTrace();
         }

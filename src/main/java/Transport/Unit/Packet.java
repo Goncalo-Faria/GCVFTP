@@ -1,6 +1,6 @@
 package Transport.Unit;
 
-import Common.BitManipulator;
+import Transport.Common.BitManipulator;
 
 public abstract class Packet {
 

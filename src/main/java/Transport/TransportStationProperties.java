@@ -1,6 +1,6 @@
 package Transport;
 
-import AgenteUDP.StationProperties;
+import Transport.UDPTransport.StationProperties;
 
 import java.net.InetAddress;
 

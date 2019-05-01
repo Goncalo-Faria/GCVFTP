@@ -2,14 +2,12 @@ package Transport.Receiver;
 
 import Test.Debugger;
 import Transport.Executor;
-import Transport.FlowWindow;
 import Transport.GCVConnection;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.DataPacket;
 import Transport.Unit.Packet;
 
 import java.io.NotActiveException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.LinkedBlockingQueue;

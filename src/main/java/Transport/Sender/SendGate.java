@@ -2,8 +2,9 @@ package Transport.Sender;
 
 
 import Test.Debugger;
-import Transport.ControlPacketTypes.*;
-import Transport.TransmissionTransportChannel;
+import Transport.TransportChannel;
+import Transport.Unit.ControlPacketTypes.*;
+import Transport.Impl.TransmissionTransportChannel;
 import Transport.Unit.DataPacket;
 
 import java.io.BufferedInputStream;
@@ -19,7 +20,7 @@ public class SendGate {
 
     private Accountant send_buffer;
 
-    private TransmissionTransportChannel ch;
+    private TransportChannel ch;
 
     private SendWorker worker;
 
@@ -50,7 +51,7 @@ public class SendGate {
     public void confirmHandshake() throws  IOException{
 
         this.ch.sendPacket( new SURE(SURE.ack_hi,
-                this.properties.window().connectionTime()));
+                this.ch.window().connectionTime()));
     }
 
     public void sendSure(int ack) throws  IOException{
@@ -58,7 +59,7 @@ public class SendGate {
         this.ch.sendPacket(
                 new SURE(
                         SURE.ack_ok,
-                        this.properties.window().connectionTime(),
+                        this.ch.window().connectionTime(),
                         ack
                 )
         );
@@ -74,7 +75,7 @@ public class SendGate {
         this.ch.sendPacket(
                 new BYE(
                         extcode,
-                        this.properties.window().connectionTime()
+                        this.ch.window().connectionTime()
                 )
         );
         Debugger.log("BYE");
@@ -85,25 +86,24 @@ public class SendGate {
         this.ch.sendPacket(
                 new SUP(
                         extcode,
-                        this.properties.window().connectionTime()
+                        this.ch.window().connectionTime()
                 )
         );
     }
     
-    public OK sendOk(short extcode, int last_seq, int free_window) throws IOException{
+    public void sendOk(short extcode, int last_seq, int free_window) throws IOException{
 
         OK packet = new OK(
                 extcode,
-                this.properties.window().connectionTime(),
+                this.ch.window().connectionTime(),
                 last_seq,
                 free_window,
-                this.properties.window().rtt(),
-                this.properties.window().rttVar()
+                this.ch.window().rtt(),
+                this.ch.window().rttVar()
         );
 
         this.ch.sendPacket(packet);
 
-        return packet;
     }
 
     public void sendForgetit(short extcode)throws IOException {
@@ -111,7 +111,7 @@ public class SendGate {
         this.ch.sendPacket(
                 new FORGETIT(
                         extcode,
-                        this.properties.window().connectionTime()
+                        this.ch.window().connectionTime()
                 )
         );
     }
@@ -122,7 +122,7 @@ public class SendGate {
             this.ch.sendPacket(
                     new NOPE(
                             (short) 0,
-                            this.properties.window().connectionTime(),
+                            this.ch.window().connectionTime(),
                             lossList
                     )
             );
@@ -151,7 +151,7 @@ public class SendGate {
 
         DataPacket packet = new DataPacket(
                 data,
-                this.properties.window().connectionTime(),
+                this.ch.window().connectionTime(),
                 ticket,
                 DataPacket.Flag.SOLO
         );
@@ -182,7 +182,7 @@ public class SendGate {
                 DataPacket dp = new DataPacket(
                         data,
                         flag,
-                        this.properties.window().connectionTime(),
+                        this.ch.window().connectionTime(),
                         ticket,
                         DataPacket.Flag.SOLO
                 );
@@ -194,7 +194,7 @@ public class SendGate {
         DataPacket dp = new DataPacket(
                 new byte[0],
                 0,
-                this.properties.window().connectionTime(),
+                this.ch.window().connectionTime(),
                 ticket,
                 DataPacket.Flag.LAST
         );
@@ -207,7 +207,6 @@ public class SendGate {
         Debugger.log("SendGate closed");
         this.worker.stop();
         this.send_buffer.terminate();
-
     }
 
 }

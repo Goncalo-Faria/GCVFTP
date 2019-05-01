@@ -1,7 +1,9 @@
 package Transport;
 
 import Test.Debugger;
-import Transport.ControlPacketTypes.HI;
+import Transport.Impl.FlowWindow;
+import Transport.Impl.TransmissionTransportChannel;
+import Transport.Unit.ControlPacketTypes.HI;
 import Transport.Sender.SendGate;
 import Transport.Receiver.ReceiveGate;
 import Transport.Sender.SenderProperties;
@@ -86,9 +88,9 @@ public class GCVSocket {
 
         sgate.confirmHandshake();
 
-        me.window().boot(their_seq,our_seq, time);
+        channel.window().boot(their_seq,our_seq, time);
 
-        this.actuary = new Executor(sgate, rgate, me.window() );
+        this.actuary = new Executor(sgate, rgate, channel.window());
 
         Thread worker = new Thread(this.actuary);
 
@@ -106,11 +108,13 @@ public class GCVSocket {
 
         InetSocketAddress sa = new InetSocketAddress(0);
 
+        FlowWindow channelWindow = new FlowWindow(maxWindow);
+
         SenderProperties senderProp = new SenderProperties(
                 this.localhost,
                 sa.getPort(),
                 this.mtu,
-                maxWindow,
+                this.maxWindow,
                 persistent);
 
         ReceiverProperties receiveProp = new ReceiverProperties(
@@ -122,14 +126,14 @@ public class GCVSocket {
         this.channel = new TransmissionTransportChannel(
                 senderProp ,
                 receiveProp,
-                senderProp.window()
+                channelWindow
         );
 
         HI responseHiPacket = new HI(
                 (short)0,
-                senderProp.window().connectionTime() ,
+                channelWindow.connectionTime() ,
                 this.channel.getSelfStationProperties().mtu(),
-                senderProp.window().getMaxWindowSize()
+                channelWindow.getMaxWindowSize()
         );
 
 
@@ -148,6 +152,8 @@ public class GCVSocket {
 
     public void connect(InetAddress ip, int intendedPort) throws IOException, TimeoutException {
 
+        FlowWindow channelWindow = new FlowWindow(maxWindow);
+
         SenderProperties sendProp = new SenderProperties(
                 InetAddress.getLocalHost(),
                 intendedPort,
@@ -157,7 +163,7 @@ public class GCVSocket {
 
         HI hiPacket = new HI(
                 (short)0,
-                sendProp.window().connectionTime(),
+                channelWindow.connectionTime(),
                 sendProp.mtu(),
                 maxWindow
         );
@@ -201,7 +207,7 @@ public class GCVSocket {
                         this.channel = new TransmissionTransportChannel(cs,
                                 sendProp ,
                                 receiveProp,
-                                sendProp.window()
+                                channelWindow
                         );
 
                         this.boot(sendProp,receiveProp, response_hello_packet.getSeq(), hiPacket.getSeq(), response_hello_packet.getTimestamp());
@@ -211,7 +217,6 @@ public class GCVSocket {
                 }
 
             }catch (SocketTimeoutException ste){
-                ;
             }
         }
 
@@ -222,7 +227,7 @@ public class GCVSocket {
     public void close() throws IOException{
         Debugger.log("GCVSocket closed");
         if( !this.actuary.hasTerminated() )
-            this.actuary.terminate((short)0);
+            this.actuary.terminate();
 
         GCVSocket.closeSocketConnection(
                     this.channel.getOtherStationProperties().ip().toString()

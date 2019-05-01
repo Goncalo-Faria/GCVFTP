@@ -1,7 +1,7 @@
 package Transport.Unit;
 
-import Common.BitManipulator;
-import Transport.ControlPacketTypes.*;
+import Transport.Common.BitManipulator;
+import Transport.Unit.ControlPacketTypes.*;
 
 public abstract class ControlPacket extends Packet {
 
@@ -38,7 +38,7 @@ public abstract class ControlPacket extends Packet {
     private short extendedtype=0; /*para a aplicação*/
     private int timestamp=0; /*tempo desde que a ligação começou*/
     
-    public ControlPacket( Type t, short extendedtype, int timestamp){
+    protected ControlPacket(Type t, short extendedtype, int timestamp){
         this.type = t;
         this.timestamp = timestamp;
         this.extendedtype=extendedtype;
@@ -61,9 +61,9 @@ public abstract class ControlPacket extends Packet {
 
     }
 
-    public abstract byte[] extendedSerialize(BitManipulator extractor);
+    protected abstract byte[] extendedSerialize(BitManipulator extractor);
 
-    public abstract int size();
+    protected abstract int size();
 
     @Override
     public boolean equals(Object obj) {

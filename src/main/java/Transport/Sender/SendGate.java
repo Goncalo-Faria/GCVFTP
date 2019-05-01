@@ -1,6 +1,7 @@
 package Transport.Sender;
 
 
+import Test.Debugger;
 import Transport.ControlPacketTypes.*;
 import Transport.TransmissionTransportChannel;
 import Transport.Unit.DataPacket;
@@ -39,7 +40,7 @@ public class SendGate {
      * */
 
     public SendGate(SenderProperties me, TransmissionTransportChannel ch, int our_seq, long initialperiod) throws IOException {
-        System.out.println("SendGate created");
+        Debugger.log("SendGate created");
         this.ch = ch;
         this.properties = me;
         this.send_buffer = new Accountant(me.transmissionChannelBufferSize(),our_seq);
@@ -76,7 +77,7 @@ public class SendGate {
                         this.properties.window().connectionTime()
                 )
         );
-        System.out.println("BYE");
+        Debugger.log("BYE");
     }
 
     public void sendSup(short extcode) throws IOException{
@@ -126,7 +127,7 @@ public class SendGate {
                     )
             );
 
-            System.out.println("SENT NACK " + lossList.get(0) );
+            Debugger.log("SENT NACK " + lossList.get(0) );
         }
 
     }
@@ -136,7 +137,7 @@ public class SendGate {
     }
 
     public void retransmit(List<Integer> lossList ) throws NotActiveException, InterruptedException{
-        System.out.println(">>>>>>>>>>><Retransmitting : " + lossList.size()+ " <<<<<<<<<<<<<<<<<<");
+        Debugger.log(">>>>>>>>>>><Retransmitting : " + lossList.size()+ " <<<<<<<<<<<<<<<<<<");
         this.send_buffer.nope(lossList);
     }
 
@@ -203,7 +204,7 @@ public class SendGate {
     }
 
     public void close() throws IOException{
-        System.out.println("SendGate closed");
+        Debugger.log("SendGate closed");
         this.worker.stop();
         this.send_buffer.terminate();
 

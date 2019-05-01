@@ -1,5 +1,6 @@
 package Transport;
 
+import Test.Debugger;
 import Transport.ControlPacketTypes.NOPE;
 import Transport.ControlPacketTypes.OK;
 import Transport.ControlPacketTypes.SURE;
@@ -130,11 +131,9 @@ public class FlowWindow {
             rtt.set( this.connectionTime() - initiate );
             rttVar.set(0);
 
-            System.out.println( "Start rtt " + this.rtt);
+            Debugger.log( "Start rtt " + this.rtt);
             this.deactivateCongestionControl();
         }
-
-        //System.out.println("rtt: " + this.rtt.get() + " var: " + this.rttVar.get() +  " ");
     }
 
     void sentSure( SURE packet ){
@@ -155,7 +154,7 @@ public class FlowWindow {
         this.setRttVar(packet.getRttVar());
         this.setReceiverBuffer(packet.getWindow());
 
-        System.out.println("receivedOK " + packet.getSeq());
+        Debugger.log("receivedOK " + packet.getSeq());
 
         if( lastseq == seq ){
             this.multiplicativeDecrease();
@@ -185,7 +184,7 @@ public class FlowWindow {
     }
 
     void sentNope( NOPE packet ){
-        System.out.println(" Sent Nope ");
+        Debugger.log(" Sent Nope ");
         timeLastNackSent.set(this.connectionTime());
     }
 
@@ -212,7 +211,6 @@ public class FlowWindow {
         int curTime = connectionTime();
 
         int expRttTime = this.rtt.get() + 4 * this.rttVar.get();
-        System.out.println(expRttTime);
         int compound =  expRttTime > GCVConnection.rate_control_interval ? expRttTime: GCVConnection.rate_control_interval;
         int waitAndSendTime =  expRttTime> GCVConnection.rate_control_interval + expRttTime/2 ? expRttTime : GCVConnection.rate_control_interval + expRttTime/2;
 
@@ -239,24 +237,23 @@ public class FlowWindow {
 
     void syn(){
         int synCounter = this.synOkCounter.getAndSet(0);
-        System.out.println("counter " + synCounter);
-        System.out.println("rtt : " + this.rtt.get() );
-        System.out.println("rttVar : " + this.rttVar.get() );
+        Debugger.log("counter " + synCounter);
+        Debugger.log("rtt : " + this.rtt.get() );
+        Debugger.log("rttVar : " + this.rttVar.get() );
 
         if( congestionControl.get() ) {
             int expRttTime = this.rtt.get() + 4 * this.rttVar.get();
-            System.out.println(expRttTime);
             expRttTime =  expRttTime > GCVConnection.rate_control_interval + expRttTime/2 ? expRttTime : GCVConnection.rate_control_interval + expRttTime/2;
             if ((this.connectionTime() - this.timeLastOkReceived.get()) > expRttTime ) {
                 /* mul decrease */
-                System.out.println("Multiplicative Decrease");
+                Debugger.log("Multiplicative decrease");
                 this.multiplicativeDecrease();
                 this.increaseCounter.set(0);
 
 
             }else{
                 /* add increase */
-                System.out.println("Additive Increase");
+                Debugger.log("Additive increase");
                 this.congestionWindowSize.addAndGet( synCounter > 0 ? 1 : 0);
 
                 int inc = this.increaseCounter.incrementAndGet();
@@ -266,13 +263,13 @@ public class FlowWindow {
             }
 
         }else{
-            System.out.println("###########################");
+            Debugger.log("Send like a crazy person");
 
             this.congestionWindowSize.getAndAdd( synCounter );
 
         }
 
-        System.out.println("window : " + this.congestionWindowSize.get() + " \n ..........-------........." );
+        Debugger.log("window : " + this.congestionWindowSize.get() + " \n ..................." );
 
     }
 

@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import Test.Debugger;
 import Transport.Receiver.ReceiveGate;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -62,7 +63,7 @@ public class Executor implements Runnable{
 
     void terminate(short code) throws IOException{
         if(this.active.get()) {
-            System.out.println("CHANNEL CLOSED");
+            Debugger.log("CHANNEL CLOSED");
             this.sgate.sendBye(code);
             this.active.set(false);
             this.sgate.close();
@@ -154,7 +155,7 @@ public class Executor implements Runnable{
                 /* like close socket */
                 //this.terminate((short)303);
                 if( this.window.hasTimeout() )
-                    System.out.println("TIMEOUT");
+                    Debugger.log("TIMEOUT");
 
             //}catch(IOException e){
         //        e.printStackTrace();
@@ -243,7 +244,7 @@ public class Executor implements Runnable{
         //System.out.println(" ::::> received an " + packet.getOK() + " receivedSure " + packet.getOK() + " packet <::::");
     }
     private void bye(BYE packet){
-        System.out.println(" ::::> received a bye packet <::::");
+        Debugger.log(" ::::> received a bye packet <::::");
         try{
             this.terminate((short)0);
         }catch (IOException e){

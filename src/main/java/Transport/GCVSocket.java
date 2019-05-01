@@ -1,5 +1,6 @@
 package Transport;
 
+import Test.Debugger;
 import Transport.ControlPacketTypes.HI;
 import Transport.Sender.SendGate;
 import Transport.Receiver.ReceiveGate;
@@ -67,7 +68,7 @@ public class GCVSocket {
     private TransmissionTransportChannel channel ;
 
     public GCVSocket() throws IOException {
-        System.out.println("GCVSocket created");
+        Debugger.log("GCVSocket created");
         this.localhost = InetAddress.getLocalHost();
     }
 
@@ -172,7 +173,7 @@ public class GCVSocket {
 
         for(int tries = 0; tries < GCVConnection.request_retry_number; tries++ ) {
 
-            System.out.println("sent " + serializedHiPacket.length + " bytes");
+            Debugger.log("sent " + serializedHiPacket.length + " bytes");
             cs.send(new DatagramPacket(
                         serializedHiPacket,
                         0,
@@ -181,7 +182,7 @@ public class GCVSocket {
                         GCVConnection.port)
             );
             try {
-                System.out.println(":localport " + cs.getLocalPort() );
+                Debugger.log(":localport " + cs.getLocalPort() );
                 cs.receive(responseDatagram);
                 Packet du = Packet.parse(responseDatagram.getData());
 
@@ -219,7 +220,7 @@ public class GCVSocket {
     }
 
     public void close() throws IOException{
-        System.out.println("GCVSocket closed");
+        Debugger.log("GCVSocket closed");
         if( !this.actuary.hasTerminated() )
             this.actuary.terminate((short)0);
 

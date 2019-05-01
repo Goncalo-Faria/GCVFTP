@@ -2,6 +2,7 @@ package Transport.Receiver;
 
 import java.util.List;
 
+import Test.Debugger;
 import Transport.GCVConnection;
 import Transport.TransmissionTransportChannel;
 import Transport.Unit.*;
@@ -17,7 +18,7 @@ public class ReceiveGate {
     private ReceiverProperties properties;
 
     public ReceiveGate(ReceiverProperties me, TransmissionTransportChannel ch, int seq){
-        System.out.println("ReceiveGate created");
+        Debugger.log("ReceiveGate created");
         this.properties = me;
         this.channel = ch;
         this.receiveBuffer = new Examiner(
@@ -51,7 +52,7 @@ public class ReceiveGate {
     }
 
     public void close(){
-        System.out.println("ReceiveGate closed");
+        Debugger.log("ReceiveGate closed");
         this.worker.stop();
         this.receiveBuffer.terminate();
     }

@@ -13,6 +13,14 @@ public class Server {
         String message = "very useful data, so they say";
         System.out.println(message.getBytes().length*200000/1000000);
         try {
+            if( args.length > 1 ) {
+                if (args[1].equals("debug"))
+                    Debugger.setEnabled(true);
+                else
+                    Debugger.setEnabled(false);
+            }else{
+                Debugger.setEnabled(false);
+            }
 
             GCVSocket cs = new GCVSocket(10000,true);
 

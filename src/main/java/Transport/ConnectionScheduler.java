@@ -1,5 +1,6 @@
 package Transport;
 
+import Test.Debugger;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.Packet;
 
@@ -41,7 +42,7 @@ public class ConnectionScheduler implements Runnable{
 
        new Thread(this).start();
 
-       System.out.println( this.connection.getLocalPort() + "::" + this.connection.getLocalAddress());
+       Debugger.log( this.connection.getLocalPort() + "::" + this.connection.getLocalAddress());
        this.alarm.scheduleAtFixedRate(
                 new RemoveExpired(),
                 0 ,
@@ -82,7 +83,7 @@ public class ConnectionScheduler implements Runnable{
                     ControlPacket.Type packettype = cpacket.getType();
 
                     if(packettype.equals(this.packetType)) {
-                        System.out.println("got " + packet.getLength() + " bytes ::-:: ip = " + packet.getAddress() + " port= " + packet.getPort());
+                        Debugger.log("got " + packet.getLength() + " bytes ::-:: ip = " + packet.getAddress() + " port= " + packet.getPort());
 
                         if( connections.containsKey(packet.getAddress().toString() + packet.getPort()) )
                             connections.get(packet.getAddress().toString() + packet.getPort()).restart();

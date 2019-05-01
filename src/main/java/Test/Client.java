@@ -15,10 +15,20 @@ public class Client {
     public static void main( String[] args )  {
 
         try {
+            if( args.length > 1 ) {
+                if (args[1].equals("debug"))
+                    Debugger.setEnabled(true);
+                else
+                    Debugger.setEnabled(false);
+            }else{
+                Debugger.setEnabled(false);
+            }
+
 
             GCVSocket cs = new GCVSocket(10000,true);
 
             cs.connect(args[0],7220);
+
 
             InputStream io = cs.receive();
 

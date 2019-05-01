@@ -1,5 +1,6 @@
 package Transport.Receiver;
 
+import Test.Debugger;
 import Transport.Executor;
 import Transport.FlowWindow;
 import Transport.GCVConnection;
@@ -28,7 +29,7 @@ class Examiner {
 
 
     Examiner(int maxControlBufferSize, int maxDataBufferSize, int seq){
-        System.out.println(">>>>> theirs " + seq + "<<<<<<<");
+        Debugger.log(">>>>> theirs " + seq + "<<<<<<<");
         this.control = new LinkedBlockingQueue<>(maxControlBufferSize);
         this.uncounted =  new SimpleSeqChain(maxDataBufferSize);
         this.lastOkedSeq = new AtomicInteger(seq);
@@ -65,9 +66,9 @@ class Examiner {
         try {
             if (!this.active.get())
                 throw new NotActiveException();
-            System.out.print("raw data : " + packet.getSeq());
+            Debugger.log("raw data : " + packet.getSeq());
             if (packet.getSeq() > this.lastOkedSeq.get()) {
-                System.out.println(" lastoked " + this.lastOkedSeq.get());
+                Debugger.log(" lastoked " + this.lastOkedSeq.get());
                 uncounted.add(packet);
 
                 /* verificar se posso tirar acks */

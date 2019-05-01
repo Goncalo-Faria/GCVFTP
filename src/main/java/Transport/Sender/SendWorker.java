@@ -1,5 +1,6 @@
 package Transport.Sender;
 
+import Test.Debugger;
 import Transport.Executor;
 import Transport.GCVConnection;
 import Transport.TransportChannel;
@@ -36,17 +37,13 @@ public class SendWorker extends TimerTask {
     public void run(){
         try {
             Executor.add(Executor.ActionType.SYN);
-            System.out.println("rate " + this.properties.window().uploadSpeed() + " Mb/s" );
+            Debugger.log("rate " + this.properties.window().uploadSpeed() + " Mb/s" );
             if( active.get() ) {
                 int it =this.properties.window().congestionWindowValue();
                 for(int i = 0; i< it ; i++){
                     DataPacket packet = sendBuffer.poll();
                     if( packet != null) {
-
-                        //if( this.properties.window().isInCongestionControl() )
-                        //System.out.println( " seq " + packet.getSeq());
                         channel.sendPacket(packet);
-                        //System.out.println("SENT DATA");
                     }
                 }
 

@@ -1,5 +1,6 @@
 package Transport.Receiver;
 
+import Test.Debugger;
 import Transport.Unit.DataPacket;
 
 import java.util.LinkedList;
@@ -38,7 +39,7 @@ public class SimpleSeqChain {
             int seq = packet.getSeq();
 
             if( seq > maxAmplitude + min && !list.empty() ){
-                System.out.println(" DROP ::: < " + seq);
+                Debugger.log(" DROP ::: < " + seq);
 
                 return;
             }
@@ -62,11 +63,9 @@ public class SimpleSeqChain {
                     list.remove();
 
                 }else if( merged == -1 ) {
-                    //System.out.println("-1 bug found ");
                     return;
 
                 }else if( merged == 0 ){
-                    //System.out.println("contains bug found ");
                     return;
                 }else if( ip.less(cur) ){
                     list.add(ip); /* add before the iterator mark */

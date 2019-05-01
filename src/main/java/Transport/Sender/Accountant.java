@@ -1,5 +1,6 @@
 package Transport.Sender;
 
+import Test.Debugger;
 import Transport.FlowWindow;
 import Transport.Unit.DataPacket;
 
@@ -64,7 +65,7 @@ class Accountant {
     void ok(int x) throws NotActiveException, InterruptedException{
         if( !this.ative.get() )
             throw new NotActiveException();
-        System.out.println("accountat release " + x);
+        Debugger.log("accountat release " + x);
         DataPacket packet;
         if( !this.uncounted.isEmpty() ){
             try {
@@ -87,14 +88,11 @@ class Accountant {
         this.sending.clear();
 
         Iterator<DataPacket> it = this.uncounted.iterator();
-        //LinkedList<DataPacket> temporaryCache = new LinkedList<>();
 
         for( Integer mss : missing ) {
             while (it.hasNext()) {
                 DataPacket packet = it.next();
                 if (packet.getSeq() == mss) {
-                    //System.out.println(" :: " + mss);
-                    //temporaryCache.addFirst(packet);
                     this.sending.put(packet);
                     break;
                 }

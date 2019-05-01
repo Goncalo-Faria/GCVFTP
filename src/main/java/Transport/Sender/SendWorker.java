@@ -14,11 +14,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SendWorker extends TimerTask {
 
-    private Accountant sendBuffer;
-    private TransportChannel channel;
-    private Timer sendTimer;
-    private AtomicBoolean active = new AtomicBoolean(true);
-    private SenderProperties properties;
+    private final Accountant sendBuffer;
+    private final TransportChannel channel;
+    private final Timer sendTimer;
+    private final AtomicBoolean active = new AtomicBoolean(true);
+    private final SenderProperties properties;
 
     public SendWorker(TransportChannel ch, Accountant send, long period, SenderProperties properties){
         this.sendBuffer = send;

@@ -13,13 +13,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 /* structure for 'accounting' traveling packets*/
 class Accountant {
 
-    private LinkedBlockingQueue<DataPacket> uncounted;
+    private final LinkedBlockingQueue<DataPacket> uncounted;
     /*
      * List containing the packets in order that haven't been acked or are waiting to be sent.
      *
      * TODO : Make it a circular List.
      * */
-    private LinkedBlockingDeque<DataPacket> sending = new LinkedBlockingDeque<DataPacket>();
+    private final LinkedBlockingDeque<DataPacket> sending = new LinkedBlockingDeque<>();
     /*
      * Packet Sending queue.
      *      the elements of the queue are either :
@@ -31,19 +31,19 @@ class Accountant {
     /*
      * List of control packets waiting to be sent.
      * */
-    private AtomicBoolean ative = new AtomicBoolean(true);
+    private final AtomicBoolean ative = new AtomicBoolean(true);
     /*
      * true : if the accountant is active.
      * false : otherwise.
      * */
 
-    private AtomicInteger seq;/* TODO : make sentSure 0 > the max numbers */
+    private final AtomicInteger seq;/* TODO : make sentSure 0 > the max numbers */
     /*
      * Current sequence number.
      *  */
 
     Accountant(int stock, int seq){
-        this.uncounted = new LinkedBlockingQueue<DataPacket>(stock);
+        this.uncounted = new LinkedBlockingQueue<>(stock);
         this.seq = new AtomicInteger(seq);
     }
 
@@ -64,12 +64,12 @@ class Accountant {
         if( !this.ative.get() )
             throw new NotActiveException();
         Debugger.log("accountat release " + x);
-        DataPacket packet;
         if( !this.uncounted.isEmpty() ){
             try {
                 while (this.uncounted.peek().getSeq() <= x)
                     this.uncounted.take();
             }catch (NullPointerException e){
+                ;
             }
             /* decrementa o número de pacotes em falta do stream*/
             /* TODO: Assegurar que é suportada ordem circular */
@@ -99,10 +99,6 @@ class Accountant {
         while( it.hasNext() )
             this.sending.put( it.next() );
 
-        //for( DataPacket e : temporaryCache)
-          //  this.sending.putFirst(e);
-
-        //temporaryCache.clear();
     }
 
     void terminate(){
@@ -126,10 +122,6 @@ class Accountant {
 
         // procura o index
         return sending.poll();
-    }
-
-    public int lastSeq(){
-        return this.seq.get();
     }
 
     void retransmit(){

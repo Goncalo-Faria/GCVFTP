@@ -12,7 +12,7 @@ public class SimpleSeqChain {
     LList<IntervalPacket> list = new LList<>();
     private int min = Integer.MAX_VALUE;
     private int max = Integer.MIN_VALUE;
-    private int maxAmplitude;
+    private final int maxAmplitude;
     //private ReadWriteLock wrl = new ReentrantReadWriteLock();
 
     public SimpleSeqChain( int maxAmplitude ){
@@ -89,7 +89,7 @@ public class SimpleSeqChain {
 
     public List<Integer> dual( int startElem, int maxSize){
 
-            List<Integer> dualRep = new LinkedList<Integer>();
+            List<Integer> dualRep = new LinkedList<>();
 
             LList<IntervalPacket> v = list.view();
 

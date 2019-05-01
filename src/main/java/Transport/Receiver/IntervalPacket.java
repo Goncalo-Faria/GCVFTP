@@ -11,9 +11,9 @@ public class IntervalPacket {
 
     private int min;
     private int max;
-    private ReadWriteLock wrl = new ReentrantReadWriteLock();
+    private final ReadWriteLock wrl = new ReentrantReadWriteLock();
 
-    private LinkedList<DataPacket> l = new LinkedList<>();
+    private final LinkedList<DataPacket> l = new LinkedList<>();
 
     public IntervalPacket( DataPacket p){
         this.min = this.max = p.getSeq();
@@ -127,7 +127,7 @@ public class IntervalPacket {
     public LinkedList<DataPacket> getpackets(){
         wrl.readLock().lock();
         try {
-            return new LinkedList<DataPacket>(this.l);
+            return new LinkedList<>(this.l);
         }finally{
             wrl.readLock().unlock();
         }

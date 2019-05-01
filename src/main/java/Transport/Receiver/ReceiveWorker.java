@@ -12,10 +12,10 @@ public class ReceiveWorker implements Runnable{
     /*tem de verificar se há espaço no buffer, caso contrário dá drop*/
 
     /* para impedir denial of service atacks */
-    private AtomicBoolean active = new AtomicBoolean(true);
-    private TransportChannel channel;
-    private ReceiverProperties properties;
-    private Examiner buffer;
+    private final AtomicBoolean active = new AtomicBoolean(true);
+    private final TransportChannel channel;
+    private final ReceiverProperties properties;
+    private final Examiner buffer;
 
     public ReceiveWorker(TransportChannel channel, Examiner buffer, ReceiverProperties properties, int numThreads ){
         this.channel = channel;

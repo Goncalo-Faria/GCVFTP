@@ -6,8 +6,8 @@ import static java.nio.ByteBuffer.wrap;
 
 public class BitManipulator {
 
-    private ByteBuffer view;
-    private byte[] cache;
+    private final ByteBuffer view;
+    private final byte[] cache;
     private boolean mod1 = false;
     private boolean mod2 = false;
 

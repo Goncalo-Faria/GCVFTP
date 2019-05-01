@@ -17,13 +17,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 class Examiner {
 
-    private LinkedBlockingQueue<ControlPacket> control;
-    private LinkedBlockingQueue<DataPacket> data = new LinkedBlockingQueue<DataPacket>();
-    private SimpleSeqChain uncounted;
-    private AtomicInteger lastOkedSeq;
-    private AtomicBoolean active = new AtomicBoolean(true);
+    private final LinkedBlockingQueue<ControlPacket> control;
+    private final LinkedBlockingQueue<DataPacket> data = new LinkedBlockingQueue<>();
+    private final SimpleSeqChain uncounted;
+    private final AtomicInteger lastOkedSeq;
+    private final AtomicBoolean active = new AtomicBoolean(true);
     private final int maxDataBufferSize;
-    private ReadWriteLock wrl = new ReentrantReadWriteLock();
+    private final ReadWriteLock wrl = new ReentrantReadWriteLock();
 
 
     Examiner(int maxControlBufferSize, int maxDataBufferSize, int seq){

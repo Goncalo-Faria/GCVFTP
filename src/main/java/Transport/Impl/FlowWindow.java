@@ -18,36 +18,36 @@ public class FlowWindow implements Window {
 
     private final LocalDateTime connectionStartTime = LocalDateTime.now();
 
-    private AtomicInteger rtt = new AtomicInteger(100);
-    private AtomicInteger rttVar =  new AtomicInteger(100);
+    private final AtomicInteger rtt = new AtomicInteger(100);
+    private final AtomicInteger rttVar =  new AtomicInteger(100);
 
 
-    private AtomicInteger timeLastReceived = new AtomicInteger(0);
-    private AtomicInteger timeLastSent = new AtomicInteger(0);
+    private final AtomicInteger timeLastReceived = new AtomicInteger(0);
+    private final AtomicInteger timeLastSent = new AtomicInteger(0);
 
-    private AtomicInteger timeLastNackSent = new AtomicInteger(0);
-    private AtomicInteger timeLastSureSent = new AtomicInteger(0);
+    private final AtomicInteger timeLastNackSent = new AtomicInteger(0);
+    private final AtomicInteger timeLastSureSent = new AtomicInteger(0);
 
-    private AtomicInteger timeLastNackReceived = new AtomicInteger(0);
-    private AtomicInteger timeLastSureReceived = new AtomicInteger(0);
-    private AtomicInteger timeLastOkReceived = new AtomicInteger(0);
+    private final AtomicInteger timeLastNackReceived = new AtomicInteger(0);
+    private final AtomicInteger timeLastSureReceived = new AtomicInteger(0);
+    private final AtomicInteger timeLastOkReceived = new AtomicInteger(0);
 
-    private AtomicInteger lastSureReceived = new AtomicInteger(0);
-    private AtomicInteger lastSureSent = new AtomicInteger(0);
-    private AtomicInteger lastOkSent = new AtomicInteger(0);
-    private AtomicInteger lastOkReceived = new AtomicInteger(this.connectionTime());
-    private AtomicInteger lastDataReceived = new AtomicInteger(0);
+    private final AtomicInteger lastSureReceived = new AtomicInteger(0);
+    private final AtomicInteger lastSureSent = new AtomicInteger(0);
+    private final AtomicInteger lastOkSent = new AtomicInteger(0);
+    private final AtomicInteger lastOkReceived = new AtomicInteger(this.connectionTime());
+    private final AtomicInteger lastDataReceived = new AtomicInteger(0);
 
-    private AtomicInteger synOkCounter = new AtomicInteger(0);
-    private AtomicInteger increaseCounter = new AtomicInteger(0);
+    private final AtomicInteger synOkCounter = new AtomicInteger(0);
+    private final AtomicInteger increaseCounter = new AtomicInteger(0);
 
-    private AtomicInteger receiverBuffer;
+    private final AtomicInteger receiverBuffer;
 
-    private ConcurrentSkipListMap<Integer,Integer> sentOkCache = new ConcurrentSkipListMap<>();
+    private final ConcurrentSkipListMap<Integer,Integer> sentOkCache = new ConcurrentSkipListMap<>();
 
-    private AtomicInteger congestionWindowSize = new AtomicInteger(GCVConnection.initial_window_size);
+    private final AtomicInteger congestionWindowSize = new AtomicInteger(GCVConnection.initial_window_size);
 
-    private AtomicBoolean congestionControl = new AtomicBoolean(false);
+    private final AtomicBoolean congestionControl = new AtomicBoolean(false);
 
     private int initiate = 0;
 

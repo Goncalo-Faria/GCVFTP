@@ -61,9 +61,9 @@ public class GCVSocket {
     private Executor actuary;
     private boolean persistent = true;
 
-    private AtomicBoolean active = new AtomicBoolean(false);
+    private final AtomicBoolean active = new AtomicBoolean(false);
 
-    private int mtu = GCVConnection.stdmtu;
+    private final int mtu = GCVConnection.stdmtu;
     private int maxWindow = GCVConnection.send_buffer_size;
     private InetAddress localhost;
 

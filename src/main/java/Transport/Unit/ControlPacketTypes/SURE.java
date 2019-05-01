@@ -10,8 +10,8 @@ public class SURE extends ControlPacket {
 
     public static int size = ControlPacket.header_size + 4;
 
-    public static short ack_hi = 239;
-    public static short ack_ok = 400;
+    public static final short ack_hi = 239;
+    public static final short ack_ok = 400;
 
     private int ok = -1;
 

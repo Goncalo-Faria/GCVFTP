@@ -14,7 +14,7 @@ public class NOPE extends ControlPacket {
 
     public static int size = ControlPacket.header_size + 4 * 2 * (GCVConnection.max_loss_list_size + 1);
 
-    private List<Integer> losslist;
+    private final List<Integer> losslist;
 
     public NOPE( BitManipulator extrator ) {
         super(ControlPacket.Type.NOPE, extrator.getShort()/*extended*/, extrator.getInt());

@@ -9,11 +9,11 @@ import Transport.Unit.*;
 
 public class ReceiveGate {
 
-    private Examiner receiveBuffer;
+    private final Examiner receiveBuffer;
 
-    private ReceiveWorker worker;
+    private final ReceiveWorker worker;
 
-    private ReceiverProperties properties;
+    private final ReceiverProperties properties;
 
     public ReceiveGate(ReceiverProperties me, TransportChannel ch, int seq){
         Debugger.log("ReceiveGate created");
@@ -26,10 +26,6 @@ public class ReceiveGate {
 
         this.worker = new ReceiveWorker(ch, receiveBuffer, me, GCVConnection.number_of_receive_workers);
         
-    }
-
-    public int getLastSeq(){
-        return receiveBuffer.getLastOk();
     }
 
     public List<Integer> getLossList(){

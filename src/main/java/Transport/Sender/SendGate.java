@@ -18,15 +18,15 @@ public class SendGate {
 
     //int msb = (m & 0xff) >> 7;
 
-    private Accountant send_buffer;
+    private final Accountant send_buffer;
 
-    private TransportChannel ch;
+    private final TransportChannel ch;
 
-    private SendWorker worker;
+    private final SendWorker worker;
 
-    private AtomicInteger backery_ticket = new AtomicInteger(0);
+    private final AtomicInteger backery_ticket = new AtomicInteger(0);
 
-    private SenderProperties properties;
+    private final SenderProperties properties;
 
 
     /* receiver
@@ -40,7 +40,7 @@ public class SendGate {
      * manda dados
      * */
 
-    public SendGate(SenderProperties me, TransmissionTransportChannel ch, int our_seq, long initialperiod) throws IOException {
+    public SendGate(SenderProperties me, TransmissionTransportChannel ch, int our_seq, long initialperiod) {
         Debugger.log("SendGate created");
         this.ch = ch;
         this.properties = me;
@@ -145,7 +145,7 @@ public class SendGate {
         this.send_buffer.retransmit();
     }
 
-    public void send( byte[] data) throws IOException, InterruptedException{
+    public void send( byte[] data) throws InterruptedException{
 
         int ticket = this.getTicket();
 
@@ -203,7 +203,7 @@ public class SendGate {
         /* desencrava*/
     }
 
-    public void close() throws IOException{
+    public void close() {
         Debugger.log("SendGate closed");
         this.worker.stop();
         this.send_buffer.terminate();

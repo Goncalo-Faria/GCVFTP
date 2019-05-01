@@ -24,10 +24,6 @@ public class StationProperties {
         return ip;
     }
 
-    public void setPort(int port) {
-        this.port = port;
-    }
-
     public int mtu() {
         return this.mtu;
     }

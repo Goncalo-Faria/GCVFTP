@@ -34,9 +34,9 @@ public abstract class ControlPacket extends Packet {
         return null;
     }
 
-    private Type type; /* control message type*/
-    private short extendedtype=0; /*para a aplicação*/
-    private int timestamp=0; /*tempo desde que a ligação começou*/
+    private final Type type; /* control message type*/
+    private short extendedtype; /*para a aplicação*/
+    private final int timestamp; /*tempo desde que a ligação começou*/
     
     protected ControlPacket(Type t, short extendedtype, int timestamp){
         this.type = t;
@@ -82,11 +82,9 @@ public abstract class ControlPacket extends Packet {
 
     @Override
     public String toString(){
-        StringBuilder sb = new StringBuilder();
-        sb.append("x-----------x-----------x--------x-------x----x--x--x-x-x-x--x \n");
-        sb.append("type " + this.getType());
-        sb.append("extcode " + this.getExtendedtype());
-        sb.append("timestamp " + this.getTimestamp());
-        return sb.toString();
+        return "x-----------x-----------x--------x-------x----x--x--x-x-x-x--x \n" +
+                "type " + this.getType() +
+                "extcode " + this.getExtendedtype() +
+                "timestamp " + this.getTimestamp();
     }
 }

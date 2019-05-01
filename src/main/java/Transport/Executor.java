@@ -26,7 +26,7 @@ public class Executor implements Runnable{
         KEEPALIVE
     }
 
-    private static LinkedBlockingDeque<ActionType> executorQueue = new LinkedBlockingDeque<ActionType>();
+    private static final LinkedBlockingDeque<ActionType> executorQueue = new LinkedBlockingDeque<>();
     
     public static void add(ActionType action) throws InterruptedException{
         switch( action ){
@@ -47,12 +47,12 @@ public class Executor implements Runnable{
         }
     }
 
-    private SendGate sgate; /* mandar pacotes de controlo */
-    private ReceiveGate rgate; /* tirar pacotes */
-    private ConcurrentHashMap< Integer, ExecutorPipe > map = new ConcurrentHashMap<>();
-    private LinkedBlockingQueue<ExecutorPipe> socketOutput = new LinkedBlockingQueue<>();
-    private AtomicBoolean active = new AtomicBoolean(true);
-    private Window window;
+    private final SendGate sgate; /* mandar pacotes de controlo */
+    private final ReceiveGate rgate; /* tirar pacotes */
+    private final ConcurrentHashMap< Integer, ExecutorPipe > map = new ConcurrentHashMap<>();
+    private final LinkedBlockingQueue<ExecutorPipe> socketOutput = new LinkedBlockingQueue<>();
+    private final AtomicBoolean active = new AtomicBoolean(true);
+    private final Window window;
 
     Executor(SendGate sgate, ReceiveGate rgate, Window window){
         this.sgate = sgate;
@@ -291,7 +291,7 @@ public class Executor implements Runnable{
     class ExecutorPipe{
 
         PipedInputStream consumer;
-        PipedOutputStream producer;
+        final PipedOutputStream producer;
 
         ExecutorPipe() throws IOException {
             this.producer = new PipedOutputStream();

@@ -10,7 +10,7 @@ public class SenderProperties extends TransportStationProperties {
 
 
 
-    private AtomicBoolean persistent;
+    private final AtomicBoolean persistent;
 
     public SenderProperties(InetAddress ip, int port, int maxpacket, int buffer, boolean isPersistent){
         super(ip,port,maxpacket, buffer);

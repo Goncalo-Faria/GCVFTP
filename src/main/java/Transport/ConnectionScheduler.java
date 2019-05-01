@@ -23,12 +23,12 @@ class ConnectionScheduler implements Runnable{
 
     private final DatagramSocket connection;
     private final AtomicBoolean active = new AtomicBoolean(true);
-    private BlockingQueue<StampedControlPacket> queue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<StampedControlPacket> queue = new LinkedBlockingQueue<>();
     private final Timer alarm = new Timer(true);
     private LocalDateTime clearTime = LocalDateTime.now();
-    private ControlPacket.Type packetType;
+    private final ControlPacket.Type packetType;
     private int maxPacket;
-    private ConcurrentHashMap<String, GCVSocket> connections = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, GCVSocket> connections = new ConcurrentHashMap<>();
 
     ConnectionScheduler(int port,
                         long connection_request_ttl,
@@ -112,10 +112,10 @@ class ConnectionScheduler implements Runnable{
     }
 
     public class StampedControlPacket {
-        private ControlPacket obj;
-        private int port;
-        private InetAddress address;
-        private LocalDateTime t = LocalDateTime.now();
+        private final ControlPacket obj;
+        private final int port;
+        private final InetAddress address;
+        private final LocalDateTime t = LocalDateTime.now();
 
         StampedControlPacket(ControlPacket obj,int port, InetAddress address){
             this.obj = obj;

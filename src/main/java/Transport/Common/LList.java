@@ -17,12 +17,12 @@ public class LList<V> {
     public void add(V element ){
         
         if( head == null){
-            head = tail = current = new No<V>(null, element, null);
+            head = tail = current = new No<>(null, element, null);
             return;
         }
 
         if( current == null ){
-            No<V> me = new No<V>(tail, element, null);
+            No<V> me = new No<>(tail, element, null);
 
             tail.next = me;
 
@@ -30,7 +30,7 @@ public class LList<V> {
             return;
         }
 
-        No<V> me = new No<V>(current.previous, element, current );
+        No<V> me = new No<>(current.previous, element, current);
         
         current.previous = me;
 
@@ -48,7 +48,7 @@ public class LList<V> {
 
         if( current == null )
             current = head;
-        else if(current != null)
+        else
             current = current.next;
 
         return this;

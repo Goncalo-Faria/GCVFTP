@@ -17,7 +17,7 @@ public class NOPE extends ControlPacket {
     private final List<Integer> losslist;
 
     public NOPE( BitManipulator extrator ) {
-        super(ControlPacket.Type.NOPE, extrator.getShort()/*extended*/, extrator.getInt());
+        super(ControlPacket.Type.NOPE, extrator.getShort()/*extended*/);
         /*extract the loss list*/
         losslist = new ArrayList<>();
         while (true) {
@@ -34,8 +34,8 @@ public class NOPE extends ControlPacket {
         return ControlPacket.header_size + losslist.size()*4;
     }
 
-    public NOPE(short extendedtype, int timestamp, List<Integer> losslist){
-        super(ControlPacket.Type.NOPE,extendedtype,timestamp);
+    public NOPE(short extendedtype, List<Integer> losslist){
+        super(ControlPacket.Type.NOPE,extendedtype);
         this.losslist = losslist;
     }
 

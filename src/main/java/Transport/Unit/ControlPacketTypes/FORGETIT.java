@@ -8,11 +8,11 @@ public class FORGETIT extends ControlPacket {
     public static int size = ControlPacket.header_size;
 
     public FORGETIT( BitManipulator extrator ) {
-        super(Type.FORGETIT, extrator.getShort()/*extended*/, extrator.getInt()/*timestamp*/);
+        super(Type.FORGETIT, extrator.getShort()/*extended*/);
     }
 
     public FORGETIT(short extendedtype, int timestamp){
-        super(Type.FORGETIT,extendedtype,timestamp);
+        super(Type.FORGETIT,extendedtype);
     }
 
     public int size(){

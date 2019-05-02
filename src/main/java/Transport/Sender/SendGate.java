@@ -59,7 +59,6 @@ public class SendGate {
         this.ch.sendPacket(
                 new SURE(
                         SURE.ack_ok,
-                        this.ch.window().connectionTime(),
                         ack
                 )
         );
@@ -74,8 +73,7 @@ public class SendGate {
 
         this.ch.sendPacket(
                 new BYE(
-                        extcode,
-                        this.ch.window().connectionTime()
+                        extcode
                 )
         );
         Debugger.log("BYE");
@@ -85,8 +83,7 @@ public class SendGate {
 
         this.ch.sendPacket(
                 new SUP(
-                        extcode,
-                        this.ch.window().connectionTime()
+                        extcode
                 )
         );
     }
@@ -95,7 +92,6 @@ public class SendGate {
 
         OK packet = new OK(
                 extcode,
-                this.ch.window().connectionTime(),
                 last_seq,
                 free_window,
                 this.ch.window().rtt(),
@@ -122,7 +118,6 @@ public class SendGate {
             this.ch.sendPacket(
                     new NOPE(
                             (short) 0,
-                            this.ch.window().connectionTime(),
                             lossList
                     )
             );

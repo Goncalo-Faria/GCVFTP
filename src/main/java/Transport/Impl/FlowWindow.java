@@ -179,7 +179,7 @@ public class FlowWindow implements Window {
     }
 
     public void sentOk(OK packet){
-        sentOkCache.put( packet.getSeq(), packet.getTimestamp() );
+        sentOkCache.put( packet.getSeq(), this.connectionTime());
         this.lastOkSent.getAndUpdate(x -> (x > packet.getSeq() ) ? x : packet.getSeq() );
     }
 

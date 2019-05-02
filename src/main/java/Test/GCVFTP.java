@@ -16,7 +16,7 @@ public class GCVFTP {
 
         System.out.println( BitManipulator.msb( base.array(),0) );
         */
-        ControlPacket cp = new OK((short)422,42,445,42,42,42);
+        ControlPacket cp = new OK((short)422,445,42,42,42);
 
         System.out.println(cp.getType());
 

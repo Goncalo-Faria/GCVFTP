@@ -108,20 +108,20 @@ public class GCVSocket {
 
         InetSocketAddress sa = new InetSocketAddress(0);
 
-        FlowWindow channelWindow = new FlowWindow(maxWindow);
+        FlowWindow channelWindow = new FlowWindow(hiPacket.getMaxWindow());
 
         SenderProperties senderProp = new SenderProperties(
                 this.localhost,
                 sa.getPort(),
                 this.mtu,
-                this.maxWindow,
+                channelWindow.getMaxWindowSize(),
                 persistent);
 
         ReceiverProperties receiveProp = new ReceiverProperties(
                 receivedStampedPacket.ip(),
                 receivedStampedPacket.port(),
                 hiPacket.getMTU(),
-                hiPacket.getMaxWindow());
+                this.maxWindow);
 
         this.channel = new TransmissionTransportChannel(
                 senderProp ,
@@ -154,19 +154,15 @@ public class GCVSocket {
 
         FlowWindow channelWindow = new FlowWindow(maxWindow);
 
-        SenderProperties sendProp = new SenderProperties(
-                InetAddress.getLocalHost(),
-                intendedPort,
-                mtu,
-                maxWindow,
-                persistent);
+
 
         HI hiPacket = new HI(
                 (short)0,
                 channelWindow.connectionTime(),
-                sendProp.mtu(),
+                mtu,
                 maxWindow
         );
+
 
         byte[] serializedHiPacket = hiPacket.serialize();
 
@@ -174,7 +170,7 @@ public class GCVSocket {
                 new byte[HI.size],
                 HI.size);
 
-        DatagramSocket cs = new DatagramSocket(sendProp.port());
+        DatagramSocket cs = new DatagramSocket(intendedPort);
         cs.setSoTimeout(GCVConnection.request_retry_timeout);
 
         for(int tries = 0; tries < GCVConnection.request_retry_number; tries++ ) {
@@ -201,8 +197,15 @@ public class GCVSocket {
                                 ip,
                                 responseDatagram.getPort(),
                                 response_hello_packet.getMTU(),
-                                response_hello_packet.getMaxWindow()
+                                this.maxWindow
                         );
+
+                        SenderProperties sendProp = new SenderProperties(
+                                InetAddress.getLocalHost(),
+                                intendedPort,
+                                mtu,
+                                response_hello_packet.getMaxWindow(),
+                                persistent);
 
                         this.channel = new TransmissionTransportChannel(cs,
                                 sendProp ,

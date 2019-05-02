@@ -13,15 +13,15 @@ public class OK extends ControlPacket {
     private final int rttvar;
 
     public OK( BitManipulator extrator ) {
-        super(ControlPacket.Type.OK, extrator.getShort()/*extended*/, extrator.getInt());
+        super(ControlPacket.Type.OK, extrator.getShort()/*extended*/);
         this.seq = extrator.getInt();
         this.window = extrator.getInt();
         this.rtt = extrator.getInt();
         this.rttvar = extrator.getInt();
     }
 
-    public OK(short extendedtype, int timestamp, int seq, int freebuffer, int rtt, int rttvar){
-        super(ControlPacket.Type.OK,extendedtype,timestamp);
+    public OK(short extendedtype, int seq, int freebuffer, int rtt, int rttvar){
+        super(ControlPacket.Type.OK,extendedtype);
         this.seq = seq;
         this.rtt = rtt;
         this.rttvar = rttvar;

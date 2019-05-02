@@ -52,7 +52,7 @@ public class DataPacket extends Packet {
 
     public static int header_size = 12;
 
-    private final int timestamp;
+    private int timestamp;
     private int seq=0;
     private final int streamNumber;
     private final byte[] information;
@@ -95,6 +95,8 @@ public class DataPacket extends Packet {
     public int getTimestamp() {
         return timestamp;
     }
+
+    public DataPacket setTimestamp( int time ){ this.timestamp = time; return this; }
 
     public byte[] getData() {
         return information;

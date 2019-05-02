@@ -44,17 +44,17 @@ public class SendGate {
         Debugger.log("SendGate created");
         this.ch = ch;
         this.properties = me;
-        this.send_buffer = new Accountant(me.transmissionChannelBufferSize(),our_seq);
+        this.send_buffer = new Accountant(me.transmissionChannelBufferSize(), our_seq);
         this.worker = new SendWorker(ch, send_buffer, initialperiod, me);
     }
 
-    public void confirmHandshake() throws  IOException{
+    public void confirmHandshake() throws IOException {
 
-        this.ch.sendPacket( new SURE(SURE.ack_hi,
+        this.ch.sendPacket(new SURE(SURE.ack_hi,
                 this.ch.window().connectionTime()));
     }
 
-    public void sendSure(int ack) throws  IOException{
+    public void sendSure(int ack) throws IOException {
 
         this.ch.sendPacket(
                 new SURE(
@@ -66,11 +66,11 @@ public class SendGate {
 
     }
 
-    public SenderProperties properties(){
+    public SenderProperties properties() {
         return this.properties;
     }
 
-    public void sendBye( short extcode ) throws IOException{
+    public void sendBye(short extcode) throws IOException {
 
         this.ch.sendPacket(
                 new BYE(
@@ -81,7 +81,7 @@ public class SendGate {
         Debugger.log("BYE");
     }
 
-    public void sendSup(short extcode) throws IOException{
+    public void sendSup(short extcode) throws IOException {
 
         this.ch.sendPacket(
                 new SUP(
@@ -90,8 +90,8 @@ public class SendGate {
                 )
         );
     }
-    
-    public void sendOk(short extcode, int last_seq, int free_window) throws IOException{
+
+    public void sendOk(short extcode, int last_seq, int free_window) throws IOException {
 
         OK packet = new OK(
                 extcode,
@@ -106,7 +106,7 @@ public class SendGate {
 
     }
 
-    public void sendForgetit(short extcode)throws IOException {
+    public void sendForgetit(short extcode) throws IOException {
 
         this.ch.sendPacket(
                 new FORGETIT(
@@ -116,9 +116,9 @@ public class SendGate {
         );
     }
 
-    public void sendNope( List<Integer> lossList ) throws IOException{
+    public void sendNope(List<Integer> lossList) throws IOException {
 
-        if( !lossList.isEmpty() ) {
+        if (!lossList.isEmpty()) {
             this.ch.sendPacket(
                     new NOPE(
                             (short) 0,
@@ -127,7 +127,7 @@ public class SendGate {
                     )
             );
 
-            Debugger.log("SENT NACK " + lossList.get(0) );
+            Debugger.log("SENT NACK " + lossList.get(0));
         }
 
     }
@@ -136,16 +136,16 @@ public class SendGate {
         this.send_buffer.ok(seq);
     }
 
-    public void retransmit(List<Integer> lossList ) throws NotActiveException, InterruptedException{
-        Debugger.log(">>>>>>>>>>><Retransmitting : " + lossList.size()+ " <<<<<<<<<<<<<<<<<<");
+    public void retransmit(List<Integer> lossList) throws NotActiveException, InterruptedException {
+        Debugger.log(">>>>>>>>>>><Retransmitting : " + lossList.size() + " <<<<<<<<<<<<<<<<<<");
         this.send_buffer.nope(lossList);
     }
 
-    public void retransmit(){
+    public void retransmit() {
         this.send_buffer.retransmit();
     }
 
-    public void send( byte[] data) throws InterruptedException{
+    public void send(byte[] data) throws InterruptedException {
 
         int ticket = this.getTicket();
 
@@ -157,56 +157,106 @@ public class SendGate {
         );
 
         this.send_buffer.data(packet);
-
     }
 
-    private int getTicket(){
+    private int getTicket() {
         return backery_ticket.accumulateAndGet(0,
-                (x,y) -> Integer.max(++x % Integer.MAX_VALUE, y)
+                (x, y) -> Integer.max(++x % Integer.MAX_VALUE, y)
         );
     }
 
-    public void send(InputStream io) throws InterruptedException, IOException{
-        /* encrava */
-        int ticket = this.getTicket();
-        BufferedInputStream bufst = new BufferedInputStream(io);
-        int flag;
+    public void send(InputStream io) {
 
-        byte[] data = new byte[this.ch.inMTU()];
-
-        do {
-            flag = bufst.read(data, 0, this.ch.inMTU());
-
-            if (flag != -1) {
-
-                DataPacket dp = new DataPacket(
-                        data,
-                        flag,
-                        this.ch.window().connectionTime(),
-                        ticket,
-                        DataPacket.Flag.SOLO
-                );
-
-                this.send_buffer.data( dp);
-            }
-        }while ( flag != -1 );
-
-        DataPacket dp = new DataPacket(
-                new byte[0],
-                0,
-                this.ch.window().connectionTime(),
-                ticket,
-                DataPacket.Flag.LAST
+        Thread copy_machine = new Thread(
+                new LoadingWorker(
+                        this.getTicket(),
+                        io,
+                        this.send_buffer,this.ch)
         );
 
-        this.send_buffer.data( dp);
-        /* desencrava*/
+        copy_machine.start();
     }
+
+    public void sendWhenReady(InputStream io) throws InterruptedException{
+
+        Thread copyMachine = new Thread(
+                new LoadingWorker(
+                        this.getTicket(),
+                        io,
+                        this.send_buffer,this.ch)
+        );
+
+        copyMachine.start();
+        copyMachine.join();
+    }
+
 
     public void close() {
         Debugger.log("SendGate closed");
         this.worker.stop();
         this.send_buffer.terminate();
+    }
+
+    class LoadingWorker implements Runnable {
+        private int ticket;
+        private InputStream io;
+        private Accountant send_buffer;
+        private TransportChannel ch;
+
+        LoadingWorker(int ticket, InputStream io, Accountant send_buffer, TransportChannel ch){
+            this.ticket = ticket;
+            this.io = io;
+            this.send_buffer = send_buffer;
+            this.ch = ch;
+        }
+
+        public void run(){
+            //BufferedInputStream bufst = new BufferedInputStream(io);
+            int flag;
+            boolean first = true;
+
+            byte[] data = new byte[this.ch.inMTU()];
+            try {
+                do {
+                    flag = io.read(data, 0, this.ch.inMTU());
+                    if (flag != -1) {
+                        DataPacket dp;
+                        if (first) {
+                            dp = new DataPacket(
+                                    data,
+                                    flag,
+                                    this.ch.window().connectionTime(),
+                                    ticket,
+                                    DataPacket.Flag.FIRST
+                            );
+                            first = false;
+                        } else {
+                            dp = new DataPacket(
+                                    data,
+                                    flag,
+                                    this.ch.window().connectionTime(),
+                                    ticket,
+                                    DataPacket.Flag.MIDDLE
+                            );
+                        }
+                        this.send_buffer.data(dp);
+                    }
+
+                } while (flag != -1);
+
+                DataPacket dp = new DataPacket(
+                        new byte[0],
+                        0,
+                        this.ch.window().connectionTime(),
+                        ticket,
+                        DataPacket.Flag.LAST
+                );
+
+                this.send_buffer.data(dp);
+            }catch (InterruptedException|IOException e){
+                e.printStackTrace();
+            }
+        }
     }
 
 }

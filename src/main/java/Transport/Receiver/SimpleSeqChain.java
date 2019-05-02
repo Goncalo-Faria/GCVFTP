@@ -108,8 +108,12 @@ public class SimpleSeqChain {
             }
 
             if( !dualRep.isEmpty() ){
-                dualRep.add(0,this.min-1);
-                dualRep.add(0, startElem);
+                dualRep.add(0,this.min-1);//to
+                dualRep.add(0, startElem);//from
+
+                dualRep.add(this.max + 1 );
+                dualRep.add(this.max + 1 );
+
             }
 
             return dualRep;

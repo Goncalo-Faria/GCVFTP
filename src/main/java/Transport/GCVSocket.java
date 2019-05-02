@@ -243,14 +243,21 @@ public class GCVSocket {
         this.actuary.send(data);
     }
 
-    public void send( InputStream io ) throws  IOException, InterruptedException{
+    public void send( InputStream io ) throws  IOException{
         if(this.actuary.hasTerminated())
             throw new IOException("GCVSocket has disconnected");
 
         this.actuary.send(io);
     }
 
-    public OutputStream send() throws  IOException, InterruptedException{
+    public void sendWhenReady( InputStream io ) throws  IOException, InterruptedException{
+        if(this.actuary.hasTerminated())
+            throw new IOException("GCVSocket has disconnected");
+
+        this.actuary.sendWhenReady(io);
+    }
+
+    public OutputStream send() throws  IOException{
         if(this.actuary.hasTerminated())
             throw new IOException("GCVSocket has disconnected");
 
@@ -262,6 +269,10 @@ public class GCVSocket {
 
     public InputStream receive() throws InterruptedException {
         return this.actuary.getStream();
+    }
+
+    public InputStream receiveWhenReady() throws InterruptedException {
+        return this.actuary.getStreamWhenReady();
     }
 
     void restart() throws IOException {

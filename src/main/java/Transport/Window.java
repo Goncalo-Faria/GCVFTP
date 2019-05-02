@@ -16,6 +16,8 @@ public interface Window {
     int rttVar();
     float uploadSpeed();
 
+    void addRtt(int sampleRtt);
+
     int connectionTime();
 
     boolean shouldSendOk();
@@ -28,8 +30,6 @@ public interface Window {
     int lastOkSent();
     int lastOkReceived();
 
-    void receivedData(DataPacket packet);
-
     void sentTransmission();
     void receivedTransmission();
 
@@ -40,6 +40,7 @@ public interface Window {
     void receivedSure(SURE packet);
     void receivedNope(NOPE packet);
     void receivedOk(OK packet);
+    void receivedData(DataPacket packet);
 
     void boot(int theirInitialSeq, int ourInitialSeq, int startTime);
 

@@ -151,7 +151,6 @@ public class SendGate {
 
         DataPacket packet = new DataPacket(
                 data,
-                this.ch.window().connectionTime(),
                 ticket,
                 DataPacket.Flag.SOLO
         );
@@ -190,7 +189,6 @@ public class SendGate {
         copyMachine.join();
     }
 
-
     public void close() {
         Debugger.log("SendGate closed");
         this.worker.stop();
@@ -225,7 +223,6 @@ public class SendGate {
                             dp = new DataPacket(
                                     data,
                                     flag,
-                                    this.ch.window().connectionTime(),
                                     ticket,
                                     DataPacket.Flag.FIRST
                             );
@@ -234,7 +231,6 @@ public class SendGate {
                             dp = new DataPacket(
                                     data,
                                     flag,
-                                    this.ch.window().connectionTime(),
                                     ticket,
                                     DataPacket.Flag.MIDDLE
                             );
@@ -247,7 +243,6 @@ public class SendGate {
                 DataPacket dp = new DataPacket(
                         new byte[0],
                         0,
-                        this.ch.window().connectionTime(),
                         ticket,
                         DataPacket.Flag.LAST
                 );

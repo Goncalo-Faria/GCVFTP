@@ -30,7 +30,7 @@ public class GCVFTP {
             System.out.println(" it's data ");
         }
 
-        DataPacket dp = new DataPacket( "ola".getBytes() ,32,884,8448,DataPacket.Flag.FIRST);
+        DataPacket dp = new DataPacket( "ola".getBytes() ,"ola".getBytes().length,8448,DataPacket.Flag.SOLO);
 
         p =  Packet.parse(dp.serialize());
 
@@ -52,7 +52,7 @@ public class GCVFTP {
         SimpleSeqChain l = new SimpleSeqChain(30);
 
         for(int i = 1; i< 22; i = i + 2) {
-            DataPacket packet = new DataPacket(new byte[20], 0, i, 4, DataPacket.Flag.SOLO);
+            DataPacket packet = new DataPacket(new byte[20], 0, i, DataPacket.Flag.SOLO);
 
             l.add( packet );
 
@@ -63,11 +63,11 @@ public class GCVFTP {
         System.out.println(" min seq " + l.minSeq());
 
 
-        DataPacket packet = new DataPacket(new byte[20], 0, 2, 4, DataPacket.Flag.SOLO);
+        DataPacket packet = new DataPacket(new byte[20], 0, 2, DataPacket.Flag.SOLO);
 
         l.add( packet );
 
-        packet = new DataPacket(new byte[20], 0, 4, 4, DataPacket.Flag.SOLO);
+        packet = new DataPacket(new byte[20], 0, 4, DataPacket.Flag.SOLO);
 
         l.add( packet );
 

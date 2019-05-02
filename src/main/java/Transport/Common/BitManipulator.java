@@ -26,10 +26,7 @@ public class BitManipulator {
 
         ByteBuffer bb = ByteBuffer.wrap(q);
 
-        bb.getInt();
-        bb.getInt();
-
-        char[] bitss = Integer.toBinaryString(bb.getInt()).toCharArray();
+        char[] bitss = Integer.toBinaryString(bb.getInt(byteindex)).toCharArray();
 
         StringBuilder sbuilder = new StringBuilder();
 

@@ -169,13 +169,10 @@ public class Executor implements Runnable{
                 /* do something about it*/
                 /* like close socket */
                 this.terminate();
-                if( this.window.hasTimeout() )
-                    Debugger.log("TIMEOUT");
-
+                Debugger.log("TIMEOUT");
             }catch(IOException e){
                 e.printStackTrace();
             }
-
         }else {
             try {
                 /* Receiver actions */

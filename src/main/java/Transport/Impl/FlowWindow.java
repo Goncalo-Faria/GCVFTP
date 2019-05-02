@@ -23,7 +23,7 @@ public class FlowWindow implements Window {
     private final AtomicInteger rttVar =  new AtomicInteger(100);
 
 
-    private final AtomicInteger timeLastReceived = new AtomicInteger(0);
+    private final AtomicInteger timeLastReceived = new AtomicInteger(this.connectionTime());
     private final AtomicInteger timeLastSent = new AtomicInteger(0);
 
     private final AtomicInteger timeLastNackSent = new AtomicInteger(0);
@@ -110,7 +110,6 @@ public class FlowWindow implements Window {
 
         if( seq != -1){
             Integer timestamp = sentOkCache.get(seq);
-
 
             SortedMap<Integer,Integer> readyToRemove = sentOkCache.headMap(seq , false);
 
@@ -282,7 +281,6 @@ public class FlowWindow implements Window {
             Debugger.log("Send like a crazy person");
 
             this.congestionWindowSize.getAndAdd( synCounter );
-
         }
 
         Debugger.log("window : " + this.congestionWindowValue() + " \n ..................." );
@@ -315,4 +313,3 @@ public class FlowWindow implements Window {
         this.congestionControl.set(false);
     }
 }
-

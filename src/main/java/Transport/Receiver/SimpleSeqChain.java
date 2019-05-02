@@ -113,7 +113,6 @@ public class SimpleSeqChain {
 
                 dualRep.add(this.max + 1 );
                 dualRep.add(this.max + 1 );
-
             }
 
             return dualRep;

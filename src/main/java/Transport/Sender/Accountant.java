@@ -71,7 +71,7 @@ class Accountant {
                 LinkedList<DataPacket> l = new LinkedList<>();
 
                 while (this.uncounted.peek().getSeq() <= x)
-                    this.uncounted.take().getTimestamp();
+                    this.uncounted.take();
 
             }catch (NullPointerException e){
 

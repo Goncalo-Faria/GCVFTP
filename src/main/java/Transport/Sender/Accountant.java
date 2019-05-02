@@ -2,7 +2,9 @@ package Transport.Sender;
 
 import Test.Debugger;
 import Transport.Unit.DataPacket;
+import Transport.Window;
 
+import javax.xml.crypto.Data;
 import java.io.NotActiveException;
 import java.util.*;
 import java.util.concurrent.*;
@@ -66,10 +68,13 @@ class Accountant {
         Debugger.log("accountat release " + x);
         if( !this.uncounted.isEmpty() ){
             try {
+                LinkedList<DataPacket> l = new LinkedList<>();
+
                 while (this.uncounted.peek().getSeq() <= x)
                     this.uncounted.take();
+
             }catch (NullPointerException e){
-                ;
+
             }
             /* decrementa o número de pacotes em falta do stream*/
             /* TODO: Assegurar que é suportada ordem circular */
@@ -83,6 +88,9 @@ class Accountant {
             throw new NotActiveException();
 
         this.sending.clear();
+
+        //for( Integer i : missing )
+           // Debugger.log("::> " + i + "::||");
 
         Iterator<DataPacket> it = this.uncounted.iterator();
 

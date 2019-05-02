@@ -6,11 +6,9 @@ import Transport.GCVSocket;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.nio.channels.Pipe;
-import java.util.Scanner;
 
 
-public class Server {
+public class ServerPacket {
     private static boolean isRunning = true;
 
 
@@ -26,31 +24,20 @@ public class Server {
                 Debugger.setEnabled(false);
             }
 
-            GCVSocket cs = new GCVSocket(GCVConnection.send_buffer_size,true);
+            GCVSocket cs = new GCVSocket(12000,true);
 
             cs.listen();
 
-            PipedInputStream pin = new PipedInputStream(10000);
-            PipedOutputStream pout = new PipedOutputStream(pin);
-
             int i = 0;
+            while ( ++i < 200000 ) {
 
-            Debugger.log("Start writing");
+                cs.send((message + " " + i + "\n").getBytes());
+                //System.out.println("::::: i'm sending shit " + i );
+            }
 
-            cs.send(pin);
-
-            while ( ++i < 200000 )
-                pout.write((message + " " + i + "\n").getBytes());
-
-            pout.flush();
-
-            pout.close();
-
-            Debugger.log("############ Sent ################");
-
-            while(true)
+            while(true){
                 Thread.sleep(1000);
-
+            }
 
         }catch(IOException|InterruptedException e){
             e.printStackTrace();

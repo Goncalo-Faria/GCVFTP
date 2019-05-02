@@ -15,7 +15,7 @@ public abstract class ControlPacket extends Packet {
         FORGETIT /*message drop*/
     }
 
-    public static int header_size = 8;
+    public static int header_size = 4;
 
     public static ControlPacket parseControl(byte[] data){
         BitManipulator extractor = new BitManipulator(data);
@@ -36,17 +36,13 @@ public abstract class ControlPacket extends Packet {
 
     private final Type type; /* control message type*/
     private short extendedtype; /*para a aplicação*/
-    private final int timestamp; /*tempo desde que a ligação começou*/
     
-    protected ControlPacket(Type t, short extendedtype, int timestamp){
+    protected ControlPacket(Type t, short extendedtype){
         this.type = t;
-        this.timestamp = timestamp;
         this.extendedtype=extendedtype;
     }
 
     public void setExtendedType(short extendedtype){ this.extendedtype = extendedtype; }
-
-    public int getTimestamp() { return this.timestamp; }
 
     public ControlPacket.Type getType() { return this.type; }
 
@@ -56,8 +52,7 @@ public abstract class ControlPacket extends Packet {
         return  this.extendedSerialize(
                 BitManipulator.allocate(this.size()).
                 flip().put((short)this.type.ordinal()).
-                put(this.extendedtype).
-                put(this.timestamp));
+                put(this.extendedtype));
 
     }
 
@@ -75,8 +70,7 @@ public abstract class ControlPacket extends Packet {
         boolean acc= true;
 
         return (this.getType().equals(cp.getType())) &&
-                (cp.getExtendedtype() == this.extendedtype) &&
-                (cp.getTimestamp() == this.timestamp);
+                (cp.getExtendedtype() == this.extendedtype);
 
     }
 
@@ -84,7 +78,6 @@ public abstract class ControlPacket extends Packet {
     public String toString(){
         return "x-----------x-----------x--------x-------x----x--x--x-x-x-x--x \n" +
                 "type " + this.getType() +
-                "extcode " + this.getExtendedtype() +
-                "timestamp " + this.getTimestamp();
+                "extcode " + this.getExtendedtype();
     }
 }

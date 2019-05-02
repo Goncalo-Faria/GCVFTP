@@ -1,5 +1,6 @@
 package Test;
 
+import Transport.GCVConnection;
 import Transport.GCVSocket;
 
 import java.io.IOException;
@@ -24,8 +25,7 @@ public class Client {
                 Debugger.setEnabled(false);
             }
 
-
-            GCVSocket cs = new GCVSocket(10000,true);
+            GCVSocket cs = new GCVSocket(GCVConnection.send_buffer_size,true);
 
             cs.connect(args[0],7220);
 

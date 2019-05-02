@@ -15,7 +15,7 @@ public final class GCVConnection {
 
     public static final int max_loss_list_size = 164;
 
-    public static final float rrt_factor = 0.125F;
+    public static final float rrt_factor = 0.125F;//
     public static final float var_rrt_factor = 0.25F;
 
     public static final float controlBufferFactor = 0.4F;

@@ -16,7 +16,7 @@ public class SURE extends ControlPacket {
     private int ok = -1;
 
     public SURE( BitManipulator extrator ) {
-        super(ControlPacket.Type.SURE, extrator.getShort()/*extended*/, extrator.getInt());
+        super(ControlPacket.Type.SURE, extrator.getShort()/*extended*/);
         try {
             this.ok = extrator.getInt();
         }catch(BufferOverflowException| BufferUnderflowException e){
@@ -28,12 +28,12 @@ public class SURE extends ControlPacket {
         return ( ok == -1 )? ControlPacket.header_size: ControlPacket.header_size + 4;
     }
 
-    public SURE(short extendedtype, int timestamp){
-        super(ControlPacket.Type.SURE,extendedtype,timestamp);
+    public SURE(short extendedtype){
+        super(ControlPacket.Type.SURE,extendedtype);
     }
 
-    public SURE(short extendedtype, int timestamp, int ok_seq){
-        super(ControlPacket.Type.SURE,extendedtype,timestamp);
+    public SURE(short extendedtype, int ok_seq){
+        super(ControlPacket.Type.SURE,extendedtype);
         this.ok = ok_seq;
     }
 

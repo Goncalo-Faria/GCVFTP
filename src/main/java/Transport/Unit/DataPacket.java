@@ -50,9 +50,8 @@ public class DataPacket extends Packet {
 
     }
 
-    public static int header_size = 12;
+    public static int header_size = 8;
 
-    private final int timestamp;
     private int seq=0;
     private final int streamNumber;
     private final byte[] information;
@@ -64,11 +63,9 @@ public class DataPacket extends Packet {
         BitManipulator extrator = new BitManipulator(data);
 
         this.seq = extrator.getInt();
-        this.timestamp = extrator.getInt();
-        this.flag = Flag.SOLO.parse(BitManipulator.msb2(data, 8));
+        this.flag = Flag.SOLO.parse(BitManipulator.msb2(data,4));
         this.streamNumber = extrator.flip2().getInt();
-
-        this.information = new byte[data.length - DataPacket.header_size ];
+        this.information = new byte[data.length - DataPacket.header_size];
 
         ByteBuffer.wrap(data,DataPacket.header_size,data.length - DataPacket.header_size).
                 get(this.information,
@@ -76,24 +73,19 @@ public class DataPacket extends Packet {
                 data.length  - DataPacket.header_size );
     }
 
-    public DataPacket(byte[] data, int datalen, int timestamp, int streamNumber, DataPacket.Flag flag){
-        this.timestamp = timestamp;
+    public DataPacket(byte[] data, int datalen, int streamNumber, DataPacket.Flag flag){
         this.streamNumber = streamNumber;
         this.flag = flag;
         this.information = new byte[datalen];
         ByteBuffer.wrap(data).get(this.information,0,datalen);
     }
 
-    public DataPacket(byte[] data, int timestamp, int streamNumber, DataPacket.Flag flag){
-        this(data,data.length,timestamp, streamNumber,flag);
+    public DataPacket(byte[] data, int streamNumber, DataPacket.Flag flag){
+        this(data,data.length, streamNumber,flag);
     }
 
     public void setSeq(int seq){
         this.seq = seq;
-    }
-
-    public int getTimestamp() {
-        return timestamp;
     }
 
     public byte[] getData() {
@@ -116,7 +108,6 @@ public class DataPacket extends Packet {
 
         return BitManipulator.allocate(DataPacket.header_size + this.information.length).
                 put(this.seq).
-                put(this.timestamp).
                 put(this.streamNumber, this.flag.mark(this.flag)).
                 put(this.information).
                 array();
@@ -141,8 +132,7 @@ public class DataPacket extends Packet {
         return acc &&
                 (cp.getFlag().equals(this.flag)) &&
                 (cp.getSeq() == this.seq) &&
-                (cp.getMessageNumber() == this.streamNumber) &&
-                (cp.getTimestamp() == this.timestamp);
+                (cp.getMessageNumber() == this.streamNumber);
 
     }
 
@@ -151,7 +141,6 @@ public class DataPacket extends Packet {
         return "x-----------x-----------x--------x-------x----x--x--x-x-x-x--x \n" +
                 "flag " + this.getFlag() + "\n" +
                 "seq " + this.getSeq() + "\n" +
-                "timestamp " + this.getTimestamp() + "\n" +
                 "streamid " + this.getMessageNumber() + "\n" +
                 new String(this.getData()) + "\n";
     }

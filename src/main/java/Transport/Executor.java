@@ -17,7 +17,6 @@ import Transport.Unit.ControlPacketTypes.*;
 
 public class Executor implements Runnable{
     /*
-    
     */ 
     public enum ActionType{
         CONTROL,
@@ -94,11 +93,15 @@ public class Executor implements Runnable{
         }
     }
 
-    public void send( InputStream io ) throws InterruptedException,IOException{
+    public void send( InputStream io ){
         this.sgate.send(io);
     }
 
-    public void send( byte[] data ) throws InterruptedException,IOException{
+    public void sendWhenReady( InputStream io ) throws InterruptedException{
+        this.sgate.sendWhenReady(io);
+    }
+
+    public void send( byte[] data ) throws InterruptedException{
         this.sgate.send(data);
     }
 
@@ -107,7 +110,20 @@ public class Executor implements Runnable{
     }
 
     InputStream getStream() throws InterruptedException{
-        return this.socketOutput.take().consumer;
+        ExecutorPipe pipe = this.socketOutput.take();
+
+        (new Thread(pipe)).start();
+
+        return pipe.consumer;
+    }
+
+    InputStream getStreamWhenReady() throws InterruptedException{
+        ExecutorPipe pipe = this.socketOutput.take();
+
+        Thread go = new Thread(pipe);
+        go.start();
+        go.join();
+        return pipe.consumer;
     }
 
 
@@ -119,7 +135,7 @@ public class Executor implements Runnable{
             DataPacket packet = this.rgate.data();
             this.window.receivedData(packet);
 
-            //System.out.println(" ::::> DATA <:::: " + packet.getSeq() +  " ops ::" );
+            //Debugger.log(" ::::> DATA <:::: " + packet.getSeq() +  " ops ::" );
 
             if ( packet.getFlag().equals(DataPacket.Flag.FIRST) || packet.getFlag().equals(DataPacket.Flag.SOLO) ){
                 ExecutorPipe inc = new Executor.ExecutorPipe();
@@ -136,35 +152,30 @@ public class Executor implements Runnable{
 
                 ExecutorPipe ep = this.map.remove(packet.getMessageNumber());
                 this.socketOutput.put(ep);
-                ep.close();
             }
 
-            
         }catch( IOException|InterruptedException e ){
             e.printStackTrace();
         }
+
     }
 
     private void syn() {
         /*verificar condições maradas e mandar shouldSendNope ou ack */
         this.window.syn();
-        //if( this.window.hasTimeout() ){
-            //try {
-                //this.sgate.sendForgetit((short) 0);/*especifica o stream a fechar 0 significa todos*/
+        if( this.window.hasTimeout() ){
+            try {
+                this.sgate.sendForgetit((short) 0);/*especifica o stream a fechar 0 significa todos*/
                 /* do something about it*/
                 /* like close socket */
-                //this.terminate((short)303);
-                if( this.window.hasTimeout() )
-                    Debugger.log("TIMEOUT");
-
-            //}catch(IOException e){
-        //        e.printStackTrace();
-            //}
-
-        //}else {
+                this.terminate();
+                Debugger.log("TIMEOUT");
+            }catch(IOException e){
+                e.printStackTrace();
+            }
+        }else {
             try {
                 /* Receiver actions */
-
                 /* Received new data */
                 if( this.window.shouldSendOk() ){
                     this.sgate.sendOk(
@@ -208,7 +219,7 @@ public class Executor implements Runnable{
 
                 e.printStackTrace();
             }
-        //}
+        }
     }
 
     private void keepalive(){
@@ -225,7 +236,7 @@ public class Executor implements Runnable{
     }
 
     private void ok(OK packet) throws InterruptedException{
-        //System.out.println(" ::::> received an " + packet.getSeq() + " ok " + packet.getSeq() + " packet <::::");
+        //Debugger.log(" ::::> received an " + packet.getSeq() + " ok " + packet.getSeq() + " packet <::::");
         try{
             this.sgate.release(packet.getSeq());
 
@@ -288,19 +299,29 @@ public class Executor implements Runnable{
         }
     }
 
-    class ExecutorPipe{
+    class ExecutorPipe implements Runnable{
 
-        PipedInputStream consumer;
-        final PipedOutputStream producer;
+        final ByteArrayOutputStream producer;
+        final PipedInputStream consumer = new PipedInputStream();
 
         ExecutorPipe() throws IOException {
-            this.producer = new PipedOutputStream();
-            this.consumer = new PipedInputStream(this.producer);
+            this.producer = new ByteArrayOutputStream();
         }
 
-        void close() throws IOException {
-            this.producer.flush();
-            this.producer.close();
+        public void run(){
+
+            this.producer.reset();
+            try {
+                PipedOutputStream pout = new PipedOutputStream(this.consumer);
+                this.producer.writeTo(pout);
+                this.producer.reset();
+                pout.flush();
+                pout.close();
+                this.producer.close();
+
+            }catch (IOException e){
+                e.printStackTrace();
+            }
         }
     }
 }

@@ -42,6 +42,7 @@ public class SendWorker extends TimerTask {
                 for(int i = 0; i< it ; i++){
                     DataPacket packet = sendBuffer.poll();
                     if( packet != null) {
+                        //Debugger.log(">>>>>>>>>>> seq : " + packet.getSeq());
                         channel.sendPacket(packet);
                     }
                 }

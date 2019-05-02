@@ -8,11 +8,11 @@ public class BYE extends ControlPacket {
     public static int size = ControlPacket.header_size ;
 
     public BYE( BitManipulator extrator ) {
-        super(ControlPacket.Type.BYE, extrator.getShort()/*extended*/, extrator.getInt());
+        super(ControlPacket.Type.BYE, extrator.getShort()/*extended*/);
     }
 
-    public BYE(short extendedtype, int timestamp){
-        super(ControlPacket.Type.BYE,extendedtype,timestamp);
+    public BYE(short extendedtype){
+        super(ControlPacket.Type.BYE,extendedtype);
     }
 
     public byte[] extendedSerialize( BitManipulator extractor ){

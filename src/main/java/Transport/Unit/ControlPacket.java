@@ -11,7 +11,6 @@ public abstract class ControlPacket extends Packet {
         SURE, /*ack2*/
         NOPE, /*shouldSendNope*/
         BYE, /*fin*/
-        SUP, /*keepalive*/
         FORGETIT /*message drop*/
     }
 
@@ -26,7 +25,6 @@ public abstract class ControlPacket extends Packet {
             case OK:return new OK(extractor);
             case SURE:return new SURE(extractor);
             case BYE:return new BYE(extractor);
-            case SUP:return new SUP(extractor);
             case FORGETIT:return new FORGETIT(extractor);
             case NOPE:return new NOPE(extractor);
         }

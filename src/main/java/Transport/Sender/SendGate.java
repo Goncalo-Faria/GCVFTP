@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.NotActiveException;
 import java.util.List;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class SendGate {
@@ -27,6 +28,8 @@ public class SendGate {
     private final AtomicInteger backery_ticket = new AtomicInteger(0);
 
     private final SenderProperties properties;
+
+    private ConcurrentSkipListMap<Integer,Integer> inMap;
 
 
     /* receiver
@@ -79,15 +82,6 @@ public class SendGate {
         Debugger.log("BYE");
     }
 
-    public void sendSup(short extcode) throws IOException {
-
-        this.ch.sendPacket(
-                new SUP(
-                        extcode
-                )
-        );
-    }
-
     public void sendOk(short extcode, int last_seq, int free_window) throws IOException {
 
         OK packet = new OK(
@@ -129,6 +123,7 @@ public class SendGate {
 
     public void release(int seq) throws InterruptedException, NotActiveException {
         this.send_buffer.ok(seq);
+        this.inMap.headMap(seq,true).clear();
     }
 
     public void retransmit(List<Integer> lossList) throws NotActiveException, InterruptedException {
@@ -151,6 +146,8 @@ public class SendGate {
         );
 
         this.send_buffer.data(packet);
+
+        this.inMap.put(packet.getSeq(),ticket);
     }
 
     private int getTicket() {
@@ -159,13 +156,19 @@ public class SendGate {
         );
     }
 
+    public void provideStreamInMap(ConcurrentSkipListMap<Integer,Integer> inMap){
+        this.inMap = inMap;
+    }
+
     public void send(InputStream io) {
 
         Thread copy_machine = new Thread(
                 new LoadingWorker(
                         this.getTicket(),
                         io,
-                        this.send_buffer,this.ch)
+                        this.send_buffer,
+                        this.ch,
+                        this.inMap)
         );
 
         copy_machine.start();
@@ -177,7 +180,9 @@ public class SendGate {
                 new LoadingWorker(
                         this.getTicket(),
                         io,
-                        this.send_buffer,this.ch)
+                        this.send_buffer,
+                        this.ch,
+                        this.inMap)
         );
 
         copyMachine.start();
@@ -191,16 +196,18 @@ public class SendGate {
     }
 
     class LoadingWorker implements Runnable {
-        private int ticket;
-        private InputStream io;
-        private Accountant send_buffer;
-        private TransportChannel ch;
+        private final int ticket;
+        private final InputStream io;
+        private final Accountant send_buffer;
+        private final TransportChannel ch;
+        private final ConcurrentSkipListMap<Integer,Integer> map;
 
-        LoadingWorker(int ticket, InputStream io, Accountant send_buffer, TransportChannel ch){
+        LoadingWorker(int ticket, InputStream io, Accountant send_buffer, TransportChannel ch, ConcurrentSkipListMap<Integer,Integer> inMap){
             this.ticket = ticket;
             this.io = io;
             this.send_buffer = send_buffer;
             this.ch = ch;
+            this.map = inMap;
         }
 
         public void run(){
@@ -241,8 +248,8 @@ public class SendGate {
                         ticket,
                         DataPacket.Flag.LAST
                 );
-
                 this.send_buffer.data(dp);
+                this.map.put(dp.getSeq(),ticket);
             }catch (InterruptedException|IOException e){
                 e.printStackTrace();
             }

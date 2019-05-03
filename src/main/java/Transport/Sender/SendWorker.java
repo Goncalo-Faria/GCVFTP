@@ -47,9 +47,6 @@ public class SendWorker extends TimerTask {
                     }
                 }
 
-                if( this.properties.isPersistent() && this.channel.window().rttHasPassed() )
-                    Executor.add(Executor.ActionType.KEEPALIVE);
-
             }
         }catch (NotActiveException other){
             active.set(false);

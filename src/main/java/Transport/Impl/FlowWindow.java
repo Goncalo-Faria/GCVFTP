@@ -204,9 +204,8 @@ public class FlowWindow implements Window {
     public boolean okMightHaveBeenLost(){
         try{
             int expRttTime = this.rtt.get() + 4 * this.rttVar.get();
-            int waitAndSendTime =  expRttTime > GCVConnection.rate_control_interval + expRttTime ? expRttTime : GCVConnection.rate_control_interval + expRttTime;
 
-            return (this.connectionTime()-this.timeLastSureReceived.get()) > waitAndSendTime;
+            return (this.connectionTime()-this.timeLastSureReceived.get()) > GCVConnection.rate_control_interval + 2 * expRttTime;
         }catch(NullPointerException e){
             return false;
         }
@@ -224,12 +223,10 @@ public class FlowWindow implements Window {
         int curTime = connectionTime();
 
         int expRttTime = this.rtt.get() + this.rttVar.get();
-        int compound =  expRttTime > GCVConnection.rate_control_interval ? expRttTime: GCVConnection.rate_control_interval;
-        int waitAndSendTime =  expRttTime> GCVConnection.rate_control_interval + expRttTime ? expRttTime : GCVConnection.rate_control_interval + expRttTime;
 
         try {
-            return (curTime - timeLastNackSent.get()) > waitAndSendTime
-                    && (curTime - this.sentOkCache.get(this.lastOkSent.get())) > compound;
+            return (curTime - timeLastNackSent.get()) > GCVConnection.rate_control_interval + expRttTime
+                    && (curTime - this.sentOkCache.get(this.lastOkSent.get())) > GCVConnection.rate_control_interval ;
         }catch(NullPointerException e){
             return false;
         }
@@ -255,8 +252,8 @@ public class FlowWindow implements Window {
 
         if( congestionControl.get() ) {
             int expRttTime = this.rtt.get() + 4 * this.rttVar.get();
-            expRttTime =  GCVConnection.rate_control_interval + expRttTime;
-            if ((this.connectionTime() - this.timeLastOkReceived.get()) > expRttTime ) {
+
+            if ((this.connectionTime() - this.timeLastOkReceived.get()) > GCVConnection.rate_control_interval + expRttTime ) {
                 /* mul decrease */
                 Debugger.log("Multiplicative decrease");
                 this.multiplicativeDecrease();

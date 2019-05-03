@@ -4,6 +4,7 @@ import java.io.*;
 import java.lang.Runnable;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -21,8 +22,7 @@ public class Executor implements Runnable{
     public enum ActionType{
         CONTROL,
         DATA,
-        SYN,
-        KEEPALIVE
+        SYN
     }
 
     private static final LinkedBlockingDeque<ActionType> executorQueue = new LinkedBlockingDeque<>();
@@ -32,7 +32,6 @@ public class Executor implements Runnable{
             case CONTROL : executorQueue.putFirst(action); break;
             case SYN : executorQueue.putFirst(action);break;
             case DATA : executorQueue.put(action); break;
-            case KEEPALIVE: executorQueue.put(action); break;
         }
     }
 
@@ -42,13 +41,14 @@ public class Executor implements Runnable{
             case CONTROL : self.control(); break;
             case DATA :  self.data(); break;
             case SYN :  self.syn(); break;
-            case KEEPALIVE: self.keepalive(); break;
         }
     }
 
     private final SendGate sgate; /* mandar pacotes de controlo */
     private final ReceiveGate rgate; /* tirar pacotes */
-    private final ConcurrentHashMap< Integer, ExecutorPipe > map = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap< Integer, ExecutorPipe > outMap = new ConcurrentHashMap<>();
+    private final ConcurrentSkipListMap<Integer,Integer> inMap = new ConcurrentSkipListMap<>();
+
     private final LinkedBlockingQueue<ExecutorPipe> socketOutput = new LinkedBlockingQueue<>();
     private final AtomicBoolean active = new AtomicBoolean(true);
     private final Window window;
@@ -57,6 +57,7 @@ public class Executor implements Runnable{
         this.sgate = sgate;
         this.rgate = rgate;
         this.window = window;
+        this.sgate.provideStreamInMap(inMap);
 
     }
 
@@ -67,7 +68,7 @@ public class Executor implements Runnable{
             this.active.set(false);
             this.sgate.close();
             this.rgate.close();
-            this.map.clear();
+            this.outMap.clear();
         }
     }
 
@@ -84,7 +85,6 @@ public class Executor implements Runnable{
                 case OK: ok((OK)packet); break;
                 case SURE: sure((SURE)packet); break;
                 case BYE: bye((BYE)packet); break;
-                case SUP: sup((SUP)packet); break;
                 case FORGETIT: forgetit((FORGETIT)packet); break;
                 case NOPE: nope((NOPE)packet); break;
             }
@@ -139,10 +139,10 @@ public class Executor implements Runnable{
 
             if ( packet.getFlag().equals(DataPacket.Flag.FIRST) || packet.getFlag().equals(DataPacket.Flag.SOLO) ){
                 ExecutorPipe inc = new Executor.ExecutorPipe();
-                this.map.put(packet.getMessageNumber(), inc );
+                this.outMap.put(packet.getMessageNumber(), inc );
             }
 
-            this.map.
+            this.outMap.
                 get(packet.getMessageNumber()).
                     producer.
                         write(packet.getData(),
@@ -150,7 +150,7 @@ public class Executor implements Runnable{
 
             if ( packet.getFlag().equals(DataPacket.Flag.LAST) || packet.getFlag().equals(DataPacket.Flag.SOLO) ){
 
-                ExecutorPipe ep = this.map.remove(packet.getMessageNumber());
+                ExecutorPipe ep = this.outMap.remove(packet.getMessageNumber());
                 this.socketOutput.put(ep);
             }
 
@@ -222,15 +222,6 @@ public class Executor implements Runnable{
         }
     }
 
-    private void keepalive(){
-        try {
-            this.sgate.sendSup((short) 0);
-            //System.out.println("SENT KEEPALIVE");
-        }catch (IOException e){
-            e.printStackTrace();
-        }
-    }
-
     private void hi(HI packet){
         //System.out.println(" ::::> received an hi packet <:::: ");
     }
@@ -262,9 +253,6 @@ public class Executor implements Runnable{
             e.printStackTrace();
         }
     }
-    private void sup(SUP packet){
-        //System.out.println(" ::::> received a sup packet <::::");
-    }
 
     private void forgetit(FORGETIT packet){
         //System.out.println(" ::::> received a forgetit packet <::::");
@@ -273,6 +261,7 @@ public class Executor implements Runnable{
         try {
             if (extcode == 0)
                 this.terminate();
+
         }catch (IOException e){
             e.printStackTrace();
         }
@@ -282,6 +271,7 @@ public class Executor implements Runnable{
         //System.out.println(" ::::> received a Nope packet <::::");
         try{
             List<Integer> lost = packet.getLossList();
+            this.sgate.release(lost.get(0)-1);
             this.sgate.retransmit(lost);
         }catch (InterruptedException|NotActiveException e){
             e.printStackTrace();

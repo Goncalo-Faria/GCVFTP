@@ -23,7 +23,7 @@ public class WindowRateControl implements Window {
     private final AtomicInteger rttVar =  new AtomicInteger(0);
 
 
-    private final AtomicInteger timeLastReceived = new AtomicInteger(this.connectionTime());
+    private final AtomicInteger timeLastReceived = new AtomicInteger(10*60*1000*1000);
     private final AtomicInteger timeLastSent = new AtomicInteger(0);
 
     private final AtomicInteger timeLastNackSent = new AtomicInteger(0);
@@ -135,7 +135,7 @@ public class WindowRateControl implements Window {
             this.rtt.set( this.connectionTime() - initiate );
             this.rttVar.set(0);
 
-            Debugger.log( "Start rtt " + this.rtt);
+            Debugger.log( "Start rtt :::::::::::::::::::::::::::: " + this.rtt);
             this.deactivateCongestionControl();
         }
     }

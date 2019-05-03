@@ -19,9 +19,8 @@ public class WindowRateControl implements Window {
 
     private final LocalDateTime connectionStartTime = LocalDateTime.now();
 
-    private final AtomicInteger rtt = new AtomicInteger(10*60*1000*1000);
+    private final AtomicInteger rtt = new AtomicInteger(1000*1000);
     private final AtomicInteger rttVar =  new AtomicInteger(0);
-
 
     private final AtomicInteger timeLastReceived = new AtomicInteger(0);
     private final AtomicInteger timeLastSent = new AtomicInteger(0);
@@ -79,6 +78,7 @@ public class WindowRateControl implements Window {
         this.lastOkReceived.set(lastOkReceived);
         this.lastSureReceived.set(lastOkSent);
         this.initiate = time;
+        Debugger.log("init:" + this.initiate );
     }
 
     public int rtt(){
@@ -301,9 +301,13 @@ public class WindowRateControl implements Window {
     public boolean hasTimeout(){
         int difs = this.connectionTime() - this.timeLastReceived.get();
 
+        //Debugger.log("difs ###################################################### " + difs);
         int exptime = rtt.get() + 4 * rttVar.get();
 
-        return (difs > 4*( GCVConnection.rate_control_interval + exptime));
+        //Debugger.log("exptime ###################################################### " + exptime);
+
+
+        return (difs > 8*( GCVConnection.rate_control_interval + exptime));
     }
 
     private void deactivateCongestionControl(){

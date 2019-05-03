@@ -243,7 +243,7 @@ public class Executor implements Runnable{
     }
 
     private void sure(SURE packet){
-        //System.out.println(" ::::> received an " + packet.getOK() + " receivedSure " + packet.getOK() + " packet <::::");
+        //Debugger.log(" ::::> received an " + packet.getOK() + " receivedSure " + packet.getOK() + " packet <::::");
     }
     private void bye(BYE packet){
         Debugger.log(" ::::> received a bye packet <::::");

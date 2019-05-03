@@ -253,7 +253,7 @@ public class WindowRateControl implements Window {
         if( congestionControl.get() ) {
             int expRttTime = this.rtt.get() + 4 * this.rttVar.get();
 
-            if ((this.connectionTime() - this.timeLastOkReceived.get()) > GCVConnection.rate_control_interval + expRttTime ) {
+            if ((this.connectionTime() - this.timeLastOkReceived.get()) > GCVConnection.rate_control_interval ) {
                 /* mul decrease */
                 Debugger.log("Multiplicative decrease");
                 this.multiplicativeDecrease();

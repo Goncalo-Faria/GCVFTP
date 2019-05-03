@@ -1,45 +1,39 @@
-package Transport.Receiver;
+package Transport.Common;
 
 import Test.Debugger;
-import Transport.Common.LList;
-import Transport.Unit.DataPacket;
 
 import java.util.LinkedList;
 import java.util.List;
 
-public class SimpleSeqChain {
+public class IntervalChain<V> {
 
-    LList<IntervalPacket> list = new LList<>();
+    DLList<Interval<V>> list = new DLList<>();
     private int min = Integer.MAX_VALUE;
     private int max = Integer.MIN_VALUE;
     private final int maxAmplitude;
-    //private ReadWriteLock wrl = new ReentrantReadWriteLock();
 
-    public SimpleSeqChain( int maxAmplitude ){
+    public IntervalChain(int maxAmplitude ){
         this.maxAmplitude = maxAmplitude;
     }
 
     public int size(){
         int s = 0;
 
-            LList<IntervalPacket> v = list.view();
+            DLList<Interval<V>> v = list.view();
             v.start();
 
             while( v.hasNext() ) {
-                IntervalPacket cur = v.next().value();
+                Interval<V> cur = v.next().value();
                 s += cur.max() - cur.min();
             }
 
         return s;
     }
 
-    public void add(DataPacket packet){
-
-            int seq = packet.getSeq();
+    public void add(int seq, V value){
 
             if( seq > maxAmplitude + min && !list.empty() ){
                 Debugger.log(" DROP ::: < " + seq);
-
                 return;
             }
 
@@ -47,12 +41,12 @@ public class SimpleSeqChain {
             this.min = ( this.min > seq ) ? seq : this.min;
             this.max = ( this.max < seq ) ? seq : this.max;
 
-            IntervalPacket ip = new IntervalPacket(packet);
+            Interval<V> ip = new Interval<V>(seq, value);
 
             list.start();
 
             while( list.hasNext() ){
-                IntervalPacket cur = list.next().value();
+                Interval<V> cur = list.next().value();
 
                 int merged = cur.merge(ip);
 
@@ -91,11 +85,11 @@ public class SimpleSeqChain {
 
             List<Integer> dualRep = new LinkedList<>();
 
-            LList<IntervalPacket> v = list.view();
+            DLList<Interval<V>> v = list.view();
 
             v.start();
 
-            IntervalPacket pst = null,cur;
+            Interval<V> pst = null,cur;
             int i = 0;
             while(v.hasNext() && (i < maxSize) ){
                 i++;
@@ -119,7 +113,7 @@ public class SimpleSeqChain {
 
     }
 
-    public IntervalPacket take(){
+    public Interval<V> take(){
 
             if( list.empty() )
                 return null;
@@ -127,12 +121,12 @@ public class SimpleSeqChain {
             if( list.singleton() ){
                 min = Integer.MAX_VALUE;
                 max = Integer.MIN_VALUE;
-                IntervalPacket e = list.start().next().value();
+                Interval<V> e = list.start().next().value();
                 list.remove();
                 return e;
             }
 
-            IntervalPacket t = list.start().next().value();
+            Interval<V> t = list.start().next().value();
             list.remove();
 
             this.min = list.peek().min();
@@ -140,7 +134,7 @@ public class SimpleSeqChain {
             return t;
     }
 
-    public IntervalPacket peek(){
+    public Interval<V> peek(){
 
         return list.peek();
 
@@ -150,6 +144,6 @@ public class SimpleSeqChain {
 
             this.min = Integer.MAX_VALUE;
             this.max = Integer.MIN_VALUE;
-            list = new LList<>();
+            list = new DLList<>();
     }
 }

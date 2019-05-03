@@ -1,15 +1,15 @@
 package Transport.Common;
 
-public class LList<V> {
+public class DLList<V> {
 
     private No<V> current=null;
     private No<V> head=null;
     private No<V> tail=null;
 
-    public LList(){
+    public DLList(){
     }
 
-    private LList( No<V> head, No<V> tail){
+    private DLList(No<V> head, No<V> tail){
         this.head = head;
         this.tail = tail;
     }
@@ -44,7 +44,7 @@ public class LList<V> {
 
     }
 
-    public LList<V> next(){
+    public DLList<V> next(){
 
         if( current == null )
             current = head;
@@ -54,11 +54,11 @@ public class LList<V> {
         return this;
     }
 
-    public LList<V> view(){
-        return new LList<>(this.head, this.tail);
+    public DLList<V> view(){
+        return new DLList<>(this.head, this.tail);
     }
 
-    public LList<V> previous(){
+    public DLList<V> previous(){
         if( current == null )
             current = tail;
         else if(current != null)   
@@ -75,7 +75,7 @@ public class LList<V> {
         }
     }
 
-    public LList<V> start(){
+    public DLList<V> start(){
         current = null;
         return this;
     }

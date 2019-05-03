@@ -1,8 +1,8 @@
 package Transport;
 
 import Test.Debugger;
-import Transport.Impl.FlowWindow;
-import Transport.Impl.TransmissionTransportChannel;
+import Transport.CongestionControl.WindowRateControl;
+import Transport.Unit.TransmissionTransportChannel;
 import Transport.Unit.ControlPacketTypes.HI;
 import Transport.Sender.SendGate;
 import Transport.Receiver.ReceiveGate;
@@ -108,7 +108,7 @@ public class GCVSocket {
 
         InetSocketAddress sa = new InetSocketAddress(0);
 
-        FlowWindow channelWindow = new FlowWindow(hiPacket.getMaxWindow());
+        WindowRateControl channelWindow = new WindowRateControl(hiPacket.getMaxWindow());
 
         SenderProperties senderProp = new SenderProperties(
                 this.localhost,
@@ -152,7 +152,7 @@ public class GCVSocket {
 
     public void connect(InetAddress ip, int intendedPort) throws IOException, TimeoutException {
 
-        FlowWindow channelWindow = new FlowWindow(maxWindow);
+        WindowRateControl channelWindow = new WindowRateControl(maxWindow);
 
 
 

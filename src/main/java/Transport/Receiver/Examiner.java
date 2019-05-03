@@ -1,6 +1,8 @@
 package Transport.Receiver;
 
 import Test.Debugger;
+import Transport.Common.Interval;
+import Transport.Common.IntervalChain;
 import Transport.Executor;
 import Transport.GCVConnection;
 import Transport.Unit.ControlPacket;
@@ -19,7 +21,7 @@ class Examiner {
 
     private final LinkedBlockingQueue<ControlPacket> control;
     private final LinkedBlockingQueue<DataPacket> data = new LinkedBlockingQueue<>();
-    private final SimpleSeqChain uncounted;
+    private final IntervalChain<DataPacket> uncounted;
     private final AtomicInteger lastOkedSeq;
     private final AtomicBoolean active = new AtomicBoolean(true);
     private final int maxDataBufferSize;
@@ -29,7 +31,7 @@ class Examiner {
     Examiner(int maxControlBufferSize, int maxDataBufferSize, int seq){
         Debugger.log(">>>>> theirs " + seq + "<<<<<<<");
         this.control = new LinkedBlockingQueue<>(maxControlBufferSize);
-        this.uncounted =  new SimpleSeqChain(maxDataBufferSize);
+        this.uncounted =  new IntervalChain<DataPacket>(maxDataBufferSize);
         this.lastOkedSeq = new AtomicInteger(seq);
         this.maxDataBufferSize = maxDataBufferSize;
     }
@@ -67,16 +69,16 @@ class Examiner {
             Debugger.log("raw data : " + packet.getSeq());
             if (packet.getSeq() > this.lastOkedSeq.get()) {
                 Debugger.log(" lastoked " + this.lastOkedSeq.get() );
-                uncounted.add(packet);
+                uncounted.add(packet.getSeq(),packet);
 
                 /* verificar se posso tirar acks */
 
                 if (lastOkedSeq.get() + 1 == uncounted.minSeq()) {
-                    IntervalPacket p = uncounted.take();
+                    Interval<DataPacket> p = uncounted.take();
 
                     lastOkedSeq.set(p.max());
 
-                    List<DataPacket> lisp = p.getpackets();
+                    List<DataPacket> lisp = p.getValues();
 
                     lisp.forEach(
                             lisppacket ->

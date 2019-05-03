@@ -11,7 +11,6 @@ public interface Window {
 
     int congestionWindowValue();
 
-    boolean rttHasPassed();
     int rtt();
     int rttVar();
     float uploadSpeed();

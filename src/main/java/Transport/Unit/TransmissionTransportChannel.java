@@ -1,12 +1,12 @@
-package Transport.Impl;
+package Transport.Unit;
 
+import Transport.CongestionControl.WindowRateControl;
 import Transport.UDPTransport.TransmissionChannel;
 import Transport.TransportChannel;
 import Transport.TransportStationProperties;
 import Transport.Unit.ControlPacketTypes.NOPE;
 import Transport.Unit.ControlPacketTypes.OK;
 import Transport.Unit.ControlPacketTypes.SURE;
-import Transport.Unit.Packet;
 import Transport.Window;
 
 import java.io.IOException;
@@ -20,7 +20,7 @@ public class TransmissionTransportChannel extends TransmissionChannel implements
     public TransmissionTransportChannel(
             TransportStationProperties send,
             TransportStationProperties receive,
-            FlowWindow window) throws SocketException {
+            WindowRateControl window) throws SocketException {
         super(send,receive);
         this.window = window;
     }
@@ -28,7 +28,7 @@ public class TransmissionTransportChannel extends TransmissionChannel implements
     public TransmissionTransportChannel(DatagramSocket cs,
                                         TransportStationProperties send,
                                         TransportStationProperties receive,
-                                        FlowWindow window
+                                        WindowRateControl window
                                         ) throws SocketException {
         super(cs,send,receive);
         this.window = window;

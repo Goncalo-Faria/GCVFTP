@@ -3,10 +3,9 @@ package Transport.Sender;
 import Test.Debugger;
 import Transport.TransportChannel;
 import Transport.Unit.ControlPacketTypes.*;
-import Transport.Impl.TransmissionTransportChannel;
+import Transport.Unit.TransmissionTransportChannel;
 import Transport.Unit.DataPacket;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.NotActiveException;

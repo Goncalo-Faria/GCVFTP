@@ -1,4 +1,4 @@
-package Transport.Impl;
+package Transport.CongestionControl;
 
 import Test.Debugger;
 import Transport.GCVConnection;
@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class FlowWindow implements Window {
+public class WindowRateControl implements Window {
 
     private final LocalDateTime connectionStartTime = LocalDateTime.now();
 
@@ -54,7 +54,7 @@ public class FlowWindow implements Window {
 
     private final int maxWindow;
 
-    public FlowWindow( int maxWindow ){
+    public WindowRateControl(int maxWindow ){
         receiverBuffer = new AtomicInteger(maxWindow);
         this.maxWindow = maxWindow;
     }

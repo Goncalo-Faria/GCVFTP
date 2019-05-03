@@ -19,8 +19,8 @@ public class WindowRateControl implements Window {
 
     private final LocalDateTime connectionStartTime = LocalDateTime.now();
 
-    private final AtomicInteger rtt = new AtomicInteger(100);
-    private final AtomicInteger rttVar =  new AtomicInteger(100);
+    private final AtomicInteger rtt = new AtomicInteger(this.connectionTime());
+    private final AtomicInteger rttVar =  new AtomicInteger(0);
 
 
     private final AtomicInteger timeLastReceived = new AtomicInteger(this.connectionTime());

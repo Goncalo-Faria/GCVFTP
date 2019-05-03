@@ -24,7 +24,7 @@ public class WindowRateControl implements Window {
 
 
     private final AtomicInteger timeLastReceived = new AtomicInteger(0);
-    private final AtomicInteger timeLastSent = new AtomicInteger(0);g
+    private final AtomicInteger timeLastSent = new AtomicInteger(0);
 
     private final AtomicInteger timeLastNackSent = new AtomicInteger(0);
     private final AtomicInteger timeLastSureSent = new AtomicInteger(0);

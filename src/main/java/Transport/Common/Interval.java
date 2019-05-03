@@ -1,4 +1,4 @@
-package Transport.Receiver;
+package Transport.Common;
 
 import Transport.Unit.DataPacket;
 import Transport.Unit.Packet;
@@ -7,17 +7,17 @@ import java.util.LinkedList;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class IntervalPacket {
+public class Interval<V> {
 
     private int min;
     private int max;
     private final ReadWriteLock wrl = new ReentrantReadWriteLock();
 
-    private final LinkedList<DataPacket> l = new LinkedList<>();
+    private final LinkedList<V> l = new LinkedList<>();
 
-    public IntervalPacket( DataPacket p){
-        this.min = this.max = p.getSeq();
-        l.add(p);
+    public Interval(int seq, V value){
+        this.min = this.max = seq;
+        l.add(value);
     }
 
     public int min(){
@@ -47,9 +47,9 @@ public class IntervalPacket {
         }
     }
 
-    public boolean less(IntervalPacket x){
-        IntervalPacket a = ( this.toString().compareTo(x.toString()) < 0 ) ? this : x;
-        IntervalPacket b = ( this.toString().compareTo(x.toString()) < 0 ) ? x : this;
+    public boolean less(Interval x){
+        Interval a = ( this.toString().compareTo(x.toString()) < 0 ) ? this : x;
+        Interval b = ( this.toString().compareTo(x.toString()) < 0 ) ? x : this;
 
         a.wrl.readLock().lock();
         b.wrl.readLock().lock();
@@ -73,10 +73,10 @@ public class IntervalPacket {
         }
     }
 
-    public boolean intersects(IntervalPacket x){
+    public boolean intersects(Interval x){
         /*basta que um dos limites de x esteja no intervalo*/
-        IntervalPacket a = ( this.toString().compareTo(x.toString()) < 0 ) ? this : x;
-        IntervalPacket b = ( this.toString().compareTo(x.toString()) < 0 ) ? x : this;
+        Interval a = ( this.toString().compareTo(x.toString()) < 0 ) ? this : x;
+        Interval b = ( this.toString().compareTo(x.toString()) < 0 ) ? x : this;
 
         a.wrl.readLock().lock();
         b.wrl.readLock().lock();
@@ -90,31 +90,7 @@ public class IntervalPacket {
         
     }
 
-    public boolean canMerge(IntervalPacket x){
-        IntervalPacket a = ( this.toString().compareTo(x.toString()) < 0 ) ? this : x;
-        IntervalPacket b = ( this.toString().compareTo(x.toString()) < 0 ) ? x : this;
-
-        a.wrl.readLock().lock();
-        b.wrl.readLock().lock();
-
-        try{
-            return (x.min() == this.max + 1) || (x.max() + 1 == this.min);
-        }finally{
-            a.wrl.readLock().unlock();
-            b.wrl.readLock().unlock();   
-        }
-    }
-
-    public boolean contains(int x){
-        wrl.readLock().lock();
-        try {
-            return ( this.min <= x ) && ( x <= this.max );
-        }finally {
-            wrl.readLock().unlock();
-        }
-    }
-
-    public Packet take(){
+    public V take(){
         this.wrl.writeLock().lock();
         try{
             this.min++;
@@ -124,7 +100,7 @@ public class IntervalPacket {
         }
     }
 
-    public LinkedList<DataPacket> getpackets(){
+    public LinkedList<V> getValues(){
         wrl.readLock().lock();
         try {
             return new LinkedList<>(this.l);
@@ -133,10 +109,10 @@ public class IntervalPacket {
         }
     }
 
-    public int merge( IntervalPacket x ){
+    public int merge( Interval<V> x ){
 
-        IntervalPacket a = ( this.toString().compareTo(x.toString()) < 0 ) ? this : x;
-        IntervalPacket b = ( this.toString().compareTo(x.toString()) < 0 ) ? x : this;
+        Interval a = ( this.toString().compareTo(x.toString()) < 0 ) ? this : x;
+        Interval b = ( this.toString().compareTo(x.toString()) < 0 ) ? x : this;
 
         a.wrl.writeLock().lock();
         b.wrl.writeLock().lock();
@@ -146,12 +122,12 @@ public class IntervalPacket {
             if ( x.min() == this.max + 1 ) {/*se são contiguos integra*/
                 this.max = x.max();
 
-                this.l.addAll( x.getpackets() );
+                this.l.addAll( x.getValues() );
                 return 1;
             }else if( x.max() + 1 == this.min ){
                 this.min = x.min();
                 
-                this.l.addAll( 0, x.getpackets() );
+                this.l.addAll( 0, x.getValues() );
                 return -1;
             }
 
@@ -171,10 +147,10 @@ public class IntervalPacket {
 
     @Override
     public boolean equals(Object obj) {
-        if( ! (obj instanceof IntervalPacket ) )
+        if( ! (obj instanceof Interval) )
             return false;
 
-        IntervalPacket other = (IntervalPacket)obj;
+        Interval other = (Interval)obj;
 
         return (other.min == this.min) && (other.max == this.max);
     }

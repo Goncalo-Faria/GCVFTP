@@ -1,8 +1,8 @@
 package Test;
 
+import Transport.Common.Interval;
 import Transport.Unit.ControlPacketTypes.*;
-import Transport.Receiver.IntervalPacket;
-import Transport.Receiver.SimpleSeqChain;
+import Transport.Common.IntervalChain;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.DataPacket;
 import Transport.Unit.Packet;
@@ -49,12 +49,12 @@ public class GCVFTP {
 
         System.out.println("examinar checks");
 
-        SimpleSeqChain l = new SimpleSeqChain(30);
+        IntervalChain<DataPacket> l = new IntervalChain<>(30);
 
         for(int i = 1; i< 22; i = i + 2) {
             DataPacket packet = new DataPacket(new byte[20], 0, i, DataPacket.Flag.SOLO);
 
-            l.add( packet );
+            l.add(packet.getSeq(), packet );
 
         }
 
@@ -65,17 +65,17 @@ public class GCVFTP {
 
         DataPacket packet = new DataPacket(new byte[20], 0, 2, DataPacket.Flag.SOLO);
 
-        l.add( packet );
+        l.add(packet.getSeq(), packet);
 
         packet = new DataPacket(new byte[20], 0, 4, DataPacket.Flag.SOLO);
 
-        l.add( packet );
+        l.add(packet.getSeq(), packet);
 
-        IntervalPacket tmp = l.take();
+        Interval<DataPacket> tmp = l.take();
 
         System.out.println(tmp.min() + " - " + tmp.max());
 
-        for(DataPacket pac : tmp.getpackets())
+        for(DataPacket pac : tmp.getValues())
             System.out.println(pac.getSeq());
 
     }

@@ -6,6 +6,7 @@ import Transport.Unit.Packet;
 
 
 import java.io.IOException;
+import java.io.StreamCorruptedException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -74,22 +75,26 @@ class ConnectionScheduler implements Runnable{
         try {
             while (this.active.get()) {
                 DatagramPacket packet = new DatagramPacket(new byte[this.maxPacket], this.maxPacket);
-                this.connection.receive(packet);
+                try {
+                    this.connection.receive(packet);
 
-                Packet synpacket = Packet.parse(packet.getData());
+                    Packet synpacket = Packet.parse(packet.getData());
 
-                if(synpacket instanceof ControlPacket){
-                    ControlPacket cpacket = (ControlPacket)synpacket;
-                    ControlPacket.Type packettype = cpacket.getType();
+                    if (synpacket instanceof ControlPacket) {
+                        ControlPacket cpacket = (ControlPacket) synpacket;
+                        ControlPacket.Type packettype = cpacket.getType();
 
-                    if(packettype.equals(this.packetType)) {
-                        Debugger.log("got " + packet.getLength() + " bytes ::-:: ip = " + packet.getAddress() + " port= " + packet.getPort());
+                        if (packettype.equals(this.packetType)) {
+                            Debugger.log("got " + packet.getLength() + " bytes ::-:: ip = " + packet.getAddress() + " port= " + packet.getPort());
 
-                        if( connections.containsKey(packet.getAddress().toString() + packet.getPort()) )
-                            connections.get(packet.getAddress().toString() + packet.getPort()).restart();
+                            if (connections.containsKey(packet.getAddress().toString() + packet.getPort()))
+                                connections.get(packet.getAddress().toString() + packet.getPort()).restart();
 
-                        this.queue.put(new StampedControlPacket(cpacket, packet.getPort(), packet.getAddress()));
+                            this.queue.put(new StampedControlPacket(cpacket, packet.getPort(), packet.getAddress()));
+                        }
                     }
+                }catch (StreamCorruptedException e){
+                    ;// erro no pacote ignora.
                 }
             }
         }catch( InterruptedException | IOException e){

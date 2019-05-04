@@ -3,6 +3,8 @@ package Transport.Unit;
 import Transport.Common.BitManipulator;
 import Transport.Unit.ControlPacketTypes.*;
 
+import java.util.zip.Adler32;
+
 public abstract class ControlPacket extends Packet {
 
     public enum Type{
@@ -14,10 +16,10 @@ public abstract class ControlPacket extends Packet {
         FORGETIT /*message drop*/
     }
 
-    public static int header_size = 4;
+    public static int header_size = 4 + 8;
 
-    public static ControlPacket parseControl(byte[] data){
-        BitManipulator extractor = new BitManipulator(data);
+    public static ControlPacket parseControl(byte[] data, int offset){
+        BitManipulator extractor = new BitManipulator(data).skip(offset);
         Type ctype = Type.values()[extractor.flip().getShort()];
 
         switch(ctype){
@@ -46,17 +48,16 @@ public abstract class ControlPacket extends Packet {
 
     public short getExtendedtype() { return this.extendedtype; }
 
-    public byte[] serialize(){
+    public byte[] serialize(BitManipulator buffer){
         return  this.extendedSerialize(
-                BitManipulator.allocate(this.size()).
+                buffer.
                 flip().put((short)this.type.ordinal()).
-                put(this.extendedtype));
+                put(this.extendedtype)
+        );
 
     }
 
     protected abstract byte[] extendedSerialize(BitManipulator extractor);
-
-    protected abstract int size();
 
     @Override
     public boolean equals(Object obj) {

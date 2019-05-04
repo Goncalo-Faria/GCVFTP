@@ -15,7 +15,7 @@ public class FORGETIT extends ControlPacket {
         super(Type.FORGETIT,extendedtype);
     }
 
-    public int size(){
+    protected int size(){
         return size;
     }
 

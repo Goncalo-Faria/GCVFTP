@@ -21,6 +21,6 @@ public class BYE extends ControlPacket {
 
     }
 
-    public int size(){ return size; }
+    protected int size(){ return size; }
 
 }

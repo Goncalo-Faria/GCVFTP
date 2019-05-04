@@ -1,5 +1,6 @@
 package Transport;
 
+import Test.Debugger;
 import Transport.CongestionControl.WindowRateControl;
 import Transport.UDPTransport.TransmissionChannel;
 import Transport.TransportChannel;
@@ -11,8 +12,10 @@ import Transport.Unit.Packet;
 import Transport.Window;
 
 import java.io.IOException;
+import java.io.StreamCorruptedException;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.nio.ByteBuffer;
 
 public class TransmissionTransportChannel extends TransmissionChannel implements TransportChannel {
 
@@ -46,22 +49,27 @@ public class TransmissionTransportChannel extends TransmissionChannel implements
             this.window.sentOk((OK)p);
         }
 
-        this.send(p.serialize());
+        this.send(p.markedSerialize());
     }
 
     public Packet receivePacket() throws IOException {
-        this.window.receivedTransmission();
-        Packet p = Packet.parse(super.receive());
 
-        if( p instanceof SURE){
-            this.window.receivedSure((SURE)p);
-        }else if( p instanceof NOPE){
-            this.window.receivedNope((NOPE)p);
-        }else if( p instanceof OK ){
-            this.window.receivedOk((OK)p);
+        try {
+            Packet p = Packet.parse(super.receive());
+
+            if (p instanceof SURE) {
+                this.window.receivedSure((SURE) p);
+            } else if (p instanceof NOPE) {
+                this.window.receivedNope((NOPE) p);
+            } else if (p instanceof OK) {
+                this.window.receivedOk((OK) p);
+            }
+
+            this.window.receivedTransmission();
+            return p;
+        }catch (StreamCorruptedException e){
+            return this.receivePacket();
         }
-
-        return p;
     }
 
     public Window window() {

@@ -43,6 +43,8 @@ public class SpeakerWorker extends TimerTask {
                     DataPacket packet = sendBuffer.poll();
                     if( packet != null) {
                         //Debugger.log(">>>>>>>>>>> seq : " + packet.getSeq());
+                        //Debugger.log("##################" + packet.getFlag().toString() + "###############");
+
                         channel.sendPacket(packet);
                     }
                 }

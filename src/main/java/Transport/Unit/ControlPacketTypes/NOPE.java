@@ -30,7 +30,7 @@ public class NOPE extends ControlPacket {
         }
     }
 
-    public int size(){
+    protected int size(){
         return ControlPacket.header_size + losslist.size()*4;
     }
 

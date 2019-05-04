@@ -38,7 +38,7 @@ public class OK extends ControlPacket {
 
     public int getWindow(){ return this.window;}
 
-    public int size(){
+    protected int size(){
         return size;
     }
 

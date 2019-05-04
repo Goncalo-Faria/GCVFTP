@@ -10,12 +10,8 @@ import Transport.Listener.ListenerProperties;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.Packet;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.*;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -158,8 +154,7 @@ public class GCVSocket {
                 maxWindow
         );
 
-
-        byte[] serializedHiPacket = hiPacket.serialize();
+        byte[] serializedHiPacket = hiPacket.markedSerialize();
 
         DatagramPacket responseDatagram = new DatagramPacket(
                 new byte[HI.size],
@@ -209,12 +204,14 @@ public class GCVSocket {
                         );
 
                         this.boot(sendProp,receiveProp, response_hello_packet.getSeq(), hiPacket.getSeq(), 0);
+
                         return;
                     }
 
                 }
 
-            }catch (SocketTimeoutException ste){
+            }catch (SocketTimeoutException|StreamCorruptedException ste){
+                ;// espera por outro.
             }
         }
 

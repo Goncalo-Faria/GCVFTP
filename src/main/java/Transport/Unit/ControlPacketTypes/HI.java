@@ -42,7 +42,7 @@ public class HI extends ControlPacket {
         return this.seq;
     }
 
-    public int size(){
+    protected int size(){
         return size;
     }
 }

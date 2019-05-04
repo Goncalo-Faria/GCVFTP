@@ -33,14 +33,25 @@ public class Client {
 
             Scanner s = new Scanner(io).useDelimiter("\\A");
 
-            while (true)
+            byte[] buffer = new byte[40000];
+            int i = 0;
+            while (i  < 1)
             {
+                i++;
                 if(!s.hasNext()){
                     io = cs.receive();
+                    int val = io.read(buffer,0,buffer.length);
                     s = new Scanner(io).useDelimiter("\\A");
+                    //System.out.println( "#############" + val + "#############" );
+
+                    //System.out.println("hey");
+                    //System.out.println( new String(buffer) );
                 }
 
-                String tmp = s.hasNext() ? s.next() : " ";
+                String tmp = s.hasNext() ? s.next() : "";
+
+                System.out.println( tmp );
+
             }
 
         } catch(IOException | TimeoutException| InterruptedException e){

@@ -1,6 +1,6 @@
 package Transport;
 
-import Test.Debugger;
+import Common.Debugger;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.Packet;
 

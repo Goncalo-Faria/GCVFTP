@@ -1,7 +1,7 @@
-package Test;
+package Common;
 
 public class Debugger {
-    private static boolean enabled = true;
+    private static boolean enabled = false;
 
     public static void setEnabled(boolean enabled) {
         Debugger.enabled = enabled;

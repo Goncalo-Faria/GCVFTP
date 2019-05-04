@@ -1,6 +1,6 @@
 package Transport.Receiver;
 
-import Test.Debugger;
+import Common.Debugger;
 import Transport.Common.Interval;
 import Transport.Common.IntervalChain;
 import Transport.Executor;

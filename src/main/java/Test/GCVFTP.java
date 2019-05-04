@@ -1,82 +1,78 @@
 package Test;
 
-import Transport.Common.Interval;
-import Transport.Unit.ControlPacketTypes.*;
-import Transport.Common.IntervalChain;
-import Transport.Unit.ControlPacket;
-import Transport.Unit.DataPacket;
-import Transport.Unit.Packet;
+import Common.GlobalVariables;
+import Transport.GCVConnection;
+import Transport.GCVSocket;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class GCVFTP {
+    private static Client client;
+
     public static void main(String[] args) {
-
-
-        /*ByteBuffer base = ByteBuffer.allocate(4);
-        base.putInt(-1);
-
-        System.out.println( BitManipulator.msb( base.array(),0) );
-        */
-        ControlPacket cp = new OK((short)422,445,42,42,42);
-
-        System.out.println(cp.getType());
-
-        Packet p =  Packet.parse(cp.serialize());
-
-        if( p instanceof ControlPacket) {
-            ControlPacket c = (ControlPacket) p;
-            System.out.println("functionally works");
-            System.out.println(c.equals(cp));
-        }else{
-            System.out.println(" it's data ");
+        if(args.length > 0) {
+            GlobalVariables.filesPath = args[0];
         }
 
-        DataPacket dp = new DataPacket( "ola".getBytes() ,"ola".getBytes().length,8448,DataPacket.Flag.SOLO);
-
-        p =  Packet.parse(dp.serialize());
-
-        if( p instanceof DataPacket) {
-            DataPacket c = (DataPacket) p;
-
-            System.out.println(((DataPacket) p).getFlag());
-
-            System.out.println(new String(c.getData()));
-            System.out.println("functionally works");
-            System.out.println(c.equals(dp));
-        }else{
-            System.out.println(" it's control ");
+        try {
+            GCVSocket cs = new GCVSocket(GCVConnection.send_buffer_size,true);
+            client = new Client(cs);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
+        String input;
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        while(true) {
+            System.out.print("> ");
 
-        System.out.println("examinar checks");
+            try {
+                input = br.readLine();
 
-        IntervalChain<DataPacket> l = new IntervalChain<>(30);
+                if(input.equals("exit")) {
+                    System.exit(0);
+                } else {
+                    parse(input);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
-        for(int i = 1; i< 22; i = i + 2) {
-            DataPacket packet = new DataPacket(new byte[20], 0, i, DataPacket.Flag.SOLO);
+    private static void parse(String input) {
+        List<String> s = new ArrayList<>(Arrays.asList(input.split(" ")));
 
-            l.add(packet.getSeq(), packet );
-
+        InetAddress inetAddress = null;
+        try {
+            inetAddress = InetAddress.getByName(s.get(1));
+        } catch (UnknownHostException | IndexOutOfBoundsException e) {
+            e.printStackTrace();
+            return;
         }
 
-        System.out.println(" max seq " + l.maxSeq());
-
-        System.out.println(" min seq " + l.minSeq());
-
-
-        DataPacket packet = new DataPacket(new byte[20], 0, 2, DataPacket.Flag.SOLO);
-
-        l.add(packet.getSeq(), packet);
-
-        packet = new DataPacket(new byte[20], 0, 4, DataPacket.Flag.SOLO);
-
-        l.add(packet.getSeq(), packet);
-
-        Interval<DataPacket> tmp = l.take();
-
-        System.out.println(tmp.min() + " - " + tmp.max());
-
-        for(DataPacket pac : tmp.getValues())
-            System.out.println(pac.getSeq());
-
+        switch (s.get(0)) {
+            case "put":
+                s.remove(0);
+                s.remove(0);
+                client.put(inetAddress, s);
+                break;
+            case "get":
+                s.remove(0);
+                s.remove(0);
+                client.get(inetAddress, s);
+                break;
+            case "register":
+                client.register(inetAddress);
+            default:
+                System.out.println("Unknown command");
+        }
     }
 }

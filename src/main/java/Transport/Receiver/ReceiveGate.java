@@ -2,7 +2,7 @@ package Transport.Receiver;
 
 import java.util.List;
 
-import Test.Debugger;
+import Common.Debugger;
 import Transport.GCVConnection;
 import Transport.TransportChannel;
 import Transport.Unit.*;
@@ -25,7 +25,7 @@ public class ReceiveGate {
         );
 
         this.worker = new ReceiveWorker(ch, receiveBuffer, me, GCVConnection.number_of_receive_workers);
-        
+
     }
 
     public List<Integer> getLossList(){
@@ -53,5 +53,5 @@ public class ReceiveGate {
     public void prepareRetransmition(){
         this.receiveBuffer.clear();
     }
-    
+
 }

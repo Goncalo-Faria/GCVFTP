@@ -1,6 +1,6 @@
 package Transport.Sender;
 
-import Test.Debugger;
+import Common.Debugger;
 import Transport.Unit.DataPacket;
 import Transport.Window;
 

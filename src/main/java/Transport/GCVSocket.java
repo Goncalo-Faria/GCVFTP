@@ -2,12 +2,11 @@ package Transport;
 
 import Test.Debugger;
 import Transport.CongestionControl.WindowRateControl;
-import Transport.Unit.TransmissionTransportChannel;
+import Transport.Speaker.SpeakerGate;
 import Transport.Unit.ControlPacketTypes.HI;
-import Transport.Sender.SendGate;
-import Transport.Receiver.ReceiveGate;
-import Transport.Sender.SenderProperties;
-import Transport.Receiver.ReceiverProperties;
+import Transport.Listener.ListenerGate;
+import Transport.Speaker.SpeakerProperties;
+import Transport.Listener.ListenerProperties;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.Packet;
 
@@ -80,11 +79,11 @@ public class GCVSocket {
         this.maxWindow = maxWindow;
     }
 
-    private void boot(SenderProperties me, ReceiverProperties caller, int their_seq, int our_seq, int time) throws IOException{
+    private void boot(SpeakerProperties me, ListenerProperties caller, int their_seq, int our_seq, int time) throws IOException{
         this.active.set(true);
 
-        SendGate sgate = new SendGate(me,channel,our_seq,GCVConnection.rate_control_interval/1000);
-        ReceiveGate rgate = new ReceiveGate(caller,channel,their_seq);
+        SpeakerGate sgate = new SpeakerGate(me,channel,our_seq,GCVConnection.rate_control_interval/1000);
+        ListenerGate rgate = new ListenerGate(caller,channel,their_seq);
 
         sgate.confirmHandshake();
 
@@ -110,14 +109,14 @@ public class GCVSocket {
 
         WindowRateControl channelWindow = new WindowRateControl(hiPacket.getMaxWindow());
 
-        SenderProperties senderProp = new SenderProperties(
+        SpeakerProperties senderProp = new SpeakerProperties(
                 this.localhost,
                 sa.getPort(),
                 this.mtu,
                 channelWindow.getMaxWindowSize(),
                 persistent);
 
-        ReceiverProperties receiveProp = new ReceiverProperties(
+        ListenerProperties receiveProp = new ListenerProperties(
                 receivedStampedPacket.ip(),
                 receivedStampedPacket.port(),
                 hiPacket.getMTU(),
@@ -153,8 +152,6 @@ public class GCVSocket {
     public void connect(InetAddress ip, int intendedPort) throws IOException, TimeoutException {
 
         WindowRateControl channelWindow = new WindowRateControl(maxWindow);
-
-
 
         HI hiPacket = new HI(
                 (short)0,
@@ -193,14 +190,14 @@ public class GCVSocket {
 
                     if( cdu instanceof HI ){
                         HI response_hello_packet = (HI)cdu;
-                        ReceiverProperties receiveProp= new ReceiverProperties(
+                        ListenerProperties receiveProp= new ListenerProperties(
                                 ip,
                                 responseDatagram.getPort(),
                                 response_hello_packet.getMTU(),
                                 this.maxWindow
                         );
 
-                        SenderProperties sendProp = new SenderProperties(
+                        SpeakerProperties sendProp = new SpeakerProperties(
                                 InetAddress.getLocalHost(),
                                 intendedPort,
                                 mtu,
@@ -213,7 +210,7 @@ public class GCVSocket {
                                 channelWindow
                         );
 
-                        this.boot(sendProp,receiveProp, response_hello_packet.getSeq(), hiPacket.getSeq(), response_hello_packet.getTimestamp());
+                        this.boot(sendProp,receiveProp, response_hello_packet.getSeq(), hiPacket.getSeq(), hiPacket.getTimestamp());
                         return;
                     }
 

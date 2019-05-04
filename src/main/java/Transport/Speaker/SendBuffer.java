@@ -1,10 +1,8 @@
-package Transport.Sender;
+package Transport.Speaker;
 
 import Test.Debugger;
 import Transport.Unit.DataPacket;
-import Transport.Window;
 
-import javax.xml.crypto.Data;
 import java.io.NotActiveException;
 import java.util.*;
 import java.util.concurrent.*;
@@ -13,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /* structure for 'accounting' traveling packets*/
-class Accountant {
+class SendBuffer {
 
     private final LinkedBlockingQueue<DataPacket> uncounted;
     /*
@@ -44,7 +42,7 @@ class Accountant {
      * Current sequence number.
      *  */
 
-    Accountant(int stock, int seq){
+    SendBuffer(int stock, int seq){
         this.uncounted = new LinkedBlockingQueue<>(stock);
         this.seq = new AtomicInteger(seq);
     }

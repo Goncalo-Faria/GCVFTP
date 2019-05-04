@@ -1,4 +1,4 @@
-package Transport.Unit;
+package Transport;
 
 import Transport.CongestionControl.WindowRateControl;
 import Transport.UDPTransport.TransmissionChannel;
@@ -7,6 +7,7 @@ import Transport.TransportStationProperties;
 import Transport.Unit.ControlPacketTypes.NOPE;
 import Transport.Unit.ControlPacketTypes.OK;
 import Transport.Unit.ControlPacketTypes.SURE;
+import Transport.Unit.Packet;
 import Transport.Window;
 
 import java.io.IOException;

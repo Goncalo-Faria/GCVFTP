@@ -1,4 +1,4 @@
-package Transport.Receiver;
+package Transport.Listener;
 
 import Transport.TransportChannel;
 import Transport.Unit.Packet;
@@ -8,16 +8,16 @@ import java.lang.Thread;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ReceiveWorker implements Runnable{
+public class ListenerWorker implements Runnable{
     /*tem de verificar se há espaço no buffer, caso contrário dá drop*/
 
     /* para impedir denial of service atacks */
     private final AtomicBoolean active = new AtomicBoolean(true);
     private final TransportChannel channel;
-    private final ReceiverProperties properties;
-    private final Examiner buffer;
+    private final ListenerProperties properties;
+    private final ReceiveBuffer buffer;
 
-    public ReceiveWorker(TransportChannel channel, Examiner buffer, ReceiverProperties properties, int numThreads ){
+    public ListenerWorker(TransportChannel channel, ReceiveBuffer buffer, ListenerProperties properties, int numThreads ){
         this.channel = channel;
         this.properties = properties;
         this.buffer = buffer;

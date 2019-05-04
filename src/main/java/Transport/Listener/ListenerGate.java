@@ -1,4 +1,4 @@
-package Transport.Receiver;
+package Transport.Listener;
 
 import java.util.List;
 
@@ -7,24 +7,24 @@ import Transport.GCVConnection;
 import Transport.TransportChannel;
 import Transport.Unit.*;
 
-public class ReceiveGate {
+public class ListenerGate {
 
-    private final Examiner receiveBuffer;
+    private final ReceiveBuffer receiveBuffer;
 
-    private final ReceiveWorker worker;
+    private final ListenerWorker worker;
 
-    private final ReceiverProperties properties;
+    private final ListenerProperties properties;
 
-    public ReceiveGate(ReceiverProperties me, TransportChannel ch, int seq){
-        Debugger.log("ReceiveGate created");
+    public ListenerGate(ListenerProperties me, TransportChannel ch, int seq){
+        Debugger.log("ListenerGate created");
         this.properties = me;
-        this.receiveBuffer = new Examiner(
+        this.receiveBuffer = new ReceiveBuffer(
             (int)(GCVConnection.controlBufferFactor * me.transmissionChannelBufferSize()),
             me.transmissionChannelBufferSize(),
             seq
         );
 
-        this.worker = new ReceiveWorker(ch, receiveBuffer, me, GCVConnection.number_of_receive_workers);
+        this.worker = new ListenerWorker(ch, receiveBuffer, me, GCVConnection.number_of_receive_workers);
         
     }
 
@@ -45,7 +45,7 @@ public class ReceiveGate {
     }
 
     public void close(){
-        Debugger.log("ReceiveGate closed");
+        Debugger.log("ListenerGate closed");
         this.worker.stop();
         this.receiveBuffer.terminate();
     }

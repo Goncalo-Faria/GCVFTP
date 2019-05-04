@@ -150,8 +150,11 @@ public class Executor implements Runnable{
 
             if ( packet.getFlag().equals(DataPacket.Flag.LAST) || packet.getFlag().equals(DataPacket.Flag.SOLO) ){
 
-                ExecutorPipe ep = this.outMap.remove(packet.getMessageNumber());
-                this.socketOutput.put(ep);
+                this.socketOutput.put(
+                        this.outMap.remove(
+                                packet.getMessageNumber()
+                        )
+                );
             }
 
         }catch( IOException|InterruptedException e ){
@@ -300,11 +303,9 @@ public class Executor implements Runnable{
 
         public void run(){
 
-            this.producer.reset();
             try {
                 PipedOutputStream pout = new PipedOutputStream(this.consumer);
                 this.producer.writeTo(pout);
-                this.producer.reset();
                 pout.flush();
                 pout.close();
                 this.producer.close();

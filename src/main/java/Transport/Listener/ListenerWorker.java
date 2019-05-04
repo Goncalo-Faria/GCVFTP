@@ -6,6 +6,7 @@ import Transport.Unit.Packet;
 import java.io.NotActiveException;
 import java.lang.Thread;
 import java.io.IOException;
+import java.net.SocketException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ListenerWorker implements Runnable{
@@ -38,7 +39,9 @@ public class ListenerWorker implements Runnable{
                 this.buffer.supply(packet);
             }
 
-        }catch (NotActiveException other){
+        }catch (NotActiveException other) {
+            active.set(false);
+        }catch (SocketException e){
             active.set(false);
         }catch ( InterruptedException| IOException e) {
             e.printStackTrace();

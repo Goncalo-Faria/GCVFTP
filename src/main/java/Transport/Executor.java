@@ -9,10 +9,10 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import Test.Debugger;
-import Transport.Receiver.ReceiveGate;
+import Transport.Listener.ListenerGate;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import Transport.Sender.SendGate;
+import Transport.Speaker.SpeakerGate;
 import Transport.Unit.*;
 import Transport.Unit.ControlPacketTypes.*;
 
@@ -44,8 +44,8 @@ public class Executor implements Runnable{
         }
     }
 
-    private final SendGate sgate; /* mandar pacotes de controlo */
-    private final ReceiveGate rgate; /* tirar pacotes */
+    private final SpeakerGate sgate; /* mandar pacotes de controlo */
+    private final ListenerGate rgate; /* tirar pacotes */
     private final ConcurrentHashMap< Integer, ExecutorPipe > outMap = new ConcurrentHashMap<>();
     private final ConcurrentSkipListMap<Integer,Integer> inMap = new ConcurrentSkipListMap<>();
 
@@ -53,7 +53,7 @@ public class Executor implements Runnable{
     private final AtomicBoolean active = new AtomicBoolean(true);
     private final Window window;
 
-    Executor(SendGate sgate, ReceiveGate rgate, Window window){
+    Executor(SpeakerGate sgate, ListenerGate rgate, Window window){
         this.sgate = sgate;
         this.rgate = rgate;
         this.window = window;
@@ -150,8 +150,11 @@ public class Executor implements Runnable{
 
             if ( packet.getFlag().equals(DataPacket.Flag.LAST) || packet.getFlag().equals(DataPacket.Flag.SOLO) ){
 
-                ExecutorPipe ep = this.outMap.remove(packet.getMessageNumber());
-                this.socketOutput.put(ep);
+                this.socketOutput.put(
+                        this.outMap.remove(
+                                packet.getMessageNumber()
+                        )
+                );
             }
 
         }catch( IOException|InterruptedException e ){
@@ -175,7 +178,7 @@ public class Executor implements Runnable{
             }
         }else {
             try {
-                /* Receiver actions */
+                /* Listener actions */
                 /* Received new data */
                 if( this.window.shouldSendOk() ){
                     this.sgate.sendOk(
@@ -202,7 +205,7 @@ public class Executor implements Runnable{
                         //this.rgate.prepareRetransmition();
                     }
                 }
-                /* Sender actions */
+                /* Speaker actions */
 
                 //if( this.window.dataMightHaveBeenLost() ){
                 //    this.sgate.retransmit();
@@ -243,7 +246,7 @@ public class Executor implements Runnable{
     }
 
     private void sure(SURE packet){
-        //System.out.println(" ::::> received an " + packet.getOK() + " receivedSure " + packet.getOK() + " packet <::::");
+        //Debugger.log(" ::::> received an " + packet.getOK() + " receivedSure " + packet.getOK() + " packet <::::");
     }
     private void bye(BYE packet){
         Debugger.log(" ::::> received a bye packet <::::");
@@ -300,11 +303,9 @@ public class Executor implements Runnable{
 
         public void run(){
 
-            this.producer.reset();
             try {
                 PipedOutputStream pout = new PipedOutputStream(this.consumer);
                 this.producer.writeTo(pout);
-                this.producer.reset();
                 pout.flush();
                 pout.close();
                 this.producer.close();

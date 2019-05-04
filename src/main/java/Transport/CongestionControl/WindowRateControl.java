@@ -19,11 +19,10 @@ public class WindowRateControl implements Window {
 
     private final LocalDateTime connectionStartTime = LocalDateTime.now();
 
-    private final AtomicInteger rtt = new AtomicInteger(100);
-    private final AtomicInteger rttVar =  new AtomicInteger(100);
+    private final AtomicInteger rtt = new AtomicInteger(1000*1000);
+    private final AtomicInteger rttVar =  new AtomicInteger(0);
 
-
-    private final AtomicInteger timeLastReceived = new AtomicInteger(this.connectionTime());
+    private final AtomicInteger timeLastReceived = new AtomicInteger(0);
     private final AtomicInteger timeLastSent = new AtomicInteger(0);
 
     private final AtomicInteger timeLastNackSent = new AtomicInteger(0);
@@ -79,6 +78,7 @@ public class WindowRateControl implements Window {
         this.lastOkReceived.set(lastOkReceived);
         this.lastSureReceived.set(lastOkSent);
         this.initiate = time;
+        Debugger.log("init:" + this.initiate );
     }
 
     public int rtt(){
@@ -135,7 +135,7 @@ public class WindowRateControl implements Window {
             this.rtt.set( this.connectionTime() - initiate );
             this.rttVar.set(0);
 
-            Debugger.log( "Start rtt " + this.rtt);
+            Debugger.log( "Start rtt :::::::::::::::::::::::::::: " + this.rtt);
             this.deactivateCongestionControl();
         }
     }
@@ -225,7 +225,7 @@ public class WindowRateControl implements Window {
         int expRttTime = this.rtt.get() + this.rttVar.get();
 
         try {
-            return (curTime - timeLastNackSent.get()) > GCVConnection.rate_control_interval + expRttTime
+            return (curTime - timeLastNackSent.get()) > expRttTime
                     && (curTime - this.sentOkCache.get(this.lastOkSent.get())) > GCVConnection.rate_control_interval ;
         }catch(NullPointerException e){
             return false;
@@ -253,7 +253,7 @@ public class WindowRateControl implements Window {
         if( congestionControl.get() ) {
             int expRttTime = this.rtt.get() + 4 * this.rttVar.get();
 
-            if ((this.connectionTime() - this.timeLastOkReceived.get()) > GCVConnection.rate_control_interval + expRttTime ) {
+            if ((this.connectionTime() - this.timeLastOkReceived.get()) > GCVConnection.rate_control_interval + expRttTime) {
                 /* mul decrease */
                 Debugger.log("Multiplicative decrease");
                 this.multiplicativeDecrease();
@@ -301,9 +301,13 @@ public class WindowRateControl implements Window {
     public boolean hasTimeout(){
         int difs = this.connectionTime() - this.timeLastReceived.get();
 
+        //Debugger.log("difs ###################################################### " + difs);
         int exptime = rtt.get() + 4 * rttVar.get();
 
-        return (difs > 4*( GCVConnection.rate_control_interval + exptime));
+        //Debugger.log("exptime ###################################################### " + exptime);
+
+
+        return (difs > 8*( GCVConnection.rate_control_interval + exptime));
     }
 
     private void deactivateCongestionControl(){

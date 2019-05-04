@@ -1,9 +1,9 @@
-package Transport.Sender;
+package Transport.Speaker;
 
 import Test.Debugger;
 import Transport.TransportChannel;
 import Transport.Unit.ControlPacketTypes.*;
-import Transport.Unit.TransmissionTransportChannel;
+import Transport.TransmissionTransportChannel;
 import Transport.Unit.DataPacket;
 
 import java.io.IOException;
@@ -13,19 +13,19 @@ import java.util.List;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class SendGate {
+public class SpeakerGate {
 
     //int msb = (m & 0xff) >> 7;
 
-    private final Accountant send_buffer;
+    private final SendBuffer send_buffer;
 
     private final TransportChannel ch;
 
-    private final SendWorker worker;
+    private final SpeakerWorker worker;
 
     private final AtomicInteger backery_ticket = new AtomicInteger(0);
 
-    private final SenderProperties properties;
+    private final SpeakerProperties properties;
 
     private ConcurrentSkipListMap<Integer,Integer> inMap;
 
@@ -41,12 +41,12 @@ public class SendGate {
      * manda dados
      * */
 
-    public SendGate(SenderProperties me, TransmissionTransportChannel ch, int our_seq, long initialperiod) {
-        Debugger.log("SendGate created");
+    public SpeakerGate(SpeakerProperties me, TransmissionTransportChannel ch, int our_seq, long initialperiod) {
+        Debugger.log("SpeakerGate created");
         this.ch = ch;
         this.properties = me;
-        this.send_buffer = new Accountant(me.transmissionChannelBufferSize(), our_seq);
-        this.worker = new SendWorker(ch, send_buffer, initialperiod, me);
+        this.send_buffer = new SendBuffer(me.transmissionChannelBufferSize(), our_seq);
+        this.worker = new SpeakerWorker(ch, send_buffer, initialperiod, me);
     }
 
     public void confirmHandshake() throws IOException {
@@ -66,7 +66,7 @@ public class SendGate {
 
     }
 
-    public SenderProperties properties() {
+    public SpeakerProperties properties() {
         return this.properties;
     }
 
@@ -188,7 +188,7 @@ public class SendGate {
     }
 
     public void close() {
-        Debugger.log("SendGate closed");
+        Debugger.log("SpeakerGate closed");
         this.worker.stop();
         this.send_buffer.terminate();
     }
@@ -196,11 +196,11 @@ public class SendGate {
     class LoadingWorker implements Runnable {
         private final int ticket;
         private final InputStream io;
-        private final Accountant send_buffer;
+        private final SendBuffer send_buffer;
         private final TransportChannel ch;
         private final ConcurrentSkipListMap<Integer,Integer> map;
 
-        LoadingWorker(int ticket, InputStream io, Accountant send_buffer, TransportChannel ch, ConcurrentSkipListMap<Integer,Integer> inMap){
+        LoadingWorker(int ticket, InputStream io, SendBuffer send_buffer, TransportChannel ch, ConcurrentSkipListMap<Integer,Integer> inMap){
             this.ticket = ticket;
             this.io = io;
             this.send_buffer = send_buffer;

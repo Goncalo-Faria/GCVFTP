@@ -1,4 +1,4 @@
-package Transport.Receiver;
+package Transport.Listener;
 
 import Test.Debugger;
 import Transport.Common.Interval;
@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-class Examiner {
+class ReceiveBuffer {
 
     private final LinkedBlockingQueue<ControlPacket> control;
     private final LinkedBlockingQueue<DataPacket> data = new LinkedBlockingQueue<>();
@@ -28,7 +28,7 @@ class Examiner {
     private final ReadWriteLock wrl = new ReentrantReadWriteLock();
 
 
-    Examiner(int maxControlBufferSize, int maxDataBufferSize, int seq){
+    ReceiveBuffer(int maxControlBufferSize, int maxDataBufferSize, int seq){
         Debugger.log(">>>>> theirs " + seq + "<<<<<<<");
         this.control = new LinkedBlockingQueue<>(maxControlBufferSize);
         this.uncounted =  new IntervalChain<DataPacket>(maxDataBufferSize);

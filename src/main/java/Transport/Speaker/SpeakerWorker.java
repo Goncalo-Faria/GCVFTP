@@ -1,4 +1,4 @@
-package Transport.Sender;
+package Transport.Speaker;
 
 import Test.Debugger;
 import Transport.Executor;
@@ -12,15 +12,15 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
-public class SendWorker extends TimerTask {
+public class SpeakerWorker extends TimerTask {
 
-    private final Accountant sendBuffer;
+    private final SendBuffer sendBuffer;
     private final TransportChannel channel;
     private final Timer sendTimer;
     private final AtomicBoolean active = new AtomicBoolean(true);
-    private final SenderProperties properties;
+    private final SpeakerProperties properties;
 
-    public SendWorker(TransportChannel ch, Accountant send, long period, SenderProperties properties){
+    public SpeakerWorker(TransportChannel ch, SendBuffer send, long period, SpeakerProperties properties){
         this.sendBuffer = send;
         this.channel = ch;
         this.sendTimer = new Timer();

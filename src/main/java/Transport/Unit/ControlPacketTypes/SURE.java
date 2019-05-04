@@ -24,7 +24,7 @@ public class SURE extends ControlPacket {
         }
     }
 
-    public int size(){
+    protected int size(){
         return ( ok == -1 )? ControlPacket.header_size: ControlPacket.header_size + 4;
     }
 

@@ -135,8 +135,6 @@ public class Executor implements Runnable{
             DataPacket packet = this.rgate.data();
             this.window.receivedData(packet);
 
-            //Debugger.log(" ::::> DATA <:::: " + packet.getSeq() +  " ops ::" );
-
             if ( packet.getFlag().equals(DataPacket.Flag.FIRST) || packet.getFlag().equals(DataPacket.Flag.SOLO) ){
                 ExecutorPipe inc = new Executor.ExecutorPipe();
                 this.outMap.put(packet.getMessageNumber(), inc );

@@ -50,7 +50,7 @@ public class DataPacket extends Packet {
 
     }
 
-    public static int header_size = 8;
+    public static int header_size = 8 + 8;
 
     private int seq=0;
     private final int streamNumber;
@@ -58,12 +58,12 @@ public class DataPacket extends Packet {
     private final Flag flag;
 
 
-    DataPacket( byte[] data ){
+    DataPacket( byte[] data, int offset){
 
-        BitManipulator extrator = new BitManipulator(data);
+        BitManipulator extrator = new BitManipulator(data).skip(offset);
 
         this.seq = extrator.getInt();
-        this.flag = Flag.SOLO.parse(BitManipulator.msb2(data,4));
+        this.flag = Flag.SOLO.parse(BitManipulator.msb2(data,offset + 4));
         this.streamNumber = extrator.flip2().getInt();
         this.information = new byte[data.length - DataPacket.header_size];
 
@@ -104,13 +104,17 @@ public class DataPacket extends Packet {
         return this.flag;
     }
 
-    public byte[] serialize(){
+    public byte[] serialize(BitManipulator buffer){
 
-        return BitManipulator.allocate(DataPacket.header_size + this.information.length).
+        return  buffer.
                 put(this.seq).
                 put(this.streamNumber, this.flag.mark(this.flag)).
                 put(this.information).
                 array();
+    }
+
+    protected int size(){
+        return DataPacket.header_size + this.information.length;
     }
 
     @Override

@@ -42,10 +42,11 @@ public class Client {
                     io = cs.receive();
                     int val = io.read(buffer,0,buffer.length);
                     s = new Scanner(io).useDelimiter("\\A");
-                    //System.out.println( "#############" + val + "#############" );
+                    Debugger.log("##########################");
 
                     //System.out.println("hey");
                     //System.out.println( new String(buffer) );
+
                 }
 
                 String tmp = s.hasNext() ? s.next() : "";
@@ -53,6 +54,8 @@ public class Client {
                 System.out.println( tmp );
 
             }
+
+            cs.close();
 
         } catch(IOException | TimeoutException| InterruptedException e){
             e.printStackTrace();

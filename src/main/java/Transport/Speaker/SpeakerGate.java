@@ -6,6 +6,7 @@ import Transport.Unit.ControlPacketTypes.*;
 import Transport.TransmissionTransportChannel;
 import Transport.Unit.DataPacket;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.NotActiveException;
@@ -202,21 +203,20 @@ public class SpeakerGate {
 
         LoadingWorker(int ticket, InputStream io, SendBuffer send_buffer, TransportChannel ch, ConcurrentSkipListMap<Integer,Integer> inMap){
             this.ticket = ticket;
-            this.io = io;
+            this.io = new BufferedInputStream(io);
             this.send_buffer = send_buffer;
             this.ch = ch;
             this.map = inMap;
         }
 
         public void run(){
-            //BufferedInputStream bufst = new BufferedInputStream(io);
             int flag;
             boolean first = true;
 
-            byte[] data = new byte[this.ch.inMTU()];
+            byte[] data = new byte[this.ch.inMTU() - DataPacket.header_size];
             try {
                 do {
-                    flag = io.read(data, 0, this.ch.inMTU());
+                    flag = io.read(data, 0, data.length);
                     if (flag != -1) {
                         DataPacket dp;
                         if (first) {

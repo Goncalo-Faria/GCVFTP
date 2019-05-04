@@ -10,12 +10,8 @@ import Transport.Listener.ListenerProperties;
 import Transport.Unit.ControlPacket;
 import Transport.Unit.Packet;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.*;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -107,13 +103,13 @@ public class GCVSocket {
 
         InetSocketAddress sa = new InetSocketAddress(0);
 
-        WindowRateControl channelWindow = new WindowRateControl(hiPacket.getMaxWindow());
+        //WindowRateControl channelWindow = new WindowRateControl(hiPacket.getMaxWindow());
 
         SpeakerProperties senderProp = new SpeakerProperties(
                 this.localhost,
                 sa.getPort(),
                 this.mtu,
-                channelWindow.getMaxWindowSize(),
+                hiPacket.getMaxWindow(),
                 persistent);
 
         ListenerProperties receiveProp = new ListenerProperties(
@@ -125,20 +121,21 @@ public class GCVSocket {
         this.channel = new TransmissionTransportChannel(
                 senderProp ,
                 receiveProp,
-                channelWindow
+                new WindowRateControl(hiPacket.getMaxWindow())
+
         );
 
         HI responseHiPacket = new HI(
                 (short)0,
-                channelWindow.connectionTime() ,
                 this.channel.getSelfStationProperties().mtu(),
-                channelWindow.getMaxWindowSize()
+                this.maxWindow
         );
 
+        int responseTime = this.channel.window().connectionTime();
 
         this.channel.sendPacket( responseHiPacket );
 
-        this.boot(senderProp, receiveProp, hiPacket.getSeq(), responseHiPacket.getSeq(), responseHiPacket.getTimestamp());
+        this.boot(senderProp, receiveProp, hiPacket.getSeq(), responseHiPacket.getSeq(), responseTime );
 
         GCVSocket.announceSocketConnection(receivedStampedPacket.ip().toString() + receivedStampedPacket.port(), this);
     }
@@ -151,17 +148,13 @@ public class GCVSocket {
 
     public void connect(InetAddress ip, int intendedPort) throws IOException, TimeoutException {
 
-        WindowRateControl channelWindow = new WindowRateControl(maxWindow);
-
         HI hiPacket = new HI(
                 (short)0,
-                channelWindow.connectionTime(),
                 mtu,
                 maxWindow
         );
 
-
-        byte[] serializedHiPacket = hiPacket.serialize();
+        byte[] serializedHiPacket = hiPacket.markedSerialize();
 
         DatagramPacket responseDatagram = new DatagramPacket(
                 new byte[HI.size],
@@ -207,16 +200,18 @@ public class GCVSocket {
                         this.channel = new TransmissionTransportChannel(cs,
                                 sendProp ,
                                 receiveProp,
-                                channelWindow
+                                new WindowRateControl(maxWindow)
                         );
 
-                        this.boot(sendProp,receiveProp, response_hello_packet.getSeq(), hiPacket.getSeq(), hiPacket.getTimestamp());
+                        this.boot(sendProp,receiveProp, response_hello_packet.getSeq(), hiPacket.getSeq(), 0);
+
                         return;
                     }
 
                 }
 
-            }catch (SocketTimeoutException ste){
+            }catch (SocketTimeoutException|StreamCorruptedException ste){
+                ;// espera por outro.
             }
         }
 
@@ -278,7 +273,6 @@ public class GCVSocket {
     void restart() throws IOException {
         this.channel.sendPacket( new HI(
                 (short)0,
-                this.actuary.connectionTime(),
                 this.channel.getSelfStationProperties().mtu(),
                 maxWindow
         ));

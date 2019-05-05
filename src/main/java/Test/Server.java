@@ -26,7 +26,7 @@ public class Server {
                 Debugger.setEnabled(false);
             }
 
-            GCVSocket cs = new GCVSocket(GCVConnection.send_buffer_size,true);
+            GCVSocket cs = new GCVSocket(GCVConnection.send_buffer_size,true,6969);
 
             cs.listen();
 

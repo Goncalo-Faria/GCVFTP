@@ -204,8 +204,10 @@ public class WindowRateControl implements Window {
     public boolean okMightHaveBeenLost(){
         try{
             int expRttTime = this.rtt.get() + 4 * this.rttVar.get();
-
-            return (this.connectionTime()-this.timeLastSureReceived.get()) > GCVConnection.rate_control_interval + 2 * expRttTime;
+                if( this.lastSureReceived.get() < this.lastOkSent.get() )
+                    return (this.connectionTime()-this.timeLastSureReceived.get()) > GCVConnection.rate_control_interval + expRttTime;
+                else
+                    return false;
         }catch(NullPointerException e){
             return false;
         }

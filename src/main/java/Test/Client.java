@@ -25,7 +25,7 @@ public class Client {
                 Debugger.setEnabled(false);
             }
 
-            GCVSocket cs = new GCVSocket(GCVConnection.send_buffer_size,true);
+            GCVSocket cs = new GCVSocket(GCVConnection.send_buffer_size,true,8855);
 
             cs.connect(args[0],7220);
 
@@ -35,14 +35,15 @@ public class Client {
 
             byte[] buffer = new byte[40000];
             int i = 0;
-            while (i  < 1)
+            while (true )
             {
                 i++;
+                //System.out.println(i);
                 if(!s.hasNext()){
                     io = cs.receive();
-                    int val = io.read(buffer,0,buffer.length);
+                    //int val = io.read(buffer,0,buffer.length);
                     s = new Scanner(io).useDelimiter("\\A");
-                    Debugger.log("##########################");
+                    //Debugger.log("##########################");
 
                     //System.out.println("hey");
                     //System.out.println( new String(buffer) );
@@ -55,7 +56,7 @@ public class Client {
 
             }
 
-            cs.close();
+            //cs.close();
 
         } catch(IOException | TimeoutException| InterruptedException e){
             e.printStackTrace();

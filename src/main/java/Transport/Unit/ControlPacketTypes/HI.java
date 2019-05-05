@@ -10,6 +10,7 @@ public class HI extends ControlPacket {
     private final int maxpacket;
     private final int maxwindow;
     private final int seq;
+    private int port=0;
 
     public HI(short extendedtype, int maxpacket, int maxwindow){
         super(ControlPacket.Type.HI,extendedtype);
@@ -19,15 +20,40 @@ public class HI extends ControlPacket {
         this.seq = (int)(Math.random()*1000)+1;
     }
 
+    public HI(int port, int maxpacket, int maxwindow){
+        super(ControlPacket.Type.HI,(short)1);
+
+        this.maxpacket=maxpacket;
+        this.maxwindow=maxwindow;
+        this.seq = (int)(Math.random()*1000)+1;
+        this.port = port;
+    }
+
     public HI( BitManipulator extrator ){
         super(ControlPacket.Type.HI, extrator.getShort()/*extended*/);
         this.maxpacket = extrator.getInt();
         this.seq = extrator.getInt();
         this.maxwindow = extrator.getInt();
+        if(this.getExtendedtype() == 1)
+            this.port = extrator.getInt();
     }
 
     public byte[] extendedSerialize( BitManipulator extractor ){
-        return  extractor.put(this.maxpacket).put(this.seq).put(this.maxwindow).array();
+
+        extractor.put(this.maxpacket).put(this.seq).put(this.maxwindow);
+
+        if( this.getExtendedtype() == 1){
+            return extractor.put(port).array();
+        }else{
+            return extractor.array();
+        }
+    }
+
+    public int getPort() throws InterruptedException {
+        if( this.getExtendedtype() == 1)
+            return port;
+        else
+            throw new InterruptedException();
     }
 
     public int getMTU(){
@@ -43,6 +69,9 @@ public class HI extends ControlPacket {
     }
 
     protected int size(){
-        return size;
+        if(this.getExtendedtype() == 1)
+            return size + 4;
+        else
+            return size;
     }
 }

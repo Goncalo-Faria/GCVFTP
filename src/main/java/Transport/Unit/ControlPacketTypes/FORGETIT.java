@@ -5,14 +5,22 @@ import Transport.Unit.ControlPacket;
 
 public class FORGETIT extends ControlPacket {
 
-    public static int size = ControlPacket.header_size;
+    public static int size = ControlPacket.header_size + 4;
 
     public FORGETIT( BitManipulator extrator ) {
         super(Type.FORGETIT, extrator.getShort()/*extended*/);
+        streamid = extrator.getInt();
     }
 
-    public FORGETIT(short extendedtype, int timestamp){
+    private int streamid;
+
+    public FORGETIT(short extendedtype, int stream){
         super(Type.FORGETIT,extendedtype);
+        this.streamid = stream;
+    }
+
+    public int getStream(){
+        return this.streamid;
     }
 
     protected int size(){
@@ -21,7 +29,7 @@ public class FORGETIT extends ControlPacket {
 
     public byte[] extendedSerialize( BitManipulator extractor ){
 
-        return  extractor.array();
+        return  extractor.put(streamid).array();
 
     }
 }

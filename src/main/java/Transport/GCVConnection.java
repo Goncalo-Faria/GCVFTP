@@ -1,7 +1,7 @@
 package Transport;
 
 public final class GCVConnection {
-    public static final int port = 6969;
+    public static final int port = 8626;
     public static final int stdmtu = 1460 - 8; /* 496 bytes*/
 
     public static final int rate_control_interval = 100000;

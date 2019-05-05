@@ -95,12 +95,12 @@ public class SpeakerGate {
 
     }
 
-    public void sendForgetit(short extcode) throws IOException {
+    public void sendForgetit(short extcode, int stream) throws IOException {
 
         this.ch.sendPacket(
                 new FORGETIT(
                         extcode,
-                        this.ch.window().connectionTime()
+                        stream
                 )
         );
     }

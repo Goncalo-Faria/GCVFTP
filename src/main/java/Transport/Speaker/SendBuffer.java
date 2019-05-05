@@ -98,6 +98,8 @@ class SendBuffer {
                 if (packet.getSeq() == mss) {
                     this.sending.put(packet);
                     break;
+                }else if ( mss > packet.getSeq() ){
+                    break;
                 }
             }
         }

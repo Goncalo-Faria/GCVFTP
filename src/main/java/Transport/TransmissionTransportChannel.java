@@ -68,6 +68,7 @@ public class TransmissionTransportChannel extends TransmissionChannel implements
             this.window.receivedTransmission();
             return p;
         }catch (StreamCorruptedException e){
+            Debugger.log("DROP#################################");
             return this.receivePacket();
         }
     }

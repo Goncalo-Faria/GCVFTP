@@ -280,7 +280,7 @@ public class GCVSocket {
             );
 
             this.boot(sendProp,receiveProp, response_hello_packet.getSeq(), hiPacket.getSeq(), 0);
-            GCVSocket.announceSocketConnection(ip.toString() + this.port, this);
+            GCVSocket.announceSocketConnection(ip.toString() + this.port +"#####", this );
             return;
         }
     }

@@ -1,6 +1,6 @@
 package Transport;
 
-import Test.Debugger;
+import Common.Debugger;
 import Transport.CongestionControl.WindowRateControl;
 import Transport.UDPTransport.TransmissionChannel;
 import Transport.TransportChannel;

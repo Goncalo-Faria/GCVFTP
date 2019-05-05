@@ -1,6 +1,6 @@
 package Transport.CongestionControl;
 
-import Test.Debugger;
+import Common.Debugger;
 import Transport.GCVConnection;
 import Transport.Unit.ControlPacketTypes.NOPE;
 import Transport.Unit.ControlPacketTypes.OK;

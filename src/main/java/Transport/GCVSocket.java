@@ -26,7 +26,7 @@ public class GCVSocket {
                 GCVSocket.common_daemon = new ConnectionScheduler(
                         GCVConnection.port,
                         GCVConnection.connection_receive_ttl,
-                        HI.size);
+                        GCVConnection.stdmtu);
 
             } catch (SocketException e) {
                 e.printStackTrace();
@@ -106,7 +106,7 @@ public class GCVSocket {
         ConnectionScheduler.StampedControlPacket receivedStampedPacket =
                 GCVSocket.getStampedPacketByPort(this.port);
 
-        HI hiPacket = (HI)receivedStampedPacket.get();/*waiting for datagram*/
+        HI hiPacket = receivedStampedPacket.get();/*waiting for datagram*/
 
         InetSocketAddress sa = new InetSocketAddress(0);
 
@@ -124,6 +124,8 @@ public class GCVSocket {
                 receivedStampedPacket.port(),
                 hiPacket.getMTU(),
                 this.maxWindow);
+
+        Debugger.log(" : " + receivedStampedPacket.ip() + " : " + receivedStampedPacket.port());
 
         this.channel = new TransmissionTransportChannel(
                 senderProp ,
@@ -164,8 +166,8 @@ public class GCVSocket {
         byte[] serializedHiPacket = hiPacket.markedSerialize();
 
         DatagramPacket responseDatagram = new DatagramPacket(
-                new byte[HI.size],
-                HI.size);
+                new byte[serializedHiPacket.length],
+                serializedHiPacket.length);
 
         DatagramSocket cs = new DatagramSocket(this.port);
         cs.setSoTimeout(GCVConnection.request_retry_timeout);
@@ -188,7 +190,7 @@ public class GCVSocket {
                         GCVSocket.getStampedPacket(ip.toString());
 
                 ControlPacket cdu = receivedStampedPacket.get();
-
+                Debugger.log("Got it, bru ");
                 this.connectBoot(cs, cdu, ip, responseDatagram, hiPacket);
 
             }catch (SocketTimeoutException|StreamCorruptedException|InterruptedException ste){
@@ -217,8 +219,8 @@ public class GCVSocket {
         byte[] serializedHiPacket = hiPacket.markedSerialize();
 
         DatagramPacket responseDatagram = new DatagramPacket(
-                new byte[HI.size],
-                HI.size);
+                new byte[serializedHiPacket.length],
+                serializedHiPacket.length);
 
         DatagramSocket cs = new DatagramSocket(this.port);
         cs.setSoTimeout(GCVConnection.request_retry_timeout);

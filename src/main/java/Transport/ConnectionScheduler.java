@@ -52,6 +52,7 @@ class ConnectionScheduler implements Runnable {
 
     ConnectionScheduler.StampedControlPacket getStamped(String ip)
             throws InterruptedException {
+        Debugger.log("connect");
         if (requests.containsKey(ip))
             return requests.get(ip).poll(GCVConnection.request_retry_timeout, TimeUnit.MILLISECONDS);
         else {
@@ -64,7 +65,7 @@ class ConnectionScheduler implements Runnable {
 
     ConnectionScheduler.StampedControlPacket getStampedByPort(int port)
             throws InterruptedException {
-
+        Debugger.log("listening");
         if (listening.containsKey(port)) {
             return listening.get(port).take();
         } else {
@@ -83,6 +84,7 @@ class ConnectionScheduler implements Runnable {
         try {
 
             int port = packet.get().getPort();
+
             if (this.listening.containsKey(port)) {
                 this.listening.get(port).put(packet);
             } else {
@@ -90,6 +92,7 @@ class ConnectionScheduler implements Runnable {
                 q.put(packet);
                 this.listening.put(port, q);
             }
+            Debugger.log("TO LISTEN " + port);
 
         } catch (InterruptedException e) {
 
@@ -100,6 +103,8 @@ class ConnectionScheduler implements Runnable {
                 q.put(packet);
                 this.requests.put(packet.ip().toString(), q);
             }
+            Debugger.log("TO CONNECT");
+
         }
     }
 
@@ -112,16 +117,19 @@ class ConnectionScheduler implements Runnable {
         try {
             while (this.active.get()) {
                 DatagramPacket packet = new DatagramPacket(new byte[this.maxPacket], this.maxPacket);
+                //Debugger.log("ittt");
+
                 try {
                     this.connection.receive(packet);
 
-                    Packet synpacket = Packet.parse(packet.getData());
+                    Packet synpacket = Packet.parse(packet.getData(),packet.getLength());
 
                     if (synpacket instanceof ControlPacket) {
+                        //Debugger.log("valid + control");
                         ControlPacket cpacket = (ControlPacket) synpacket;
                         ControlPacket.Type packettype = cpacket.getType();
 
-                        if (packettype.equals(ControlPacket.Type.HI)) {
+                        if (cpacket instanceof HI) {
                             Debugger.log("got " + packet.getLength() + " bytes ::-:: ip = " + packet.getAddress() + " port= " + packet.getPort());
 
                             if (connections.containsKey(packet.getAddress().toString() + packet.getPort()))
@@ -132,6 +140,7 @@ class ConnectionScheduler implements Runnable {
                     }
                 } catch (StreamCorruptedException e) {
                     ;// erro no pacote ignora.
+                    Debugger.log("Packert error");
                 }
             }
         } catch (InterruptedException | IOException e) {

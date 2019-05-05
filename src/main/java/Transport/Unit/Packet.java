@@ -5,19 +5,20 @@ import Transport.Common.BitManipulator;
 import java.io.StreamCorruptedException;
 import java.nio.ByteBuffer;
 import java.util.zip.Adler32;
-import java.util.zip.CRC32;
+import Test.Debugger;
 import java.util.zip.Checksum;
 
 public abstract class Packet {
 
-    public static Packet parse(byte[] udp_data) throws StreamCorruptedException {
+    public static Packet parse(byte[] udp_data, int length) throws StreamCorruptedException {
 
         long checksum = ByteBuffer.wrap(udp_data).getLong();
 
-
         Checksum checks = new Adler32();
         checks.reset();
-        checks.update(udp_data,8, udp_data.length-8);
+        checks.update(udp_data,8, length-8);
+
+        //Debugger.log(" : GOT"+ checks.getValue() + " : : " + checksum + ": "+ length);
 
         if( checks.getValue() == checksum ){
             boolean type = BitManipulator.msb(udp_data,8);
@@ -33,6 +34,11 @@ public abstract class Packet {
             throw new StreamCorruptedException();
         }
 
+    }
+
+    public static Packet parse(byte[] udp_data) throws StreamCorruptedException {
+
+        return parse(udp_data,udp_data.length);
     }
 
     abstract byte[] serialize(BitManipulator buffer);
@@ -58,7 +64,7 @@ public abstract class Packet {
     public byte[] markedSerialize(){
         if( this.serialized == null)
             this.setChecksum();
-
+        //Debugger.log(" sz : " + this.serialized.length);
         return this.serialized;
     }
 

@@ -27,7 +27,7 @@ public class Client {
 
             GCVSocket cs = new GCVSocket(GCVConnection.send_buffer_size,true,8855);
 
-            cs.connect(args[0],7220);
+            cs.connect(args[0],6969);
 
             InputStream io = cs.receive();
 

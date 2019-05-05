@@ -24,7 +24,7 @@ public class ServerPacket {
                 Debugger.setEnabled(false);
             }
 
-            GCVSocket cs = new GCVSocket(12000,true, 4332);
+            GCVSocket cs = new GCVSocket(12000,true, 6969);
 
             cs.listen();
 

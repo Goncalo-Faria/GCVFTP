@@ -140,7 +140,7 @@ class ConnectionScheduler implements Runnable {
                     }
                 } catch (StreamCorruptedException e) {
                     ;// erro no pacote ignora.
-                    Debugger.log("Packert error");
+                    //Debugger.log("Packert error");
                 }
             }
         } catch (InterruptedException | IOException e) {

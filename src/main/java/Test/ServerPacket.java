@@ -26,7 +26,7 @@ public class ServerPacket {
 
             GCVSocket cs = new GCVSocket(12000,true, 6969);
 
-            cs.listen();
+            cs = cs.listen();
 
             int i = 0;
             while ( ++i < 200000 ) {

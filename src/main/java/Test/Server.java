@@ -28,7 +28,7 @@ public class Server {
 
             GCVSocket cs = new GCVSocket(GCVConnection.send_buffer_size,true,6969);
 
-            cs.listen();
+            cs = cs.listen();
 
             PipedInputStream pin = new PipedInputStream(10000);
             PipedOutputStream pout = new PipedOutputStream(pin);

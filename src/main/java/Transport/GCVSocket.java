@@ -94,7 +94,7 @@ public class GCVSocket {
                       int theirSeq,
                       int ourSeq,
                       int time,
-                      String ip) throws IOException
+                      String socketkey) throws IOException
     {
         this.maxWindow = maxWindow;
         this.persistent = persistent;
@@ -103,7 +103,7 @@ public class GCVSocket {
         this.localhost = localhost;
 
         this.boot(senderProp,receiveProp,theirSeq,ourSeq,time);
-        GCVSocket.announceSocketConnection(ip + this.port, this);
+        GCVSocket.announceSocketConnection(socketkey, this);
     }
 
     private void boot(SpeakerProperties me, ListenerProperties caller, int their_seq, int our_seq, int time) throws IOException{
@@ -175,7 +175,7 @@ public class GCVSocket {
                 hiPacket.getSeq(),
                 responseHiPacket.getSeq(),
                 responseTime,
-                receivedStampedPacket.ip().toString()
+                receivedStampedPacket.ip().toString() + receivedStampedPacket.port()
         );
 
     }
@@ -195,10 +195,6 @@ public class GCVSocket {
         );
 
         byte[] serializedHiPacket = hiPacket.markedSerialize();
-
-        DatagramPacket responseDatagram = new DatagramPacket(
-                new byte[serializedHiPacket.length],
-                serializedHiPacket.length);
 
         DatagramSocket cs = new DatagramSocket(this.port);
         cs.setSoTimeout(GCVConnection.request_retry_timeout);
@@ -222,9 +218,11 @@ public class GCVSocket {
 
                 ControlPacket cdu = receivedStampedPacket.get();
 
-                this.connectBoot(cs, cdu, ip, responseDatagram, hiPacket);
+                this.connectBoot(cs, cdu, ip, receivedStampedPacket.port() , hiPacket);
 
-            }catch (SocketTimeoutException|StreamCorruptedException|InterruptedException ste){
+                return;
+
+            }catch (SocketTimeoutException|StreamCorruptedException|InterruptedException|NullPointerException ste){
                 ;// espera por outro.
             }
         }
@@ -275,7 +273,7 @@ public class GCVSocket {
                 if(du instanceof ControlPacket){
                     ControlPacket cdu = (ControlPacket)du;
 
-                    this.connectBoot(cs, cdu, ip, responseDatagram, hiPacket);
+                    this.connectBoot(cs, cdu, ip, responseDatagram.getPort(), hiPacket);
 
                 }
 
@@ -288,12 +286,12 @@ public class GCVSocket {
 
     }
 
-    private void connectBoot(DatagramSocket cs ,ControlPacket cdu, InetAddress ip, DatagramPacket responseDatagram, HI hiPacket ) throws IOException{
+    private void connectBoot(DatagramSocket cs ,ControlPacket cdu, InetAddress ip, int port, HI hiPacket ) throws IOException{
         if( cdu instanceof HI ){
             HI response_hello_packet = (HI)cdu;
             ListenerProperties receiveProp= new ListenerProperties(
                     ip,
-                    responseDatagram.getPort(),
+                    port,
                     response_hello_packet.getMTU(),
                     this.maxWindow
             );
@@ -312,7 +310,8 @@ public class GCVSocket {
             );
 
             this.boot(sendProp,receiveProp, response_hello_packet.getSeq(), hiPacket.getSeq(), 0);
-            GCVSocket.announceSocketConnection(ip.toString() + this.port, this);
+            System.out.println(ip.toString() + port + "#####3333333333###############################");
+            GCVSocket.announceSocketConnection(ip.toString() + port, this);
             return;
         }
     }
@@ -369,11 +368,21 @@ public class GCVSocket {
     }
 
     void restart() throws IOException {
-        this.channel.sendPacket( new HI(
+        byte[] hiMessage = new HI(
                 (short)0,
                 this.channel.getSelfStationProperties().mtu(),
                 maxWindow
-        ));
+        ).markedSerialize();
+
+        DatagramSocket cs = new DatagramSocket(this.port);
+        cs.send(new DatagramPacket(
+                hiMessage,
+                0,
+                hiMessage.length,
+                this.channel.getOtherStationProperties().ip(),
+                GCVConnection.port) );
+
+        System.out.println("Rrrrestart");
     }
 
 }

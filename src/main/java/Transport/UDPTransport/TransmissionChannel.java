@@ -1,5 +1,7 @@
 package Transport.UDPTransport;
 
+import Test.Debugger;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -30,6 +32,9 @@ public class TransmissionChannel implements Channel {
         this.cs.setSoTimeout(0);
         this.cs.setSendBufferSize(send.channelBufferSize());
         this.cs.setReceiveBufferSize(receive.channelBufferSize());
+
+
+        Debugger.log(" - " + receive.ip()+ " , " + receive.port() + ":::- ");
         this.cs.connect(receive.ip(), receive.port());
         this.in = send;
         this.out = receive;

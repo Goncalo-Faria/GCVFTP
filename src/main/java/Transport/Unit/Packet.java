@@ -31,6 +31,7 @@ public abstract class Packet {
                 return new DataPacket(udp_data, 8);
             }
         }else{
+            //Debugger.log("DROOOOP");
             throw new StreamCorruptedException();
         }
 

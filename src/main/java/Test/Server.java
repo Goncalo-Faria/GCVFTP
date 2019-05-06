@@ -8,6 +8,7 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.nio.channels.Pipe;
 import java.util.Scanner;
+import java.util.concurrent.TimeoutException;
 
 
 public class Server {
@@ -17,8 +18,8 @@ public class Server {
     public static void main( String[] args ) {
         String message = "very useful data, so they say";
         try {
-            if( args.length > 0) {
-                if (args[0].equals("debug"))
+            if( args.length > 1) {
+                if (args[1].equals("debug"))
                     Debugger.setEnabled(true);
                 else
                     Debugger.setEnabled(false);
@@ -28,7 +29,7 @@ public class Server {
 
             GCVSocket cs = new GCVSocket(GCVConnection.send_buffer_size,true,6969);
 
-            cs.listen();
+            cs.connect(args[0]);
 
             PipedInputStream pin = new PipedInputStream(10000);
             PipedOutputStream pout = new PipedOutputStream(pin);
@@ -52,7 +53,7 @@ public class Server {
                 Thread.sleep(1000);
 
 
-        }catch(IOException|InterruptedException e){
+        }catch(IOException|InterruptedException| TimeoutException e){
             e.printStackTrace();
         }
     }

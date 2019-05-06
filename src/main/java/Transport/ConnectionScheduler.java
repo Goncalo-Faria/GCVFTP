@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 class ConnectionScheduler implements Runnable {
 
-
     private final DatagramSocket connection;
     private final AtomicBoolean active = new AtomicBoolean(true);
     private final BlockingQueue<StampedControlPacket> queue = new LinkedBlockingQueue<>();
@@ -132,15 +131,18 @@ class ConnectionScheduler implements Runnable {
                         if (cpacket instanceof HI) {
                             Debugger.log("got " + packet.getLength() + " bytes ::-:: ip = " + packet.getAddress() + " port= " + packet.getPort());
 
-                            if (connections.containsKey(packet.getAddress().toString() + packet.getPort()))
+                            System.out.println(packet.getAddress().toString() + packet.getPort());
+
+                            if (connections.containsKey(packet.getAddress().toString() + packet.getPort())) {
+                                System.out.println("###>>|||<<###");
                                 connections.get(packet.getAddress().toString() + packet.getPort()).restart();
-                            else
+                            }else
                                 this.supply(new StampedControlPacket((HI) cpacket, packet.getPort(), packet.getAddress()));
                         }
                     }
                 } catch (StreamCorruptedException e) {
                     ;// erro no pacote ignora.
-                    Debugger.log("Packert error");
+                    //Debugger.log("Packert error");
                 }
             }
         } catch (InterruptedException | IOException e) {

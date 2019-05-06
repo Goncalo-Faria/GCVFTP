@@ -131,10 +131,7 @@ class ConnectionScheduler implements Runnable {
                         if (cpacket instanceof HI) {
                             Debugger.log("got " + packet.getLength() + " bytes ::-:: ip = " + packet.getAddress() + " port= " + packet.getPort());
 
-                            System.out.println(packet.getAddress().toString() + packet.getPort() + " run " );
-
                             if (connections.containsKey(packet.getAddress().toString() + packet.getPort())) {
-                                System.out.println("###>>|||<<###");
                                 connections.get(packet.getAddress().toString() + packet.getPort()).restart();
                             }else
                                 this.supply(new StampedControlPacket((HI) cpacket, packet.getPort(), packet.getAddress()));

@@ -311,7 +311,6 @@ public class GCVSocket {
 
             this.boot(sendProp,receiveProp, response_hello_packet.getSeq(), hiPacket.getSeq(), 0);
 
-            System.out.println(ip.toString() + port + "#####3333333333###############################");
             GCVSocket.announceSocketConnection(ip.toString() + port, this);
             return;
         }
@@ -376,10 +375,6 @@ public class GCVSocket {
                 maxWindow
         ).markedSerialize();
 
-        System.out.println("sending");
-
-        System.out.println(" socket created ");
-
         this.channel.adhoc(new DatagramPacket(
                 hiMessage,
                 0,
@@ -387,7 +382,6 @@ public class GCVSocket {
                 this.channel.getOtherStationProperties().ip(),
                 GCVConnection.port));
 
-        System.out.println("sent000");
     }
 
 }

@@ -27,7 +27,7 @@ public class Client {
 
             GCVSocket cs = new GCVSocket(GCVConnection.send_buffer_size,true,8855);
 
-            cs.connect(args[0],6969);
+            cs.connect(args[0]);
 
             InputStream io = cs.receive();
 
@@ -52,7 +52,7 @@ public class Client {
 
                 String tmp = s.hasNext() ? s.next() : "";
 
-                System.out.println( tmp );
+                //System.out.println( tmp );
 
             }
 

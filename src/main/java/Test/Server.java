@@ -29,7 +29,9 @@ public class Server {
 
             GCVSocket cs = new GCVSocket(GCVConnection.send_buffer_size,true,6969);
 
-            cs.connect(args[0]);
+            //cs.connect(args[0]);
+
+            cs = cs.listen();
 
             PipedInputStream pin = new PipedInputStream(10000);
             PipedOutputStream pout = new PipedOutputStream(pin);
@@ -52,8 +54,7 @@ public class Server {
             while(true)
                 Thread.sleep(1000);
 
-
-        }catch(IOException|InterruptedException| TimeoutException e){
+        }catch(IOException|InterruptedException e){
             e.printStackTrace();
         }
     }

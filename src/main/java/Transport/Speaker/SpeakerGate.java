@@ -95,8 +95,11 @@ public class SpeakerGate {
 
     }
 
-    public void sendForgetit(short extcode, int stream) throws IOException {
+    public void sendSup() throws IOException {
+        this.ch.sendPacket( new SUP((short)0) );
+    }
 
+    public void sendForgetit(short extcode, int stream) throws IOException {
         this.ch.sendPacket(
                 new FORGETIT(
                         extcode,

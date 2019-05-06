@@ -51,11 +51,14 @@ public class WindowRateControl implements Window {
 
     private int initiate = 0;
 
+    private final boolean persistent;
+
     private final int maxWindow;
 
-    public WindowRateControl(int maxWindow ){
+    public WindowRateControl(int maxWindow, boolean persistent){
         receiverBuffer = new AtomicInteger(maxWindow);
         this.maxWindow = maxWindow;
+        this.persistent = persistent;
     }
 
     public int congestionWindowValue(){
@@ -219,6 +222,16 @@ public class WindowRateControl implements Window {
 
     public boolean shouldSendSure(){
         return this.lastOkReceived.get() > this.lastSureSent.get();
+    }
+
+    public boolean shouldKeepAlive(){
+        int expTime = this.rtt.get() + 4 * this.rttVar.get();
+        int wTime = (expTime > GCVConnection.rate_control_interval) ?
+                expTime :
+                GCVConnection.rate_control_interval;
+
+        return this.persistent &&
+                ((this.connectionTime()-this.timeLastSent.get()) > wTime);
     }
 
     public boolean shouldSendNope(){

@@ -87,6 +87,7 @@ public class Executor implements Runnable{
                 case BYE: bye((BYE)packet); break;
                 case FORGETIT: forgetit((FORGETIT)packet); break;
                 case NOPE: nope((NOPE)packet); break;
+                case SUP: sup((SUP)packet); break;
             }
         }catch( InterruptedException e ){
             e.printStackTrace();
@@ -211,6 +212,10 @@ public class Executor implements Runnable{
                 //    this.sgate.retransmit();
                 //}
 
+                if( this.window.shouldKeepAlive() ){
+                    this.sgate.sendSup();
+                }
+
                 /*  Received new ok */
                 if( this.window.shouldSendSure() ){
                     this.sgate.sendSure(
@@ -227,6 +232,10 @@ public class Executor implements Runnable{
 
     private void hi(HI packet){
         //System.out.println(" ::::> received an hi packet <:::: ");
+    }
+
+    private void sup(SUP packet){
+
     }
 
     private void ok(OK packet) throws InterruptedException{

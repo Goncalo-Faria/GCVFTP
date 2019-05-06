@@ -67,8 +67,6 @@ public class GCVSocket {
     private InetAddress localhost;
     private final int port;
 
-    private int numExecutorWorkers = 4;
-
     private TransmissionTransportChannel channel ;
 
     public GCVSocket(int port) throws IOException {
@@ -120,7 +118,7 @@ public class GCVSocket {
 
         this.actuary = new Executor(sgate, rgate, channel.window());
 
-        for(int i = 0; i< this.numExecutorWorkers ; i++) {
+        for(int i = 0; i< GCVConnection.number_of_executor_workers ; i++) {
             Thread worker = new Thread(this.actuary);
             worker.start();
         }

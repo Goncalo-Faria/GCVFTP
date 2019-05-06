@@ -114,7 +114,7 @@ public class GCVSocket {
 
         sgate.confirmHandshake();
 
-        channel.window().boot(their_seq,our_seq, time);
+        channel.window().boot(their_seq, our_seq, time);
 
         this.actuary = new Executor(sgate, rgate, channel.window());
 
@@ -310,7 +310,7 @@ public class GCVSocket {
                     new WindowRateControl(maxWindow,this.persistent)
             );
 
-            this.boot(sendProp,receiveProp, response_hello_packet.getSeq(), hiPacket.getSeq(), 0);
+            this.boot(sendProp,receiveProp, hiPacket.getSeq(), response_hello_packet.getSeq(),0);
 
             GCVSocket.announceSocketConnection(ip.toString() + port, this);
             return;

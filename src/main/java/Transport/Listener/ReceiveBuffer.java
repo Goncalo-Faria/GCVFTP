@@ -68,7 +68,7 @@ class ReceiveBuffer {
                 throw new NotActiveException();
             Debugger.log("raw data : " + packet.getSeq());
             if (packet.getSeq() > this.lastOkedSeq.get()) {
-                Debugger.log(" lastoked " + this.lastOkedSeq.get() );
+                Debugger.log(" lastoked " + this.lastOkedSeq.get());
                 uncounted.add(packet.getSeq(),packet);
 
                 /* verificar se posso tirar acks */

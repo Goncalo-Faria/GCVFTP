@@ -369,21 +369,25 @@ public class GCVSocket {
     }
 
     void restart() throws IOException {
+
         byte[] hiMessage = new HI(
                 (short)0,
                 this.channel.getSelfStationProperties().mtu(),
                 maxWindow
         ).markedSerialize();
 
-        DatagramSocket cs = new DatagramSocket(this.port);
-        cs.send(new DatagramPacket(
+        System.out.println("sending");
+
+        System.out.println(" socket created ");
+
+        this.channel.adhoc(new DatagramPacket(
                 hiMessage,
                 0,
                 hiMessage.length,
                 this.channel.getOtherStationProperties().ip(),
-                GCVConnection.port) );
+                GCVConnection.port));
 
-        System.out.println("Restart");
+        System.out.println("sent000");
     }
 
 }

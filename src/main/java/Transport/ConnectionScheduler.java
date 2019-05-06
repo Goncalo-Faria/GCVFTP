@@ -2,8 +2,8 @@ package Transport;
 
 import Test.Debugger;
 import Transport.Unit.ControlPacket;
+import Transport.Unit.ControlPacketTypes.HI;
 import Transport.Unit.Packet;
-
 
 import java.io.IOException;
 import java.io.StreamCorruptedException;
@@ -17,56 +17,97 @@ import java.util.TimerTask;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-class ConnectionScheduler implements Runnable{
-
+class ConnectionScheduler implements Runnable {
 
     private final DatagramSocket connection;
     private final AtomicBoolean active = new AtomicBoolean(true);
     private final BlockingQueue<StampedControlPacket> queue = new LinkedBlockingQueue<>();
     private final Timer alarm = new Timer(true);
-    private LocalDateTime clearTime = LocalDateTime.now();
-    private final ControlPacket.Type packetType;
-    private int maxPacket;
     private final ConcurrentHashMap<String, GCVSocket> connections = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, BlockingQueue<StampedControlPacket>> requests = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, BlockingQueue<StampedControlPacket>> listening = new ConcurrentHashMap<>();
+    private LocalDateTime clearTime = LocalDateTime.now();
+    private int maxPacket;
 
     ConnectionScheduler(int port,
                         long connection_request_ttl,
-                        ControlPacket.Type control_packet_type,
                         int maxPacket)
             throws SocketException {
 
-        this.packetType = control_packet_type;
         this.connection = new DatagramSocket(port);
         this.maxPacket = maxPacket;
 
-       new Thread(this).start();
+        new Thread(this).start();
 
-       Debugger.log( this.connection.getLocalPort() + "::" + this.connection.getLocalAddress());
-       this.alarm.scheduleAtFixedRate(
+        Debugger.log(this.connection.getLocalPort() + "::" + this.connection.getLocalAddress());
+        this.alarm.scheduleAtFixedRate(
                 new RemoveExpired(),
-                0 ,
+                0,
                 connection_request_ttl);
     }
 
-    public ControlPacket get()
-            throws InterruptedException{
+    ConnectionScheduler.StampedControlPacket getStamped(String ip)
+            throws InterruptedException {
+        Debugger.log("connect");
+        if (requests.containsKey(ip))
+            return requests.get(ip).poll(GCVConnection.request_retry_timeout, TimeUnit.MILLISECONDS);
+        else {
+            LinkedBlockingQueue<StampedControlPacket> q = new LinkedBlockingQueue<>();
+            requests.put(ip, q);
+            return q.poll(GCVConnection.request_retry_timeout, TimeUnit.MILLISECONDS);
+        }
 
-        return queue.take().get();
     }
 
-    ConnectionScheduler.StampedControlPacket getStamped()
-            throws InterruptedException{
+    ConnectionScheduler.StampedControlPacket getStampedByPort(int port)
+            throws InterruptedException {
+        Debugger.log("listening");
+        if (listening.containsKey(port)) {
+            return listening.get(port).take();
+        } else {
+            LinkedBlockingQueue<StampedControlPacket> q = new LinkedBlockingQueue<>();
+            listening.put(port, q);
+            return q.take();
+        }
 
-        return queue.take();
     }
 
-    void announceConnection( String key , GCVSocket cs ){
-        this.connections.put(key,cs);
+    void announceConnection(String key, GCVSocket cs) {
+        this.connections.put(key, cs);
     }
 
-    void closeConnection( String key ){
+    private void supply(StampedControlPacket packet) throws InterruptedException {
+        try {
+
+            int port = packet.get().getPort();
+
+            if (this.listening.containsKey(port)) {
+                this.listening.get(port).put(packet);
+            } else {
+                LinkedBlockingQueue<StampedControlPacket> q = new LinkedBlockingQueue<>();
+                q.put(packet);
+                this.listening.put(port, q);
+            }
+            Debugger.log("TO LISTEN " + port);
+
+        } catch (InterruptedException e) {
+
+            if (this.requests.containsKey(packet.ip().toString())) {
+                this.requests.get(packet.ip().toString()).put(packet);
+            } else {
+                LinkedBlockingQueue<StampedControlPacket> q = new LinkedBlockingQueue<>();
+                q.put(packet);
+                this.requests.put(packet.ip().toString(), q);
+            }
+            Debugger.log("TO CONNECT");
+
+        }
+    }
+
+    void closeConnection(String key) {
         this.connections.remove(key);
     }
 
@@ -75,70 +116,78 @@ class ConnectionScheduler implements Runnable{
         try {
             while (this.active.get()) {
                 DatagramPacket packet = new DatagramPacket(new byte[this.maxPacket], this.maxPacket);
+                //Debugger.log("ittt");
+
                 try {
                     this.connection.receive(packet);
 
-                    Packet synpacket = Packet.parse(packet.getData());
+                    Packet synpacket = Packet.parse(packet.getData(),packet.getLength());
 
                     if (synpacket instanceof ControlPacket) {
+                        //Debugger.log("valid + control");
                         ControlPacket cpacket = (ControlPacket) synpacket;
                         ControlPacket.Type packettype = cpacket.getType();
 
-                        if (packettype.equals(this.packetType)) {
+                        if (cpacket instanceof HI) {
                             Debugger.log("got " + packet.getLength() + " bytes ::-:: ip = " + packet.getAddress() + " port= " + packet.getPort());
 
-                            if (connections.containsKey(packet.getAddress().toString() + packet.getPort()))
+                            if (connections.containsKey(packet.getAddress().toString() + packet.getPort())) {
                                 connections.get(packet.getAddress().toString() + packet.getPort()).restart();
-
-                            this.queue.put(new StampedControlPacket(cpacket, packet.getPort(), packet.getAddress()));
+                            }else
+                                this.supply(new StampedControlPacket((HI) cpacket, packet.getPort(), packet.getAddress()));
                         }
                     }
-                }catch (StreamCorruptedException e){
+                } catch (StreamCorruptedException e) {
                     ;// erro no pacote ignora.
+                    //Debugger.log("Packert error");
                 }
             }
-        }catch( InterruptedException | IOException e){
+        } catch (InterruptedException | IOException e) {
             e.getStackTrace();
         }
 
     }
 
-    void close(){
+    void close() {
         this.active.set(false);
         this.alarm.cancel();
         this.connection.close();
     }
 
-    private class RemoveExpired extends TimerTask{
-        public void run(){
-            queue.removeIf( p -> p.isRecent(clearTime) );
+    private class RemoveExpired extends TimerTask {
+        public void run() {
+            queue.removeIf(p -> p.isRecent(clearTime));
             clearTime = LocalDateTime.now();
         }
     }
 
     public class StampedControlPacket {
-        private final ControlPacket obj;
+        private final HI obj;
         private final int port;
         private final InetAddress address;
         private final LocalDateTime t = LocalDateTime.now();
 
-        StampedControlPacket(ControlPacket obj,int port, InetAddress address){
+        StampedControlPacket(HI obj, int port, InetAddress address) {
             this.obj = obj;
             this.port = port;
             this.address = address;
         }
 
-        boolean isRecent( LocalDateTime cleartime){
+        boolean isRecent(LocalDateTime cleartime) {
             return cleartime.isAfter(t);
         }
 
-        public ControlPacket get(){
+        public HI get() {
             return this.obj;
         }
 
-        int port(){ return this.port;}
+        int port() {
+            return this.port;
+        }
 
-        InetAddress ip(){ return this.address; }
+        InetAddress ip() {
+            return this.address;
+        }
 
     }
 }

@@ -141,9 +141,9 @@ public class Executor implements Runnable{
             }
 
             this.outMap.
-                get(packet.getMessageNumber()).
-                    producer.
-                        write(packet.getData(),
+                    get(packet.getMessageNumber()).
+                        producer.
+                            write(packet.getData(),
                                 0, packet.getData().length);
 
             if ( packet.getFlag().equals(DataPacket.Flag.LAST) || packet.getFlag().equals(DataPacket.Flag.SOLO) ){
@@ -157,6 +157,8 @@ public class Executor implements Runnable{
 
         }catch( IOException|InterruptedException e ){
             e.printStackTrace();
+        }catch (NullPointerException e){
+            ;
         }
 
     }
@@ -166,7 +168,7 @@ public class Executor implements Runnable{
         this.window.syn();
         if( this.window.hasTimeout() ){
             try {
-                this.sgate.sendForgetit((short) 0);/*especifica o stream a fechar 0 significa todos*/
+                this.sgate.sendForgetit((short) 0, 0);/*especifica o stream a fechar 0 significa todos*/
                 /* do something about it*/
                 /* like close socket */
                 this.terminate();
@@ -257,16 +259,12 @@ public class Executor implements Runnable{
 
     private void forgetit(FORGETIT packet){
         //System.out.println(" ::::> received a forgetit packet <::::");
-        short extcode = packet.getExtendedtype();
+        int extcode = packet.getStream();
 
-        try {
-            if (extcode == 0)
-                this.terminate();
-
-        }catch (IOException e){
-            e.printStackTrace();
+        if (extcode == 0) {
+            this.outMap.clear();
+            this.inMap.clear();
         }
-
     }
     private void nope(NOPE packet) {
         //System.out.println(" ::::> received a Nope packet <::::");

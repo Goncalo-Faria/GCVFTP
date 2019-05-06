@@ -8,6 +8,7 @@ import Transport.Listener.ListenerGate;
 import Transport.Speaker.SpeakerProperties;
 import Transport.Listener.ListenerProperties;
 import Transport.Unit.ControlPacket;
+import Transport.Unit.DataPacket;
 import Transport.Unit.Packet;
 
 import java.io.*;
@@ -25,8 +26,7 @@ public class GCVSocket {
                 GCVSocket.common_daemon = new ConnectionScheduler(
                         GCVConnection.port,
                         GCVConnection.connection_receive_ttl,
-                        ControlPacket.Type.HI,
-                        HI.size);
+                        GCVConnection.stdmtu);
 
             } catch (SocketException e) {
                 e.printStackTrace();
@@ -44,8 +44,12 @@ public class GCVSocket {
             GCVSocket.common_daemon.closeConnection(key);
     }
 
-    private static ConnectionScheduler.StampedControlPacket getStampedPacket() throws InterruptedException{
-        return GCVSocket.common_daemon.getStamped();
+    private static ConnectionScheduler.StampedControlPacket getStampedPacketByPort(int port) throws InterruptedException{
+        return GCVSocket.common_daemon.getStampedByPort(port);
+    }
+
+    private static ConnectionScheduler.StampedControlPacket getStampedPacket( String ip) throws InterruptedException{
+        return GCVSocket.common_daemon.getStamped(ip);
     }
 
     public static void closeConnection(){
@@ -61,18 +65,45 @@ public class GCVSocket {
     private final int mtu = GCVConnection.stdmtu;
     private int maxWindow = GCVConnection.send_buffer_size;
     private InetAddress localhost;
+    private final int port;
 
     private TransmissionTransportChannel channel ;
 
-    public GCVSocket() throws IOException {
+    public GCVSocket(int port) throws IOException {
+        GCVSocket.activate();
         Debugger.log("GCVSocket created");
         this.localhost = InetAddress.getLocalHost();
+        this.port = port;
     }
 
-    public GCVSocket(int maxWindow, boolean persistent) throws IOException {
+    public GCVSocket(int maxWindow, boolean persistent, int port) throws IOException {
+        GCVSocket.activate();
         this.localhost = InetAddress.getLocalHost();
         this.persistent = persistent;
         this.maxWindow = maxWindow;
+        this.port = port;
+    }
+
+    private GCVSocket(int maxWindow,
+                      boolean persistent,
+                      int port,
+                      InetAddress localhost,
+                      TransmissionTransportChannel channel,
+                      SpeakerProperties senderProp,
+                      ListenerProperties receiveProp,
+                      int theirSeq,
+                      int ourSeq,
+                      int time,
+                      String socketkey) throws IOException
+    {
+        this.maxWindow = maxWindow;
+        this.persistent = persistent;
+        this.port = port;
+        this.channel = channel;
+        this.localhost = localhost;
+
+        this.boot(senderProp,receiveProp,theirSeq,ourSeq,time);
+        GCVSocket.announceSocketConnection(socketkey, this);
     }
 
     private void boot(SpeakerProperties me, ListenerProperties caller, int their_seq, int our_seq, int time) throws IOException{
@@ -92,14 +123,12 @@ public class GCVSocket {
         worker.start();
     }
 
-    public void listen() throws InterruptedException, IOException{
-
-        GCVSocket.activate();
+    public GCVSocket listen() throws InterruptedException, IOException{
 
         ConnectionScheduler.StampedControlPacket receivedStampedPacket =
-                GCVSocket.getStampedPacket();
+                GCVSocket.getStampedPacketByPort(this.port);
 
-        HI hiPacket = (HI)receivedStampedPacket.get();/*waiting for datagram*/
+        HI hiPacket = receivedStampedPacket.get();/*waiting for datagram*/
 
         InetSocketAddress sa = new InetSocketAddress(0);
 
@@ -118,7 +147,9 @@ public class GCVSocket {
                 hiPacket.getMTU(),
                 this.maxWindow);
 
-        this.channel = new TransmissionTransportChannel(
+        Debugger.log(" : " + receivedStampedPacket.ip() + " : " + receivedStampedPacket.port());
+
+        TransmissionTransportChannel tmpChannel = new TransmissionTransportChannel(
                 senderProp ,
                 receiveProp,
                 new WindowRateControl(hiPacket.getMaxWindow())
@@ -127,26 +158,35 @@ public class GCVSocket {
 
         HI responseHiPacket = new HI(
                 (short)0,
-                this.channel.getSelfStationProperties().mtu(),
+                tmpChannel.getSelfStationProperties().mtu(),
                 this.maxWindow
         );
 
-        int responseTime = this.channel.window().connectionTime();
+        int responseTime = tmpChannel.window().connectionTime();
 
-        this.channel.sendPacket( responseHiPacket );
+        return new GCVSocket(
+                this.maxWindow,
+                this.persistent,
+                this.port,
+                this.localhost,
+                tmpChannel,
+                senderProp,
+                receiveProp,
+                hiPacket.getSeq(),
+                responseHiPacket.getSeq(),
+                responseTime,
+                receivedStampedPacket.ip().toString() + receivedStampedPacket.port()
+        );
 
-        this.boot(senderProp, receiveProp, hiPacket.getSeq(), responseHiPacket.getSeq(), responseTime );
-
-        GCVSocket.announceSocketConnection(receivedStampedPacket.ip().toString() + receivedStampedPacket.port(), this);
     }
 
-    public void connect(String ip, int intendedPort) throws IOException, TimeoutException {
+    public void connect(String ip) throws IOException, TimeoutException {
 
-        this.connect(InetAddress.getByName(ip), intendedPort);
+        this.connect(InetAddress.getByName(ip));
 
     }
 
-    public void connect(InetAddress ip, int intendedPort) throws IOException, TimeoutException {
+    public void connect(InetAddress ip) throws IOException, TimeoutException {
 
         HI hiPacket = new HI(
                 (short)0,
@@ -156,16 +196,13 @@ public class GCVSocket {
 
         byte[] serializedHiPacket = hiPacket.markedSerialize();
 
-        DatagramPacket responseDatagram = new DatagramPacket(
-                new byte[HI.size],
-                HI.size);
-
-        DatagramSocket cs = new DatagramSocket(intendedPort);
+        DatagramSocket cs = new DatagramSocket(this.port);
         cs.setSoTimeout(GCVConnection.request_retry_timeout);
 
         for(int tries = 0; tries < GCVConnection.request_retry_number; tries++ ) {
 
             Debugger.log("sent " + serializedHiPacket.length + " bytes");
+
             cs.send(new DatagramPacket(
                         serializedHiPacket,
                         0,
@@ -175,38 +212,68 @@ public class GCVSocket {
             );
             try {
                 Debugger.log(":localport " + cs.getLocalPort() );
-                cs.receive(responseDatagram);
-                Packet du = Packet.parse(responseDatagram.getData());
 
+                ConnectionScheduler.StampedControlPacket receivedStampedPacket =
+                        GCVSocket.getStampedPacket(ip.toString());
+
+                ControlPacket cdu = receivedStampedPacket.get();
+
+                this.connectBoot(cs, cdu, ip, receivedStampedPacket.port() , hiPacket);
+
+                return;
+
+            }catch (SocketTimeoutException|StreamCorruptedException|InterruptedException|NullPointerException ste){
+                ;// espera por outro.
+            }
+        }
+
+        throw new TimeoutException();
+
+    }
+
+    public void connect(String ip, int targetPort) throws IOException, TimeoutException {
+
+        this.connect(InetAddress.getByName(ip),targetPort);
+
+    }
+
+    public void connect(InetAddress ip, int targetPort) throws IOException, TimeoutException {
+
+        HI hiPacket = new HI(
+                targetPort,
+                mtu,
+                maxWindow
+        );
+
+        byte[] serializedHiPacket = hiPacket.markedSerialize();
+
+        DatagramPacket responseDatagram = new DatagramPacket(
+                new byte[serializedHiPacket.length],
+                serializedHiPacket.length);
+
+        DatagramSocket cs = new DatagramSocket(this.port);
+        cs.setSoTimeout(GCVConnection.request_retry_timeout);
+
+        for(int tries = 0; tries < GCVConnection.request_retry_number; tries++ ) {
+
+            Debugger.log("sent " + serializedHiPacket.length + " bytes");
+            cs.send(new DatagramPacket(
+                    serializedHiPacket,
+                    0,
+                    serializedHiPacket.length,
+                    ip,
+                    GCVConnection.port)
+            );
+            try {
+                Debugger.log(":localport " + cs.getLocalPort() );
+                cs.receive(responseDatagram);
+                Debugger.log(responseDatagram.getPort() + " : ");
+                Packet du = Packet.parse(responseDatagram.getData(),responseDatagram.getLength());
+                Debugger.log("parsed with sucess");
                 if(du instanceof ControlPacket){
                     ControlPacket cdu = (ControlPacket)du;
 
-                    if( cdu instanceof HI ){
-                        HI response_hello_packet = (HI)cdu;
-                        ListenerProperties receiveProp= new ListenerProperties(
-                                ip,
-                                responseDatagram.getPort(),
-                                response_hello_packet.getMTU(),
-                                this.maxWindow
-                        );
-
-                        SpeakerProperties sendProp = new SpeakerProperties(
-                                InetAddress.getLocalHost(),
-                                intendedPort,
-                                mtu,
-                                response_hello_packet.getMaxWindow(),
-                                persistent);
-
-                        this.channel = new TransmissionTransportChannel(cs,
-                                sendProp ,
-                                receiveProp,
-                                new WindowRateControl(maxWindow)
-                        );
-
-                        this.boot(sendProp,receiveProp, response_hello_packet.getSeq(), hiPacket.getSeq(), 0);
-
-                        return;
-                    }
+                    this.connectBoot(cs, cdu, ip, responseDatagram.getPort(), hiPacket);
 
                 }
 
@@ -217,6 +284,36 @@ public class GCVSocket {
 
         throw new TimeoutException();
 
+    }
+
+    private void connectBoot(DatagramSocket cs ,ControlPacket cdu, InetAddress ip, int port, HI hiPacket ) throws IOException{
+        if( cdu instanceof HI ){
+            HI response_hello_packet = (HI)cdu;
+            ListenerProperties receiveProp= new ListenerProperties(
+                    ip,
+                    port,
+                    response_hello_packet.getMTU(),
+                    this.maxWindow
+            );
+
+            SpeakerProperties sendProp = new SpeakerProperties(
+                    this.localhost,
+                    this.port,
+                    mtu,
+                    response_hello_packet.getMaxWindow(),
+                    persistent);
+
+            this.channel = new TransmissionTransportChannel(cs,
+                    sendProp ,
+                    receiveProp,
+                    new WindowRateControl(maxWindow)
+            );
+
+            this.boot(sendProp,receiveProp, response_hello_packet.getSeq(), hiPacket.getSeq(), 0);
+
+            GCVSocket.announceSocketConnection(ip.toString() + port, this);
+            return;
+        }
     }
 
     public void close() throws IOException{
@@ -271,11 +368,20 @@ public class GCVSocket {
     }
 
     void restart() throws IOException {
-        this.channel.sendPacket( new HI(
+
+        byte[] hiMessage = new HI(
                 (short)0,
                 this.channel.getSelfStationProperties().mtu(),
                 maxWindow
-        ));
+        ).markedSerialize();
+
+        this.channel.adhoc(new DatagramPacket(
+                hiMessage,
+                0,
+                hiMessage.length,
+                this.channel.getOtherStationProperties().ip(),
+                GCVConnection.port));
+
     }
 
 }

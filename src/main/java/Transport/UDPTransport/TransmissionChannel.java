@@ -1,5 +1,7 @@
 package Transport.UDPTransport;
 
+import Test.Debugger;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -30,7 +32,10 @@ public class TransmissionChannel implements Channel {
         this.cs.setSoTimeout(0);
         this.cs.setSendBufferSize(send.channelBufferSize());
         this.cs.setReceiveBufferSize(receive.channelBufferSize());
-        this.cs.connect(receive.ip(), receive.port());
+
+
+        Debugger.log(" - " + receive.ip()+ " , " + receive.port() + ":::- ");
+        //this.cs.connect(receive.ip(), receive.port());
         this.in = send;
         this.out = receive;
         this.data_buffer = new byte[in.mtu()];
@@ -43,6 +48,10 @@ public class TransmissionChannel implements Channel {
             sz = out.mtu();
 
         cs.send(new DatagramPacket(data, 0, sz, out.ip(), out.port()));
+    }
+
+    public void adhoc(DatagramPacket packet) throws IOException{
+        this.cs.send(packet);
     }
 
     public byte[] receive() throws IOException {

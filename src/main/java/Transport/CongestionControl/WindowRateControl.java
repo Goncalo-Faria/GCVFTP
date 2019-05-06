@@ -243,7 +243,7 @@ public class WindowRateControl implements Window {
             return (curTime - timeLastNackSent.get()) > expRttTime
                     && (curTime - this.sentOkCache.get(this.lastOkSent.get())) > GCVConnection.rate_control_interval ;
         }catch(NullPointerException e){
-            return true;
+            return false;
         }
     }
 

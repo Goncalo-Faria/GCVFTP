@@ -21,6 +21,7 @@ public interface Window {
 
     boolean shouldSendOk();
     boolean shouldSendNope();
+    boolean shouldKeepAlive();
     boolean okMightHaveBeenLost();
     boolean shouldSendSure();
     boolean hasTimeout();

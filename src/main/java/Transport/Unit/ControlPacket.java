@@ -13,7 +13,8 @@ public abstract class ControlPacket extends Packet {
         SURE, /*ack2*/
         NOPE, /*shouldSendNope*/
         BYE, /*fin*/
-        FORGETIT /*message drop*/
+        FORGETIT, /*message drop*/
+        SUP
     }
 
     public static int header_size = 4 + 8;
@@ -29,6 +30,7 @@ public abstract class ControlPacket extends Packet {
             case BYE:return new BYE(extractor);
             case FORGETIT:return new FORGETIT(extractor);
             case NOPE:return new NOPE(extractor);
+            case SUP: return new SUP(extractor);
         }
 
         return null;

@@ -152,7 +152,7 @@ public class GCVSocket {
         TransmissionTransportChannel tmpChannel = new TransmissionTransportChannel(
                 senderProp ,
                 receiveProp,
-                new WindowRateControl(hiPacket.getMaxWindow())
+                new WindowRateControl(hiPacket.getMaxWindow(),this.persistent)
 
         );
 
@@ -306,7 +306,7 @@ public class GCVSocket {
             this.channel = new TransmissionTransportChannel(cs,
                     sendProp ,
                     receiveProp,
-                    new WindowRateControl(maxWindow)
+                    new WindowRateControl(maxWindow,this.persistent)
             );
 
             this.boot(sendProp,receiveProp, response_hello_packet.getSeq(), hiPacket.getSeq(), 0);

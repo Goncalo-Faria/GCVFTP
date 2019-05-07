@@ -25,7 +25,7 @@ public class OK extends ControlPacket {
         this.seq = seq;
         this.rtt = rtt;
         this.rttvar = rttvar;
-        this.window = (freebuffer > 2) ? freebuffer: 2;
+        this.window = (freebuffer > 1) ? freebuffer: 1;
     }
 
     public int getSeq(){

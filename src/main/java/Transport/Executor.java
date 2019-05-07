@@ -198,27 +198,17 @@ public class Executor implements Runnable{
 
                     /* If is likely a packet was lost */
                     if( this.window.shouldSendNope() ) {
-                        Debugger.log("#########SENT NOPE#### SENT NOPE#####");
                         this.sgate.sendNope(
                                     this.rgate.getLossList()
                         );
                     }
 
-                    /* If is likely a sent ack was lost */
-                    if( this.window.okMightHaveBeenLost() ){
-                        this.sgate.sendOk(
-                                (short)0,
-                                this.window.lastOkSent(),
-                                this.rgate.getWindowSize()
-                        );
-                        //this.rgate.prepareRetransmition();
-                    }
                 }
                 /* Speaker actions */
 
-                //if( this.window.dataMightHaveBeenLost() ){
-                //    this.sgate.retransmit();
-                //}
+                if( this.window.shouldRetransmitData() ){
+                    this.sgate.retransmit();
+                }
 
                 if( this.window.shouldKeepAlive() ){
                     this.sgate.sendSup();

@@ -13,11 +13,11 @@ import java.security.PublicKey;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 
-
 public class Server implements Runnable {
     private static RSAKeys rsaKeys = new RSAKeys();
     private static Map<String, User> users = new HashMap<>();
     private static SFiles files = new SFiles();
+    private static List<String> peers = new ArrayList<>();
 
     private GCVSocket cs;
     private Encryption encryption;
@@ -104,6 +104,8 @@ public class Server implements Runnable {
                 ask(packet);
             } else if (packet.getConnectionType().equals(ConnectionType.FRAG)) {
                 frag(packet);
+            } else if (packet.getConnectionType().equals(ConnectionType.SHARE)) {
+                updateFiles(packet);
             }
         }
     }
@@ -152,10 +154,34 @@ public class Server implements Runnable {
         fs.forEach(f -> {
             try {
                 files.add(f, InetAddress.getLocalHost().getHostAddress());
+                tellPeersIHave(f);
             } catch (UnknownHostException e) {
                 e.printStackTrace();
             }
         });
+    }
+
+    private void tellPeersIHave(String filename) {
+        List<TFile> tFiles = Collections.singletonList(new TFile(filename));
+        peers.forEach(p -> {
+            try {
+                GCVSocket cs = new GCVSocket(GCVConnection.send_buffer_size,true, 7220);
+                cs.connect(p, 7220);
+                Connection.send(cs,
+                        new Packet(
+                                ConnectionType.SHARE,
+                                tFiles,
+                                InetAddress.getLocalHost().getHostAddress()).toString().getBytes()
+                );
+                cs.close();
+            } catch (IOException | TimeoutException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    private void updateFiles(Packet p) {
+        files.add(p.gettFiles().get(0).getFilename(), p.getDigitalSignature());
     }
 
     private void frag(Packet packet) {

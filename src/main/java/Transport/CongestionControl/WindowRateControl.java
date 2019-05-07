@@ -317,9 +317,9 @@ public class WindowRateControl implements Window {
     private void multiplicativeDecrease(){
         int buff = this.receiverBuffer.get();
         this.congestionWindowSize.updateAndGet(
-                x -> ( x > 2 ) ? (
+                x -> ( x > 1 ) ? (
                         x > buff ? (int)(GCVConnection.decrease_factor * buff) : (int)(GCVConnection.decrease_factor * x)
-                ) : 2
+                ) : 1
         );
     }
 

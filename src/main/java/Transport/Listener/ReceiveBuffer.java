@@ -68,7 +68,7 @@ class ReceiveBuffer {
                 throw new NotActiveException();
             Debugger.log("raw data : " + packet.getSeq());
             if (packet.getSeq() > this.lastOkedSeq.get()) {
-                Debugger.log(" lastoked " + this.lastOkedSeq.get());
+                Debugger.log(" lastoked " + this.lastOkedSeq.get() + " minseq " + uncounted.minSeq());
                 uncounted.add(packet.getSeq(),packet);
 
                 /* verificar se posso tirar acks */
@@ -77,6 +77,7 @@ class ReceiveBuffer {
                     Interval<DataPacket> p = uncounted.take();
 
                     lastOkedSeq.set(p.max());
+                    Debugger.log(": setok " + p.max());
 
                     List<DataPacket> lisp = p.getValues();
 

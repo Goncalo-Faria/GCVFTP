@@ -261,9 +261,9 @@ public class WindowRateControl implements Window {
 
     public void syn(){
         int synCounter = this.synOkCounter.getAndSet(0);
-        Debugger.log("counter " + synCounter);
-        Debugger.log("rtt : " + this.rtt.get() );
-        Debugger.log("rttVar : " + this.rttVar.get() );
+        //Debugger.log("counter " + synCounter);
+        //Debugger.log("rtt : " + this.rtt.get() );
+        //Debugger.log("rttVar : " + this.rttVar.get() );
 
         if( congestionControl.get() ) {
             int expRttTime = this.rtt.get() + 4 * this.rttVar.get();
@@ -295,8 +295,8 @@ public class WindowRateControl implements Window {
             this.congestionWindowSize.getAndAdd( synCounter );
         }
 
-        Debugger.log("window : " + this.congestionWindowValue() + " \n ..................." );
-        Debugger.log( "buffer : " + this.receiverBuffer.get());
+        //Debugger.log("window : " + this.congestionWindowValue() + " \n ..................." );
+        //Debugger.log( "buffer : " + this.receiverBuffer.get());
 
     }
 

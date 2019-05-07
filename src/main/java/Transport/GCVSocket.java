@@ -66,6 +66,7 @@ public class GCVSocket {
     private int maxWindow = GCVConnection.send_buffer_size;
     private InetAddress localhost;
     private final int port;
+    private boolean direct = false;
 
     private TransmissionTransportChannel channel ;
 
@@ -101,6 +102,7 @@ public class GCVSocket {
         this.port = port;
         this.channel = channel;
         this.localhost = localhost;
+        this.direct = true;
 
         this.boot(senderProp,receiveProp,theirSeq,ourSeq,time);
         GCVSocket.announceSocketConnection(socketkey, this);
@@ -163,6 +165,8 @@ public class GCVSocket {
                 this.maxWindow
         );
 
+        tmpChannel.sendPacket( responseHiPacket );
+
         int responseTime = tmpChannel.window().connectionTime();
 
         return new GCVSocket(
@@ -173,8 +177,8 @@ public class GCVSocket {
                 tmpChannel,
                 senderProp,
                 receiveProp,
-                hiPacket.getSeq(),
                 responseHiPacket.getSeq(),
+                hiPacket.getSeq(),
                 responseTime,
                 receivedStampedPacket.ip().toString() + receivedStampedPacket.port()
         );
@@ -275,11 +279,12 @@ public class GCVSocket {
                     ControlPacket cdu = (ControlPacket)du;
 
                     this.connectBoot(cs, cdu, ip, responseDatagram.getPort(), hiPacket);
-
+                    return;
                 }
 
             }catch (SocketTimeoutException|StreamCorruptedException ste){
                 ;// espera por outro.
+                Debugger.log(" ################################## corrrrrrrrrrrrrrrupted");
             }
         }
 
@@ -370,18 +375,22 @@ public class GCVSocket {
 
     void restart() throws IOException {
 
-        byte[] hiMessage = new HI(
-                (short)0,
+        HI hiMessage = new HI(
+                (short) 0,
                 this.channel.getSelfStationProperties().mtu(),
                 maxWindow
-        ).markedSerialize();
+        );
 
-        this.channel.adhoc(new DatagramPacket(
-                hiMessage,
-                0,
-                hiMessage.length,
-                this.channel.getOtherStationProperties().ip(),
-                GCVConnection.port));
+        if( this.direct ){
+            this.channel.sendPacket(hiMessage);
+        }else {
+            this.channel.adhoc(new DatagramPacket(
+                    hiMessage.markedSerialize(),
+                    0,
+                    hiMessage.markedSerialize().length,
+                    this.channel.getOtherStationProperties().ip(),
+                    GCVConnection.port));
+        }
 
     }
 

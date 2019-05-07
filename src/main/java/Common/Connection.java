@@ -2,10 +2,7 @@ package Common;
 
 import Transport.GCVSocket;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import java.io.*;
 import java.util.Scanner;
 
 public class Connection {
@@ -13,40 +10,41 @@ public class Connection {
         StringBuilder stringBuilder = new StringBuilder();
 
         try {
-            InputStream io = cs.receive();
+            return new String( cs.receive() );
+
+
+            /*
+            System.out.println("::" + io.toString() +  "::");
 
             Scanner s = new Scanner(io).useDelimiter("\\A");
 
-            byte[] buffer = new byte[40000];
-            int i = 0;
-            while (i  < 1)
-            {
-                i++;
-                if(!s.hasNext()){
-                    io = cs.receive();
-                    int val = io.read(buffer,0,buffer.length);
-                    s = new Scanner(io).useDelimiter("\\A");
-                }
 
-                String tmp = s.hasNext() ? s.next() : "";
-                stringBuilder.append(tmp);
+            while(s.hasNext()){
+                String kk = s.next();
+                stringBuilder.append(kk);
+                System.out.println(":: "+ kk);
             }
-            io.close();
-        } catch (IOException | InterruptedException e) {
+
+            if( stringBuilder.toString().equals("") ){
+                System.out.println(".");
+                return receive(cs);
+            }
+            */
+        } catch (InterruptedException e) {
             e.printStackTrace();
+            return "";
         }
 
-        return stringBuilder.toString();
     }
 
     public static void send(GCVSocket cs, byte[] bytes) {
         try {
-            PipedInputStream pin = new PipedInputStream(10000);
-            PipedOutputStream pout = new PipedOutputStream(pin);
 
             Debugger.log("Start writing");
+            //System.out.println(new String(bytes));
 
-            cs.send(pin);
+            OutputStream pout = cs.send();
+
             pout.write(bytes);
             pout.flush();
             pout.close();

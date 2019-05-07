@@ -68,9 +68,10 @@ public class Server implements Runnable {
     }
 
     private void login(String s) {
+        //System.out.println(s);
         String[] ss = s.split("//");
         String username = ss[0];
-        String password = ss[1];
+        String password = ss[1];//
 
         if (users.containsKey(username)) {
             User u = users.get(username);

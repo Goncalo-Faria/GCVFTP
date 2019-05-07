@@ -110,12 +110,15 @@ public class Executor implements Runnable{
         return this.window.connectionTime();
     }
 
-    InputStream getStream() throws InterruptedException{
+    byte[] getStream() throws InterruptedException{
         ExecutorPipe pipe = this.socketOutput.take();
 
-        (new Thread(pipe)).start();
+        return  pipe.producer.toByteArray();
+        //System.out.println(pipe.producer.toString());
 
-        return pipe.consumer;
+        //(new Thread(pipe)).start();
+
+        //return pipe.consumer;
     }
 
     InputStream getStreamWhenReady() throws InterruptedException{
@@ -136,9 +139,12 @@ public class Executor implements Runnable{
             DataPacket packet = this.rgate.data();
             this.window.receivedData(packet);
 
+            //System.out.println("### "+ new String(packet.getData()));
+
             if ( packet.getFlag().equals(DataPacket.Flag.FIRST) || packet.getFlag().equals(DataPacket.Flag.SOLO) ){
                 ExecutorPipe inc = new Executor.ExecutorPipe();
                 this.outMap.put(packet.getMessageNumber(), inc );
+                //System.out.println("create");
             }
 
             this.outMap.
@@ -154,6 +160,7 @@ public class Executor implements Runnable{
                                 packet.getMessageNumber()
                         )
                 );
+                //System.out.println("destroy");
             }
 
         }catch( IOException|InterruptedException e ){

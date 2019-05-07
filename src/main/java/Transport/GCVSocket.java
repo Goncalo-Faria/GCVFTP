@@ -370,7 +370,7 @@ public class GCVSocket {
         return producer;
     }
 
-    public InputStream receive() throws InterruptedException {
+    public byte[] receive() throws InterruptedException {
         return this.actuary.getStream();
     }
 

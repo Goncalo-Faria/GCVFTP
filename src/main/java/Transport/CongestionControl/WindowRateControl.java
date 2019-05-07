@@ -30,6 +30,7 @@ public class WindowRateControl implements Window {
 
     private final AtomicInteger timeLastNackReceived = new AtomicInteger(0);
     private final AtomicInteger timeLastSureReceived = new AtomicInteger(0);
+    private final AtomicInteger timelastDataReceived = new AtomicInteger( this.connectionTime());
     private final AtomicInteger timeLastOkReceived = new AtomicInteger(0);
 
     private final AtomicInteger lastSureReceived = new AtomicInteger(0);
@@ -197,6 +198,7 @@ public class WindowRateControl implements Window {
     }
 
     public void receivedData(DataPacket packet){
+        this.timelastDataReceived.set(this.connectionTime());
         this.lastDataReceived.updateAndGet( x -> ( x > packet.getSeq() ) ? x : packet.getSeq() );
     }
 
@@ -209,8 +211,9 @@ public class WindowRateControl implements Window {
             int expRttTime = this.rtt.get() + 4 * this.rttVar.get();
                 if( this.lastSureReceived.get() < this.lastOkSent.get() )
                     return (this.connectionTime()-this.timeLastSureReceived.get()) > GCVConnection.rate_control_interval + expRttTime;
-                else
+                else{
                     return false;
+                }
         }catch(NullPointerException e){
             return false;
         }

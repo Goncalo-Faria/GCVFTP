@@ -66,7 +66,7 @@ class ReceiveBuffer {
         try {
             if (!this.active.get())
                 throw new NotActiveException();
-            Debugger.log("raw data : " + packet.getSeq());
+            Debugger.log("raw data : " + packet.getSeq() +  "lastok " +this.lastOkedSeq.get() );
             if (packet.getSeq() > this.lastOkedSeq.get()) {
                 Debugger.log(" lastoked " + this.lastOkedSeq.get() + " minseq " + uncounted.minSeq());
                 uncounted.add(packet.getSeq(),packet);

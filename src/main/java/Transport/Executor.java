@@ -106,30 +106,12 @@ public class Executor implements Runnable{
         this.sgate.send(data);
     }
 
-    public int connectionTime(){
-        return this.window.connectionTime();
-    }
-
     byte[] getStream() throws InterruptedException{
         ExecutorPipe pipe = this.socketOutput.take();
 
         return  pipe.producer.toByteArray();
-        //System.out.println(pipe.producer.toString());
 
-        //(new Thread(pipe)).start();
-
-        //return pipe.consumer;
     }
-
-    InputStream getStreamWhenReady() throws InterruptedException{
-        ExecutorPipe pipe = this.socketOutput.take();
-
-        Thread go = new Thread(pipe);
-        go.start();
-        go.join();
-        return pipe.consumer;
-    }
-
 
     private void data(){
         /* distribuir os dados em streams */
@@ -295,27 +277,14 @@ public class Executor implements Runnable{
         }
     }
 
-    class ExecutorPipe implements Runnable{
+    class ExecutorPipe{
 
         final ByteArrayOutputStream producer;
-        final PipedInputStream consumer = new PipedInputStream();
+        //final PipedInputStream consumer = new PipedInputStream();
 
         ExecutorPipe() throws IOException {
             this.producer = new ByteArrayOutputStream();
         }
 
-        public void run(){
-
-            try {
-                PipedOutputStream pout = new PipedOutputStream(this.consumer);
-                this.producer.writeTo(pout);
-                pout.flush();
-                pout.close();
-                this.producer.close();
-
-            }catch (IOException e){
-                e.printStackTrace();
-            }
-        }
     }
 }

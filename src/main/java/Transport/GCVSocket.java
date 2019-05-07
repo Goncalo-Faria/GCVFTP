@@ -374,10 +374,6 @@ public class GCVSocket {
         return this.actuary.getStream();
     }
 
-    public InputStream receiveWhenReady() throws InterruptedException {
-        return this.actuary.getStreamWhenReady();
-    }
-
     void restart() throws IOException {
 
         if( this.direct ){

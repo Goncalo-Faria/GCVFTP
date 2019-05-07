@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import Test.Debugger;
+import Common.Debugger;
 import Transport.Listener.ListenerGate;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -18,7 +18,7 @@ import Transport.Unit.ControlPacketTypes.*;
 
 public class Executor implements Runnable{
     /*
-    */ 
+    */
     public enum ActionType{
         CONTROL,
         DATA,
@@ -26,7 +26,7 @@ public class Executor implements Runnable{
     }
 
     private static final LinkedBlockingDeque<ActionType> executorQueue = new LinkedBlockingDeque<>();
-    
+
     public static void add(ActionType action) throws InterruptedException{
         switch( action ){
             case CONTROL : executorQueue.putFirst(action); break;
@@ -106,27 +106,12 @@ public class Executor implements Runnable{
         this.sgate.send(data);
     }
 
-    public int connectionTime(){
-        return this.window.connectionTime();
-    }
-
-    InputStream getStream() throws InterruptedException{
+    byte[] getStream() throws InterruptedException{
         ExecutorPipe pipe = this.socketOutput.take();
 
-        (new Thread(pipe)).start();
+        return  pipe.producer.toByteArray();
 
-        return pipe.consumer;
     }
-
-    InputStream getStreamWhenReady() throws InterruptedException{
-        ExecutorPipe pipe = this.socketOutput.take();
-
-        Thread go = new Thread(pipe);
-        go.start();
-        go.join();
-        return pipe.consumer;
-    }
-
 
     private void data(){
         /* distribuir os dados em streams */
@@ -136,9 +121,12 @@ public class Executor implements Runnable{
             DataPacket packet = this.rgate.data();
             this.window.receivedData(packet);
 
+            //System.out.println("### "+ new String(packet.getData()));
+
             if ( packet.getFlag().equals(DataPacket.Flag.FIRST) || packet.getFlag().equals(DataPacket.Flag.SOLO) ){
                 ExecutorPipe inc = new Executor.ExecutorPipe();
                 this.outMap.put(packet.getMessageNumber(), inc );
+                //System.out.println("create");
             }
 
             this.outMap.
@@ -154,6 +142,7 @@ public class Executor implements Runnable{
                                 packet.getMessageNumber()
                         )
                 );
+                //System.out.println("destroy");
             }
 
         }catch( IOException|InterruptedException e ){
@@ -191,27 +180,17 @@ public class Executor implements Runnable{
 
                     /* If is likely a packet was lost */
                     if( this.window.shouldSendNope() ) {
-                        Debugger.log("#########SENT NOPE#### SENT NOPE#####");
                         this.sgate.sendNope(
                                     this.rgate.getLossList()
                         );
                     }
 
-                    /* If is likely a sent ack was lost */
-                    if( this.window.okMightHaveBeenLost() ){
-                        this.sgate.sendOk(
-                                (short)0,
-                                this.window.lastOkSent(),
-                                this.rgate.getWindowSize()
-                        );
-                        //this.rgate.prepareRetransmition();
-                    }
                 }
                 /* Speaker actions */
 
-                //if( this.window.dataMightHaveBeenLost() ){
-                //    this.sgate.retransmit();
-                //}
+                if( this.window.shouldRetransmitData() ){
+                    this.sgate.retransmit();
+                }
 
                 if( this.window.shouldKeepAlive() ){
                     this.sgate.sendSup();
@@ -298,27 +277,14 @@ public class Executor implements Runnable{
         }
     }
 
-    class ExecutorPipe implements Runnable{
+    class ExecutorPipe{
 
         final ByteArrayOutputStream producer;
-        final PipedInputStream consumer = new PipedInputStream();
+        //final PipedInputStream consumer = new PipedInputStream();
 
         ExecutorPipe() throws IOException {
             this.producer = new ByteArrayOutputStream();
         }
 
-        public void run(){
-
-            try {
-                PipedOutputStream pout = new PipedOutputStream(this.consumer);
-                this.producer.writeTo(pout);
-                pout.flush();
-                pout.close();
-                this.producer.close();
-
-            }catch (IOException e){
-                e.printStackTrace();
-            }
-        }
     }
 }

@@ -1,6 +1,6 @@
 package Transport.UDPTransport;
 
-import Test.Debugger;
+import Common.Debugger;
 
 import java.io.IOException;
 import java.net.DatagramPacket;

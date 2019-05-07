@@ -1,11 +1,9 @@
 package Test;
 
-import Transport.GCVConnection;
+import Common.Debugger;
 import Transport.GCVSocket;
 
 import java.io.IOException;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.util.concurrent.TimeoutException;
 
 

@@ -1,62 +1,65 @@
 package Test;
 
+import Common.Connection;
 import Transport.GCVConnection;
 import Transport.GCVSocket;
 
-import java.io.IOException;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.nio.channels.Pipe;
-import java.util.Scanner;
-import java.util.concurrent.TimeoutException;
-
-
 public class Server {
-    private static boolean isRunning = true;
+    private static GCVSocket cs;
+    private static int correct = 0;
 
-    public static void main( String[] args ) {
-        String message = "very useful data, so they say";
-        try {
-            if( args.length > 1) {
-                if (args[1].equals("debug"))
-                    Debugger.setEnabled(true);
-                else
-                    Debugger.setEnabled(false);
-            }else{
-                Debugger.setEnabled(false);
-            }
+    public static void main(String[] args) throws Exception {
+        System.out.println("Launching server");
+        cs = new GCVSocket(GCVConnection.send_buffer_size,true, 7220);
+        System.out.println("Listening");
+        cs.listen();
+        System.out.println("Connection established");
 
-            GCVSocket cs = new GCVSocket(GCVConnection.send_buffer_size,true,6969);
+        test1();
+        test2();
+        test3();
 
-           cs = cs.listen();
+        System.out.println("\n\norder:");
+        test4();
+    }
 
-            PipedInputStream pin = new PipedInputStream(10000);
-            PipedOutputStream pout = new PipedOutputStream(pin);
-
-            int i = 0;
-
-            Debugger.log("Start writing");
-
-            cs.send(pin);
-
-            while ( ++i < 200000 )
-                pout.write((message + " " + i + "\n").getBytes());
-
-            pout.flush();
-
-            pout.close();
-
-            Debugger.log("############ Sent ################");
-
-            while(true)
-                Thread.sleep(1000);
-
-        }catch(IOException|InterruptedException e){
-            e.printStackTrace();
+    private static void test1() {
+        if(Connection.receive(cs).equals("ola")) {
+            correct++;
+            System.out.println("Simple test passed - " + correct + "/3");
+        } else {
+            System.out.println("Simple test failed - " + correct + "/3");
         }
     }
 
-    public static void stop() {
-        isRunning = false;
+    private static void test2() {
+        String s = Connection.receive(cs);
+        if(s.matches("a{10000000}")) {
+            correct++;
+            System.out.println("Big input (10000000 chars) test passed - " + correct + "/3");
+        } else {
+            System.out.println("Big input (10000000 chars) test failed - " + correct + "/3");
+        }
+    }
+
+    private static void test3() {
+        if(Connection.receive(cs).equals("¿Ç÷û")) {
+            correct++;
+            System.out.println("Uncommon Charsets characters passed - " + correct + "/3");
+        } else {
+            System.out.println("Uncommon Charsets characters - " + correct + "/3");
+        }
+    }
+
+    private static void test4() {
+        for (int i = 1000000; i >= 1000; i/=10) {
+            String s = Connection.receive(cs);
+            System.out.println("got " + i);
+            long receivingTime = System.currentTimeMillis();
+            String[] ss = s.split("-");
+            long sentTime = Long.parseLong(ss[0]);
+            System.out.println(ss[1] + " -> sent at " + sentTime + ", received at " + receivingTime);
+            System.out.println(i + " chars: " + (receivingTime - sentTime) + " ms\n");
+        }
     }
 }

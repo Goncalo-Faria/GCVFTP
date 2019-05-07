@@ -1,7 +1,8 @@
-package Test;
+package Common;
 
 public class Debugger {
-    private static boolean enabled = true;
+    private static boolean enabled = false;
+    private static boolean appLevel = true;
 
     public static void setEnabled(boolean enabled) {
         Debugger.enabled = enabled;
@@ -9,6 +10,11 @@ public class Debugger {
 
     public static void log(String str) {
         if(enabled)
+            System.out.println(str);
+    }
+
+    public static void logAppLevel(String str) {
+        if(appLevel)
             System.out.println(str);
     }
 }

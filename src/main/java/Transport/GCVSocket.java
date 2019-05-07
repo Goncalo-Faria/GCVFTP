@@ -1,6 +1,6 @@
 package Transport;
 
-import Test.Debugger;
+import Common.Debugger;
 import Transport.CongestionControl.WindowRateControl;
 import Transport.Speaker.SpeakerGate;
 import Transport.Unit.ControlPacketTypes.HI;
@@ -370,12 +370,8 @@ public class GCVSocket {
         return producer;
     }
 
-    public InputStream receive() throws InterruptedException {
+    public byte[] receive() throws InterruptedException {
         return this.actuary.getStream();
-    }
-
-    public InputStream receiveWhenReady() throws InterruptedException {
-        return this.actuary.getStreamWhenReady();
     }
 
     void restart() throws IOException {

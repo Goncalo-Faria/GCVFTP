@@ -1,6 +1,6 @@
 package Transport.CongestionControl;
 
-import Test.Debugger;
+import Common.Debugger;
 import Transport.GCVConnection;
 import Transport.Unit.ControlPacketTypes.NOPE;
 import Transport.Unit.ControlPacketTypes.OK;
@@ -25,11 +25,13 @@ public class WindowRateControl implements Window {
     private final AtomicInteger timeLastReceived = new AtomicInteger(0);
     private final AtomicInteger timeLastSent = new AtomicInteger(0);
 
-    private final AtomicInteger timeLastNackSent = new AtomicInteger(0);
+    private final AtomicInteger timeLastNopeSent = new AtomicInteger(0);
     private final AtomicInteger timeLastSureSent = new AtomicInteger(0);
 
-    private final AtomicInteger timeLastNackReceived = new AtomicInteger(0);
+    private final AtomicInteger timeLastNopeReceived = new AtomicInteger(0);
     private final AtomicInteger timeLastSureReceived = new AtomicInteger(0);
+    private final AtomicInteger timeLastDataReceived = new AtomicInteger( this.connectionTime());
+    private final AtomicInteger timeLastDataSent     = new AtomicInteger(this.connectionTime());
     private final AtomicInteger timeLastOkReceived = new AtomicInteger(0);
 
     private final AtomicInteger lastSureReceived = new AtomicInteger(0);
@@ -37,6 +39,7 @@ public class WindowRateControl implements Window {
     private final AtomicInteger lastOkSent = new AtomicInteger(0);
     private final AtomicInteger lastOkReceived = new AtomicInteger(this.connectionTime());
     private final AtomicInteger lastDataReceived = new AtomicInteger(0);
+    private final AtomicInteger lastDataSent = new AtomicInteger(0);
 
     private final AtomicInteger synOkCounter = new AtomicInteger(0);
     private final AtomicInteger increaseCounter = new AtomicInteger(0);
@@ -79,6 +82,7 @@ public class WindowRateControl implements Window {
     public void boot(int lastOkSent, int lastOkReceived, int time){
         this.lastOkSent.set(lastOkSent);
         this.lastOkReceived.set(lastOkReceived);
+        this.lastDataSent.set(lastOkReceived);
         this.lastSureReceived.set(lastOkSent);
         this.initiate = time;
         Debugger.log("init:" + this.initiate );
@@ -187,16 +191,17 @@ public class WindowRateControl implements Window {
     }
 
     public void receivedNope( NOPE packet ){
-        timeLastNackReceived.set(this.connectionTime());
+        timeLastNopeReceived.set(this.connectionTime());
         this.activateCongestionControl();
     }
 
     public void sentNope( NOPE packet ){
         Debugger.log(" Sent Nope ");
-        timeLastNackSent.set(this.connectionTime());
+        timeLastNopeSent.set(this.connectionTime());
     }
 
     public void receivedData(DataPacket packet){
+        this.timeLastDataReceived.set(this.connectionTime());
         this.lastDataReceived.updateAndGet( x -> ( x > packet.getSeq() ) ? x : packet.getSeq() );
     }
 
@@ -204,20 +209,25 @@ public class WindowRateControl implements Window {
 
     public void sentTransmission(){ this.timeLastSent.set(this.connectionTime()); }
 
-    public boolean okMightHaveBeenLost(){
+    public boolean shouldSendOk(){
         try{
             int expRttTime = this.rtt.get() + 4 * this.rttVar.get();
                 if( this.lastSureReceived.get() < this.lastOkSent.get() )
                     return (this.connectionTime()-this.timeLastSureReceived.get()) > GCVConnection.rate_control_interval + expRttTime;
-                else
-                    return false;
+                else{
+                    return this.lastOkSent.get() < this.lastDataReceived.get();
+                }
         }catch(NullPointerException e){
             return false;
         }
     }
 
-    public boolean shouldSendOk(){
-        return this.lastOkSent.get() < this.lastDataReceived.get();
+    public boolean shouldRetransmitData(){
+
+        int maxexpttime = this.rtt.get() + 4 * this.rttVar.get();
+        return (this.lastDataSent.get() > this.lastOkReceived.get()) &&
+                (this.connectionTime()-this.timeLastOkReceived.get()) > maxexpttime &&
+                (this.connectionTime()-this.timeLastDataSent.get()) > maxexpttime ;
     }
 
     public boolean shouldSendSure(){
@@ -240,7 +250,7 @@ public class WindowRateControl implements Window {
         int expRttTime = this.rtt.get() + this.rttVar.get();
 
         try {
-            return (curTime - timeLastNackSent.get()) > expRttTime
+            return (curTime - timeLastNopeSent.get()) > expRttTime
                     && (curTime - this.sentOkCache.get(this.lastOkSent.get())) > GCVConnection.rate_control_interval ;
         }catch(NullPointerException e){
             return false;
@@ -295,7 +305,7 @@ public class WindowRateControl implements Window {
             this.congestionWindowSize.getAndAdd( synCounter );
         }
 
-        //Debugger.log("window : " + this.congestionWindowValue() + " \n ..................." );
+        System.out.println("window : " + this.congestionWindowValue() );
         //Debugger.log( "buffer : " + this.receiverBuffer.get());
 
     }

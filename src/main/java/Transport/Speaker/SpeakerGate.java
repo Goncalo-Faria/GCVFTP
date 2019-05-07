@@ -1,6 +1,6 @@
 package Transport.Speaker;
 
-import Test.Debugger;
+import Common.Debugger;
 import Transport.TransportChannel;
 import Transport.Unit.ControlPacketTypes.*;
 import Transport.TransmissionTransportChannel;

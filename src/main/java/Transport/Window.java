@@ -22,7 +22,7 @@ public interface Window {
     boolean shouldSendOk();
     boolean shouldSendNope();
     boolean shouldKeepAlive();
-    boolean okMightHaveBeenLost();
+    boolean shouldRetransmitData();
     boolean shouldSendSure();
     boolean hasTimeout();
 

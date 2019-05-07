@@ -24,7 +24,6 @@ class ConnectionScheduler implements Runnable {
 
     private final DatagramSocket connection;
     private final AtomicBoolean active = new AtomicBoolean(true);
-    private final BlockingQueue<StampedControlPacket> queue = new LinkedBlockingQueue<>();
     private final Timer alarm = new Timer(true);
     private final ConcurrentHashMap<String, GCVSocket> connections = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, BlockingQueue<StampedControlPacket>> requests = new ConcurrentHashMap<>();
@@ -156,7 +155,9 @@ class ConnectionScheduler implements Runnable {
 
     private class RemoveExpired extends TimerTask {
         public void run() {
-            queue.removeIf(p -> p.isRecent(clearTime));
+
+            listening.values().forEach( l -> l.removeIf(p -> p.isRecent(clearTime)));
+            requests.values().forEach( l -> l.removeIf(p -> p.isRecent(clearTime)));
             clearTime = LocalDateTime.now();
         }
     }

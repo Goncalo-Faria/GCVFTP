@@ -191,6 +191,7 @@ public class Executor implements Runnable{
 
                     /* If is likely a packet was lost */
                     if( this.window.shouldSendNope() ) {
+                        Debugger.log("#########SENT NOPE#### SENT NOPE#####");
                         this.sgate.sendNope(
                                     this.rgate.getLossList()
                         );

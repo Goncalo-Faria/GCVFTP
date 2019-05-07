@@ -66,6 +66,7 @@ public class GCVSocket {
     private int maxWindow = GCVConnection.send_buffer_size;
     private InetAddress localhost;
     private final int port;
+    private boolean direct = false;
 
     private TransmissionTransportChannel channel ;
 
@@ -101,6 +102,7 @@ public class GCVSocket {
         this.port = port;
         this.channel = channel;
         this.localhost = localhost;
+        this.direct = true;
 
         this.boot(senderProp,receiveProp,theirSeq,ourSeq,time);
         GCVSocket.announceSocketConnection(socketkey, this);
@@ -114,13 +116,14 @@ public class GCVSocket {
 
         sgate.confirmHandshake();
 
-        channel.window().boot(their_seq,our_seq, time);
+        channel.window().boot(their_seq, our_seq, time);
 
         this.actuary = new Executor(sgate, rgate, channel.window());
 
-        Thread worker = new Thread(this.actuary);
-
-        worker.start();
+        for(int i = 0; i< GCVConnection.number_of_executor_workers ; i++) {
+            Thread worker = new Thread(this.actuary);
+            worker.start();
+        }
     }
 
     public GCVSocket listen() throws InterruptedException, IOException{
@@ -162,6 +165,8 @@ public class GCVSocket {
                 this.maxWindow
         );
 
+        tmpChannel.sendPacket( responseHiPacket );
+
         int responseTime = tmpChannel.window().connectionTime();
 
         return new GCVSocket(
@@ -172,8 +177,8 @@ public class GCVSocket {
                 tmpChannel,
                 senderProp,
                 receiveProp,
-                hiPacket.getSeq(),
                 responseHiPacket.getSeq(),
+                hiPacket.getSeq(),
                 responseTime,
                 receivedStampedPacket.ip().toString() + receivedStampedPacket.port()
         );
@@ -274,11 +279,12 @@ public class GCVSocket {
                     ControlPacket cdu = (ControlPacket)du;
 
                     this.connectBoot(cs, cdu, ip, responseDatagram.getPort(), hiPacket);
-
+                    return;
                 }
 
             }catch (SocketTimeoutException|StreamCorruptedException ste){
                 ;// espera por outro.
+                Debugger.log(" ################################## corrrrrrrrrrrrrrrupted");
             }
         }
 
@@ -309,7 +315,7 @@ public class GCVSocket {
                     new WindowRateControl(maxWindow,this.persistent)
             );
 
-            this.boot(sendProp,receiveProp, response_hello_packet.getSeq(), hiPacket.getSeq(), 0);
+            this.boot(sendProp,receiveProp, hiPacket.getSeq(), response_hello_packet.getSeq(),0);
 
             GCVSocket.announceSocketConnection(ip.toString() + port, this);
             return;
@@ -369,18 +375,22 @@ public class GCVSocket {
 
     void restart() throws IOException {
 
-        byte[] hiMessage = new HI(
-                (short)0,
+        HI hiMessage = new HI(
+                (short) 0,
                 this.channel.getSelfStationProperties().mtu(),
                 maxWindow
-        ).markedSerialize();
+        );
 
-        this.channel.adhoc(new DatagramPacket(
-                hiMessage,
-                0,
-                hiMessage.length,
-                this.channel.getOtherStationProperties().ip(),
-                GCVConnection.port));
+        if( this.direct ){
+            this.channel.sendPacket(hiMessage);
+        }else {
+            this.channel.adhoc(new DatagramPacket(
+                    hiMessage.markedSerialize(),
+                    0,
+                    hiMessage.markedSerialize().length,
+                    this.channel.getOtherStationProperties().ip(),
+                    GCVConnection.port));
+        }
 
     }
 

@@ -19,7 +19,7 @@ public class TransmissionChannel implements Channel {
         this.cs = new DatagramSocket(send.port());
         this.cs.setSendBufferSize(send.channelBufferSize());
         this.cs.setReceiveBufferSize(receive.channelBufferSize());
-        this.cs.connect(receive.ip(), receive.port());
+        //this.cs.connect(receive.ip(), receive.port());
         this.in = send;
         this.out = receive;
         this.data_buffer = new byte[in.mtu()];
@@ -57,10 +57,15 @@ public class TransmissionChannel implements Channel {
     public byte[] receive() throws IOException {
         DatagramPacket packet = new DatagramPacket(this.data_buffer, in.mtu());
 
-        //System.out.println(new String(this.data_buffer));
 
-        cs.receive(packet);
+        do{
+            cs.receive(packet);
+        }while(packet.getPort() != this.out.port());
+
+        //this.cs.connect(this.out.ip(), this.out.port());
+
         byte[] dest = new byte[packet.getLength()];
+
         ByteBuffer.wrap(packet.getData()).get(dest, 0, packet.getLength());
 
         return dest;

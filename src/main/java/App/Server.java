@@ -29,13 +29,18 @@ public class Server implements Runnable {
             GlobalVariables.filesPath = args[0];
         }
 
+        for (int i = 1; i < args.length; i++) {
+            peers.add(args[i]);
+        }
+
         rsaKeys.generate();
         Debugger.logAppLevel("RSA keys generated");
 
         while (true) {
             try {
-                GCVSocket cs = new GCVSocket(GCVConnection.send_buffer_size,true, 7220);
-                new Thread(new Server(cs.listen())).start();
+                GCVSocket cs = new GCVSocket(GCVConnection.send_buffer_size,true);
+                cs.listen();
+                new Thread(new Server(cs)).start();
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
@@ -165,7 +170,7 @@ public class Server implements Runnable {
         List<TFile> tFiles = Collections.singletonList(new TFile(filename));
         peers.forEach(p -> {
             try {
-                GCVSocket cs = new GCVSocket(GCVConnection.send_buffer_size,true, 7220);
+                GCVSocket cs = new GCVSocket(GCVConnection.send_buffer_size,true);
                 cs.connect(p, 7220);
                 Connection.send(cs,
                         new Packet(

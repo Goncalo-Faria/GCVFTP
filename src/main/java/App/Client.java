@@ -101,7 +101,7 @@ public class Client {
 
     private void connect(String host) {
         try {
-            cs = new GCVSocket(GCVConnection.send_buffer_size, true, 7220);
+            cs =new GCVSocket(GCVConnection.send_buffer_size, true);
             cs.connect(host, 7220);
 
             Debugger.logAppLevel("Connected to server");

@@ -10,7 +10,7 @@ public class Server {
 
     public static void main(String[] args) throws Exception {
         System.out.println("Launching server");
-        cs = new GCVSocket(GCVConnection.send_buffer_size,true, 7220);
+        cs = new GCVSocket(GCVConnection.send_buffer_size,true);
         System.out.println("Listening");
         cs.listen();
         System.out.println("Connection established");

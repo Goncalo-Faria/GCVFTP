@@ -9,7 +9,7 @@ import java.util.Arrays;
 public class Client {
     public static void main(String[] args) throws Exception {
         System.out.println("Launching client");
-        GCVSocket cs = new GCVSocket(GCVConnection.send_buffer_size,true,7220);
+        GCVSocket cs = new GCVSocket(GCVConnection.send_buffer_size,true);
         System.out.println("Connecting");
         cs.connect(args[0], 7220);
         System.out.println("Connection established");

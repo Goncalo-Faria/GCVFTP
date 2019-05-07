@@ -1,6 +1,7 @@
 package Common;
 
 import java.io.Serializable;
+import java.util.Base64;
 
 public class TFile implements Serializable {
     private String filename;
@@ -61,10 +62,10 @@ public class TFile implements Serializable {
         String[] ss = s.split("'---'");
         return new TFile(
                 ss[0], Integer.parseInt(ss[1]), Integer.parseInt(ss[2]),
-                ss.length < 4 ? "" : ss[3]);
+                new String(Base64.getDecoder().decode(ss.length < 4 ? "" : ss[3])));
     }
 
     public String toString() {
-        return filename + "'---'" + part + "'---'" + total + "'---'" + fileContents;
+        return filename + "'---'" + part + "'---'" + total + "'---'" + Base64.getEncoder().encodeToString(fileContents.getBytes());
     }
 }

@@ -13,6 +13,7 @@ public class TransmissionChannel implements Channel {
     private final StationProperties in;
     private final StationProperties out;
     private final byte[] data_buffer;
+    private boolean connected =false;
 
     public TransmissionChannel(StationProperties send,
                                StationProperties receive) throws SocketException {
@@ -57,12 +58,16 @@ public class TransmissionChannel implements Channel {
     public byte[] receive() throws IOException {
         DatagramPacket packet = new DatagramPacket(this.data_buffer, in.mtu());
 
-
-        do{
+        if( !this.connected ) {
+            do {
+                cs.receive(packet);
+            } while (packet.getPort() != this.out.port());
+        }else{
             cs.receive(packet);
-        }while(packet.getPort() != this.out.port());
+        }
 
-        //this.cs.connect(this.out.ip(), this.out.port());
+        this.connected = true;
+        this.cs.connect(this.out.ip(), this.out.port());
 
         byte[] dest = new byte[packet.getLength()];
 

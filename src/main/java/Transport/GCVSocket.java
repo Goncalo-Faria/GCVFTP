@@ -68,6 +68,7 @@ public class GCVSocket {
     private InetAddress localhost;
     private final int port;
     private boolean direct = false;
+    private HI hi;
 
     private TransmissionTransportChannel channel ;
 
@@ -76,6 +77,7 @@ public class GCVSocket {
         Debugger.log("GCVSocket created");
         this.localhost = InetAddress.getLocalHost();
         this.port = port;
+        //
     }
 
     public GCVSocket(int maxWindow, boolean persistent, int port) throws IOException {
@@ -117,7 +119,7 @@ public class GCVSocket {
 
         sgate.confirmHandshake();
 
-        channel.window().boot(their_seq, our_seq, time);
+        channel.window().boot( their_seq,our_seq, time);
 
         this.actuary = new Executor(sgate, rgate, channel.window());
 
@@ -162,13 +164,13 @@ public class GCVSocket {
 
         );
 
-        HI responseHiPacket = new HI(
+        this.hi = new HI(
                 (short)0,
-                tmpChannel.getSelfStationProperties().mtu(),
-                this.maxWindow
+                mtu,
+                maxWindow
         );
 
-        tmpChannel.sendPacket( responseHiPacket );
+        tmpChannel.sendPacket( this.hi );
 
         int responseTime = tmpChannel.window().connectionTime();
 
@@ -180,8 +182,8 @@ public class GCVSocket {
                 tmpChannel,
                 senderProp,
                 receiveProp,
-                responseHiPacket.getSeq(),
                 hiPacket.getSeq(),
+                this.hi.getSeq(),
                 responseTime,
                 receivedStampedPacket.ip().toString() + receivedStampedPacket.port()
         );
@@ -196,13 +198,13 @@ public class GCVSocket {
 
     public void connect(InetAddress ip) throws IOException, TimeoutException {
 
-        HI hiPacket = new HI(
+        this.hi = new HI(
                 (short)0,
                 mtu,
                 maxWindow
         );
 
-        byte[] serializedHiPacket = hiPacket.markedSerialize();
+        byte[] serializedHiPacket = this.hi.markedSerialize();
 
         DatagramSocket cs = new DatagramSocket(this.port);
         cs.setSoTimeout(GCVConnection.request_retry_timeout);
@@ -226,7 +228,7 @@ public class GCVSocket {
 
                 ControlPacket cdu = receivedStampedPacket.get();
 
-                this.connectBoot(cs, cdu, ip, receivedStampedPacket.port(), hiPacket);
+                this.connectBoot(cs, cdu, ip, receivedStampedPacket.port(), this.hi);
 
                 return;
 
@@ -247,13 +249,13 @@ public class GCVSocket {
 
     public void connect(InetAddress ip, int targetPort) throws IOException, TimeoutException {
 
-        HI hiPacket = new HI(
+        this.hi = new HI(
                 targetPort,
                 mtu,
                 maxWindow
         );
 
-        byte[] serializedHiPacket = hiPacket.markedSerialize();
+        byte[] serializedHiPacket = this.hi.markedSerialize();
 
         DatagramPacket responseDatagram = new DatagramPacket(
                 new byte[serializedHiPacket.length],
@@ -281,7 +283,7 @@ public class GCVSocket {
                 if(du instanceof ControlPacket){
                     ControlPacket cdu = (ControlPacket)du;
 
-                    this.connectBoot(cs, cdu, ip, responseDatagram.getPort(), hiPacket);
+                    this.connectBoot(cs, cdu, ip, responseDatagram.getPort(), this.hi);
                     return;
                 }
 
@@ -378,19 +380,13 @@ public class GCVSocket {
 
     void restart() throws IOException {
 
-        HI hiMessage = new HI(
-                (short) 0,
-                this.channel.getSelfStationProperties().mtu(),
-                maxWindow
-        );
-
         if( this.direct ){
-            this.channel.sendPacket(hiMessage);
+            this.channel.sendPacket(this.hi);
         }else {
             this.channel.adhoc(new DatagramPacket(
-                    hiMessage.markedSerialize(),
+                    this.hi.markedSerialize(),
                     0,
-                    hiMessage.markedSerialize().length,
+                    this.hi.markedSerialize().length,
                     this.channel.getOtherStationProperties().ip(),
                     GCVConnection.port));
         }

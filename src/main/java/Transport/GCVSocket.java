@@ -11,6 +11,7 @@ import Transport.Unit.ControlPacket;
 import Transport.Unit.DataPacket;
 import Transport.Unit.Packet;
 
+
 import java.io.*;
 import java.net.*;
 import java.util.concurrent.TimeoutException;
@@ -124,6 +125,8 @@ public class GCVSocket {
             Thread worker = new Thread(this.actuary);
             worker.start();
         }
+
+        Debugger.log(":."+ their_seq + " : " +our_seq);
     }
 
     public GCVSocket listen() throws InterruptedException, IOException{
@@ -223,7 +226,7 @@ public class GCVSocket {
 
                 ControlPacket cdu = receivedStampedPacket.get();
 
-                this.connectBoot(cs, cdu, ip, receivedStampedPacket.port() , hiPacket);
+                this.connectBoot(cs, cdu, ip, receivedStampedPacket.port(), hiPacket);
 
                 return;
 
@@ -315,7 +318,7 @@ public class GCVSocket {
                     new WindowRateControl(maxWindow,this.persistent)
             );
 
-            this.boot(sendProp,receiveProp, hiPacket.getSeq(), response_hello_packet.getSeq(),0);
+            this.boot(sendProp,receiveProp, response_hello_packet.getSeq(), hiPacket.getSeq(),0);
 
             GCVSocket.announceSocketConnection(ip.toString() + port, this);
             return;

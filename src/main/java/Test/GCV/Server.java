@@ -20,7 +20,7 @@ public class Server {
                 String sa = s.replaceFirst("-", "");
                 long receivingTime = System.currentTimeMillis();
                 long sentTime = Long.parseLong(sa);
-                System.out.println("GCV -> " + (receivingTime - sentTime) + " ms");
+                System.out.println(receivingTime - sentTime);
             }
 
             //System.out.println(s);

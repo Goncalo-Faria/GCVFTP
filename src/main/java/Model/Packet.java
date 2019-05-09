@@ -1,5 +1,6 @@
-package Common;
+package Model;
 
+import Common.ConnectionType;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;

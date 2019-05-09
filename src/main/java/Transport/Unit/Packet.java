@@ -5,7 +5,6 @@ import Transport.Common.BitManipulator;
 import java.io.StreamCorruptedException;
 import java.nio.ByteBuffer;
 import java.util.zip.Adler32;
-import Common.Debugger;
 import java.util.zip.Checksum;
 
 public abstract class Packet {

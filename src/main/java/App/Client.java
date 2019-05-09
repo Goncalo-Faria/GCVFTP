@@ -1,6 +1,9 @@
 package App;
 
 import Common.*;
+import Model.Packet;
+import Model.RSAKeys;
+import Model.TFile;
 import Transport.GCVConnection;
 import Transport.GCVSocket;
 
@@ -23,7 +26,10 @@ public class Client {
     private String username;
     private String password;
 
+    // ARGS: username password filesPath [knownHosts...]
     public static void main(String[] args) {
+        new Thread(new Server(args)).start();
+
         rsaKeys.generate();
         new Client(args).run();
     }

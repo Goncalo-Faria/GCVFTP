@@ -1,6 +1,6 @@
 package Common;
 
-import Common.Packet;
+import Model.Packet;
 
 import java.io.File;
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package Test;
+package Test.Simple;
 
 import Common.Connection;
 import Transport.GCVConnection;
@@ -12,7 +12,7 @@ public class Server {
         System.out.println("Launching server");
         cs = new GCVSocket(GCVConnection.send_buffer_size,true, 7220);
         System.out.println("Listening");
-        cs.listen();
+        cs = cs.listen();
         System.out.println("Connection established");
 
         test1();

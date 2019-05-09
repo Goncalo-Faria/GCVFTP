@@ -1,4 +1,4 @@
-package Test;
+package Test.Simple;
 
 import Common.Connection;
 import Transport.GCVConnection;

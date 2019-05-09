@@ -210,13 +210,15 @@ public class WindowRateControl implements Window {
     public void sentTransmission(){ this.timeLastSent.set(this.connectionTime()); }
 
     public boolean shouldSendOk(){
-        try{
+        try {
             int expRttTime = this.rtt.get() + 4 * this.rttVar.get();
-                if( this.lastSureReceived.get() < this.lastOkSent.get() )
-                    return (this.connectionTime()-this.timeLastSureReceived.get()) > GCVConnection.rate_control_interval + expRttTime;
-                else{
-                    return this.lastOkSent.get() < this.lastDataReceived.get();
-                }
+            boolean ans = false;
+            if (this.lastSureReceived.get() < this.lastOkSent.get()){
+                ans = (this.connectionTime() - this.timeLastSureReceived.get()) > GCVConnection.rate_control_interval + expRttTime;
+            }
+
+            return ans || this.lastOkSent.get() < this.lastDataReceived.get();
+
         }catch(NullPointerException e){
             return false;
         }
@@ -292,7 +294,7 @@ public class WindowRateControl implements Window {
 
                 int inc = this.increaseCounter.incrementAndGet();
 
-                if(  inc  > 20 )
+                if(  inc  > 10 )
                     this.deactivateCongestionControl();
 
                 if( synCounter > 2 * this.congestionWindowSize.get() )

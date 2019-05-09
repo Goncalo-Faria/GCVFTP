@@ -1,20 +1,22 @@
 package Transport;
 
-import java.io.*;
-import java.lang.Runnable;
+import Common.Debugger;
+import Transport.Listener.ListenerGate;
+import Transport.Speaker.SpeakerGate;
+import Transport.Unit.ControlPacket;
+import Transport.Unit.ControlPacketTypes.*;
+import Transport.Unit.DataPacket;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.NotActiveException;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
-
-import Common.Debugger;
-import Transport.Listener.ListenerGate;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import Transport.Speaker.SpeakerGate;
-import Transport.Unit.*;
-import Transport.Unit.ControlPacketTypes.*;
 
 public class Executor implements Runnable{
     /*

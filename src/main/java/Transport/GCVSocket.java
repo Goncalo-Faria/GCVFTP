@@ -2,15 +2,13 @@ package Transport;
 
 import Common.Debugger;
 import Transport.CongestionControl.WindowRateControl;
-import Transport.Speaker.SpeakerGate;
-import Transport.Unit.ControlPacketTypes.HI;
 import Transport.Listener.ListenerGate;
-import Transport.Speaker.SpeakerProperties;
 import Transport.Listener.ListenerProperties;
+import Transport.Speaker.SpeakerGate;
+import Transport.Speaker.SpeakerProperties;
 import Transport.Unit.ControlPacket;
-import Transport.Unit.DataPacket;
+import Transport.Unit.ControlPacketTypes.HI;
 import Transport.Unit.Packet;
-
 
 import java.io.*;
 import java.net.*;

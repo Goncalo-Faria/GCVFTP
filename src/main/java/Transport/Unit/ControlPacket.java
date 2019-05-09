@@ -3,8 +3,6 @@ package Transport.Unit;
 import Transport.Common.BitManipulator;
 import Transport.Unit.ControlPacketTypes.*;
 
-import java.util.zip.Adler32;
-
 public abstract class ControlPacket extends Packet {
 
     public enum Type{
@@ -38,7 +36,7 @@ public abstract class ControlPacket extends Packet {
 
     private final Type type; /* control message type*/
     private short extendedtype; /*para a aplicação*/
-    
+
     protected ControlPacket(Type t, short extendedtype){
         this.type = t;
         this.extendedtype=extendedtype;

@@ -1,9 +1,9 @@
 package Transport.Speaker;
 
 import Common.Debugger;
+import Transport.TransmissionTransportChannel;
 import Transport.TransportChannel;
 import Transport.Unit.ControlPacketTypes.*;
-import Transport.TransmissionTransportChannel;
 import Transport.Unit.DataPacket;
 
 import java.io.BufferedInputStream;

@@ -305,7 +305,7 @@ public class WindowRateControl implements Window {
             this.congestionWindowSize.getAndAdd( synCounter );
         }
 
-        System.out.println("window : " + this.congestionWindowValue() );
+        //System.out.println("window : " + this.congestionWindowValue() );
         //Debugger.log( "buffer : " + this.receiverBuffer.get());
 
     }

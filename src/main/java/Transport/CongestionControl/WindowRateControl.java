@@ -294,7 +294,7 @@ public class WindowRateControl implements Window {
 
                 int inc = this.increaseCounter.incrementAndGet();
 
-                if(  inc  > 20 )
+                if(  inc  > 10 )
                     this.deactivateCongestionControl();
 
                 if( synCounter > 2 * this.congestionWindowSize.get() )

@@ -1,4 +1,4 @@
-package Common;
+package Model;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;

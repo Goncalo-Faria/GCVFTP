@@ -2,7 +2,7 @@ package Common;
 
 public class Debugger {
     private static boolean enabled = false;
-    private static boolean appLevel = true;
+    private static boolean appLevel = false;
 
     public static void setEnabled(boolean enabled) {
         Debugger.enabled = enabled;

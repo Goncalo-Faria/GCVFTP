@@ -1,8 +1,5 @@
 package Transport.Common;
 
-import Transport.Unit.DataPacket;
-import Transport.Unit.Packet;
-
 import java.util.LinkedList;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -58,7 +55,7 @@ public class Interval<V> {
             return (this.max < x.min());
         }finally{
             a.wrl.readLock().unlock();
-            b.wrl.readLock().unlock();   
+            b.wrl.readLock().unlock();
         }
 
     }
@@ -85,9 +82,9 @@ public class Interval<V> {
             return (x.max() <= this.max && x.max() >= this.min()) || (x.min() <= this.max && x.min() >= this.min);
         }finally{
             a.wrl.readLock().unlock();
-            b.wrl.readLock().unlock();   
+            b.wrl.readLock().unlock();
         }
-        
+
     }
 
     public V take(){
@@ -126,7 +123,7 @@ public class Interval<V> {
                 return 1;
             }else if( x.max() + 1 == this.min ){
                 this.min = x.min();
-                
+
                 this.l.addAll( 0, x.getValues() );
                 return -1;
             }
@@ -140,8 +137,8 @@ public class Interval<V> {
             /*indica se o merge foi feito*/
         }finally{
             a.wrl.writeLock().unlock();
-            b.wrl.writeLock().unlock();   
-        
+            b.wrl.writeLock().unlock();
+
         }
     }
 

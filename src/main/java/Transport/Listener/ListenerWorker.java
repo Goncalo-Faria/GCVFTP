@@ -3,9 +3,8 @@ package Transport.Listener;
 import Transport.TransportChannel;
 import Transport.Unit.Packet;
 
-import java.io.NotActiveException;
-import java.lang.Thread;
 import java.io.IOException;
+import java.io.NotActiveException;
 import java.net.SocketException;
 import java.util.concurrent.atomic.AtomicBoolean;
 

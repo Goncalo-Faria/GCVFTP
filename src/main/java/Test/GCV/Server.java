@@ -13,10 +13,17 @@ public class Server {
         System.out.println("listening");
         cs = cs.listen();
         System.out.println("receiving");
-        String s = Connection.receive(cs);
-        long receivingTime = System.currentTimeMillis();
-        String[] ss = s.split("-");
-        long sentTime = Long.parseLong(ss[0]);
-        System.out.println("Client -> " + (receivingTime - sentTime) + " ms");
+        while(true) {
+            String s = Connection.receive(cs);
+
+            if(s.startsWith("-")) {
+                String sa = s.replaceFirst("-", "");
+                long receivingTime = System.currentTimeMillis();
+                long sentTime = Long.parseLong(sa);
+                System.out.println("GCV -> " + (receivingTime - sentTime) + " ms");
+            }
+
+            //System.out.println(s);
+        }
     }
 }

@@ -16,7 +16,7 @@ public class Server implements Runnable {
         GlobalVariables.filesPath = args[2];
 
         List<String> peers = Listener.getPeers();
-        for (int i = 1; i < args.length; i++) {
+        for (int i = 3; i < args.length; i++) {
             peers.add(args[i]);
             tellPeerIExist(args[i]);
         }
